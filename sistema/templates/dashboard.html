@@ -155,7 +155,7 @@
         {% for nome, vals in fat_marca_anual.items() %}
           {% set ns.total_bruto = ns.total_bruto + vals.bruto %}
         {% endfor %}
-        {% for nome, vals in fat_marca_anual|dictsort(by='value', reverse=true) %}
+        {% for nome, vals in fat_marca_anual.items()|sort(attribute='1.bruto', reverse=true) %}
           <tr style="border-bottom:1px solid rgba(255,255,255,.03)">
             <td style="padding:8px 12px;font-weight:600">{{ nome }}</td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--gold)">
