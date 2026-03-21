@@ -1372,9 +1372,12 @@ def api_resumo_anual(loja_id, ano):
     row = request.api_key_row
     if row["loja_id"] and row["loja_id"] != loja_id:
         return jsonify({"erro": "Sem acesso"}), 403
-    dados = resumo_anual(loja_id, ano)
+    resumo = resumo_anual(loja_id, ano)
+    dados = resumo["meses"]
     return jsonify({
         "loja_id": loja_id, "ano": ano, "meses": dados,
+        "fat_marca_anual": resumo["fat_marca_anual"],
+        "desp_marca_anual": resumo["desp_marca_anual"],
         "totais": {
             "faturamento": round(sum(m["faturamento"] for m in dados), 2),
             "despesas": round(sum(m["despesas"] for m in dados), 2),
