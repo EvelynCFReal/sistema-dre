@@ -1,0 +1,23 @@
+services:
+  app:
+    build: .
+    container_name: dre-sistema
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - dre_data:/app/data
+      - dre_logos:/app/static/logos
+    environment:
+      - TZ=America/Sao_Paulo
+      - SECRET_KEY=sunomono-dre-2026-prod-key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  dre_data:
+  dre_logos:
