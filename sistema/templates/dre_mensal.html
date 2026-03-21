@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}DRE {{ nome_mes }} {{ ano }} · Sistema de DRE{% endblock %}
+{% block page_title %}DRE Mensal — {{ nome_mes }} {{ ano }}{% endblock %}
+
+{% block topbar_extra %}
+<div class="d-flex gap-2 align-items-center no-print">
+  {% if mes > 1 %}
+  <a href="{{ url_for('dre_mensal', mes=mes-1) }}" class="btn-outline-gold" style="padding:5px 14px;font-size:12px">
+    <i class="bi bi-chevron-left"></i> {{ meses[mes-2] }}
+  </a>
+  {% endif %}
+  {% if mes < 12 %}
+  <a href="{{ url_for('dre_mensal', mes=mes+1) }}" class="btn-outline-gold" style="padding:5px 14px;font-size:12px">
+    {{ meses[mes] }} <i class="bi bi-chevron-right"></i>
+  </a>
+  {% endif %}
+  <select class="form-select" style="width:auto;font-size:11px;padding:5px 28px 5px 10px"
+    onchange="var url=new URL(window.location); if(this.value) url.searchParams.set('marca_id',this.value); else url.searchParams.delete('marca_id'); window.location=url;">
+    <option value="">Todas as Marcas</option>
+    {% for m in marcas %}
+    <option value="{{ m.id }}" {% if marca_sel == m.id %}selected{% endif %}>{{ m.nome }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn-outline-gold" style="padding:5px 14px;font-size:12px" onclick="window.print()" title="Imprimir DRE">
+    <i class="bi bi-printer"></i>
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.dre-section{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.dre-section-header{
+  padding:12px 18px;background:rgba(200,169,110,.06);border-bottom:1px solid var(--border);
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;
+  display:flex;align-items:center;gap:8px}
+.dre-row{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 18px;border-bottom:1px solid rgba(255,255,255,.03);font-size:13px}
+.dre-row:last-child{border-bottom:none}
+.dre-row:hover{background:rgba(255,255,255,.02)}
+.dre-row.total{padding:11px 18px;background:rgba(255,255,255,.03);font-weight:600;font-size:13px}
+.dre-row.resultado{padding:14px 18px;background:rgba(200,169,110,.07);
+  font-weight:700;font-size:17px;font-family:'Playfair Display',serif;color:var(--gold)}
+.dre-row.resultado.neg{background:rgba(255,102,102,.07);color:var(--red)}
+.label-desp{color:var(--muted)}
+.val-money{font-variant-numeric:tabular-nums;white-space:nowrap}
+.taxa-badge{font-size:9px;color:var(--muted);background:var(--card2);padding:2px 5px;border-radius:4px;margin-left:6px}
+.chart-mini{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- KPIs do mês -->
+<div class="kpi-grid mb-4">
+  <div class="card-dre">
+    <h6>Faturamento Bruto</h6>
+    <div class="val gold">R$ {{ "{:,.2f}".format(dre.total_bruto).replace(",","X").replace(".",",").replace("X",".") }}</div>
+    <div class="sub">Taxas: R$ {{ "{:,.2f}".format(dre.total_taxas).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="card-dre">
+    <h6>Faturamento Líquido</h6>
+    <div class="val">R$ {{ "{:,.2f}".format(dre.fat_liquido).replace(",","X").replace(".",",").replace("X",".") }}</div>
+    <div class="sub">Após descontar taxas</div>
+  </div>
+  <div class="card-dre">
+    <h6>Total Despesas</h6>
+    <div class="val" style="color:var(--red)">R$ {{ "{:,.2f}".format(dre.total_despesas).replace(",","X").replace(".",",").replace("X",".") }}</div>
+    <div class="sub">
+      {% if dre.total_bruto %}{{ "%.1f"|format(dre.total_despesas/dre.total_bruto*100) }}% do faturamento{% endif %}
+    </div>
+  </div>
+  <div class="card-dre">
+    <h6>Resultado do Mês</h6>
+    <div class="val {% if dre.resultado>=0 %}pos{% else %}neg{% endif %}">
+      R$ {{ "{:,.2f}".format(dre.resultado).replace(",","X").replace(".",",").replace("X",".") }}
+    </div>
+    <div class="sub">
+      Margem: <span class="{% if dre.margem>=0 %}text-success{% else %}text-danger{% endif %}">{{ "%.1f"|format(dre.margem) }}%</span>
+      &middot; Média diária: R$ {{ "{:,.0f}".format(dre.media_diaria).replace(",","X").replace(".",",").replace("X",".") }}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+<div class="col-lg-7">
+
+<!-- FATURAMENTO BRUTO -->
+<div class="dre-section">
+  <div class="dre-section-header">
+    <i class="bi bi-arrow-up-circle"></i> Faturamento Bruto por Forma de Pagamento
+  </div>
+  {% for nome, vals in dre.fat_bruto.items() %}
+  <div class="dre-row">
+    <span class="label-desp">{{ nome }}
+      {% if vals.bruto and vals.taxa > 0 %}
+      <span class="taxa-badge">{{ "%.1f"|format(vals.taxa/vals.bruto*100) }}%</span>
+      {% endif %}
+    </span>
+    <div class="text-end">
+      <div class="val-money">R$ {{ "%.2f"|format(vals.bruto) }}</div>
+      {% if vals.taxa %}<div style="font-size:10px;color:var(--red)">(-) R$ {{ "%.2f"|format(vals.taxa) }}</div>{% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="dre-row"><span style="color:var(--muted)">Sem lançamentos neste mês.</span></div>
+  {% endfor %}
+  <div class="dre-row total">
+    <span>Total Bruto</span>
+    <span class="val-money text-gold">R$ {{ "{:,.2f}".format(dre.total_bruto).replace(",","X").replace(".",",").replace("X",".") }}</span>
+  </div>
+</div>
+
+<!-- FATURAMENTO POR APP -->
+<div class="dre-section">
+  <div class="dre-section-header">
+    <i class="bi bi-shop"></i> Faturamento por Plataforma / App
+  </div>
+  {% for app_nome, vals in dre.fat_app.items() %}
+  <div class="dre-row">
+    <span>{{ app_nome }}</span>
+    <div class="text-end">
+      <div class="val-money">R$ {{ "%.2f"|format(vals.total) }}</div>
+      <div style="font-size:10px;color:var(--muted)">
+        Almoço R${{ "%.0f"|format(vals.almoco) }} &middot; Jantar R${{ "%.0f"|format(vals.jantar) }} &middot; Pós R${{ "%.0f"|format(vals.pos) }}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="dre-row"><span style="color:var(--muted)">Sem dados de plataformas.</span></div>
+  {% endfor %}
+</div>
+
+<!-- APURAÇÃO DO RESULTADO -->
+<div class="dre-section">
+  <div class="dre-section-header">
+    <i class="bi bi-calculator"></i> Apuração do Resultado
+  </div>
+  <div class="dre-row">
+    <span>(+) Faturamento Bruto</span>
+    <span class="val-money text-gold">R$ {{ "{:,.2f}".format(dre.total_bruto).replace(",","X").replace(".",",").replace("X",".") }}</span>
+  </div>
+  <div class="dre-row">
+    <span class="label-desp">(-) Taxas / Descontos</span>
+    <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.total_taxas).replace(",","X").replace(".",",").replace("X",".") }})</span>
+  </div>
+
+  {% if dre.totais_desp.cmv %}
+  <div class="dre-row" style="background:rgba(255,255,255,.02)">
+    <span class="label-desp">(-) CMV — Custo da Mercadoria</span>
+    <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.totais_desp.cmv).replace(",","X").replace(".",",").replace("X",".") }})</span>
+  </div>
+  {% endif %}
+
+  {% for tipo_key, label in [('fixa','Despesas Fixas'),('motoboy','Despesas Motoboy'),('balcao','Despesas Balcão'),('financeira','Despesas Financeiras'),('outra','Outras Despesas')] %}
+  {% if dre.totais_desp[tipo_key] %}
+  <div class="dre-row">
+    <span class="label-desp">(-) {{ label }}</span>
+    <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.totais_desp[tipo_key]).replace(",","X").replace(".",",").replace("X",".") }})</span>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <div class="dre-row">
+    <span class="label-desp">(-) Royalties</span>
+    <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.royalties).replace(",","X").replace(".",",").replace("X",".") }})</span>
+  </div>
+  {% if dre.mkt %}
+  <div class="dre-row">
+    <span class="label-desp">(-) Verba de Marketing</span>
+    <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.mkt).replace(",","X").replace(".",",").replace("X",".") }})</span>
+  </div>
+  {% endif %}
+
+  <div class="dre-row total">
+    <span>(=) Total de Deduções</span>
+    <span class="val-money" style="color:var(--red)">R$ {{ "{:,.2f}".format(dre.total_despesas + dre.total_taxas + dre.royalties + dre.mkt).replace(",","X").replace(".",",").replace("X",".") }}</span>
+  </div>
+  <div class="dre-row resultado {% if dre.resultado < 0 %}neg{% endif %}">
+    <span>(=) Resultado do Mês</span>
+    <span class="val-money">R$ {{ "{:,.2f}".format(dre.resultado).replace(",","X").replace(".",",").replace("X",".") }}</span>
+  </div>
+</div>
+
+</div>
+<div class="col-lg-5">
+
+<!-- GRÁFICO DESPESAS -->
+<div class="chart-mini mb-3">
+  <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px">
+    Composição das Despesas
+  </div>
+  <canvas id="chartDespMes"></canvas>
+</div>
+
+<!-- DESPESAS DETALHADAS -->
+{% for tipo_key, label, icone in [
+  ('cmv','CMV — Custo da Mercadoria','bi-box-seam'),
+  ('fixa','Despesas Fixas','bi-house'),
+  ('motoboy','Motoboy','bi-bicycle'),
+  ('balcao','Balcão','bi-person-workspace'),
+  ('financeira','Financeiras','bi-bank'),
+  ('outra','Outras','bi-three-dots'),
+] %}
+{% if dre.despesas[tipo_key] %}
+<div class="dre-section mb-2">
+  <div class="dre-section-header">
+    <i class="bi {{ icone }}"></i> {{ label }}
+  </div>
+  {% for nome, val in dre.despesas[tipo_key].items() %}
+  <div class="dre-row">
+    <span class="label-desp">{{ nome }}</span>
+    <span class="val-money">R$ {{ "%.2f"|format(val) }}</span>
+  </div>
+  {% endfor %}
+  <div class="dre-row total">
+    <span>Subtotal</span>
+    <span class="val-money">R$ {{ "{:,.2f}".format(dre.totais_desp[tipo_key]).replace(",","X").replace(".",",").replace("X",".") }}</span>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- COMPARATIVO POR MARCA -->
+{% if comp_marcas and comp_marcas.comparativo %}
+<div class="dre-section mb-2">
+  <div class="dre-section-header">
+    <i class="bi bi-tag"></i> Comparativo por Marca — {{ nome_mes }} vs {{ comp_marcas.mes_anterior }}
+  </div>
+  {% for item in comp_marcas.comparativo %}
+  <div class="dre-row" {% if item.marca == comp_marcas.melhor_marca %}style="background:rgba(200,169,110,.06)"{% endif %}>
+    <span>
+      {{ item.marca }}
+      {% if item.marca == comp_marcas.melhor_marca %}
+      <span style="font-size:9px;color:var(--gold);margin-left:4px"><i class="bi bi-trophy"></i> Mais faturou</span>
+      {% endif %}
+    </span>
+    <div class="text-end">
+      <div class="val-money">R$ {{ "{:,.2f}".format(item.fat_atual).replace(",","X").replace(".",",").replace("X",".") }}</div>
+      <div style="font-size:10px;color:{% if item.variacao >= 0 %}var(--green){% else %}var(--red){% endif %}">
+        {% if item.variacao >= 0 %}<i class="bi bi-arrow-up-short"></i>{% else %}<i class="bi bi-arrow-down-short"></i>{% endif %}
+        {{ "%.1f"|format(item.variacao) }}% vs {{ comp_marcas.mes_anterior }}
+        <span style="color:var(--muted);margin-left:4px">(R$ {{ "{:,.2f}".format(item.fat_anterior).replace(",","X").replace(".",",").replace("X",".") }})</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- FATURAMENTO POR MARCA (detalhado) -->
+{% if dre.fat_marca and (dre.fat_marca|length > 1 or (dre.fat_marca and 'Sem marca' not in dre.fat_marca)) %}
+<div class="dre-section mb-2">
+  <div class="dre-section-header">
+    <i class="bi bi-cash-stack"></i> Faturamento por Marca
+  </div>
+  {% for marca_nome, vals in dre.fat_marca.items() %}
+  <div class="dre-row">
+    <span>{{ marca_nome }}</span>
+    <div class="text-end">
+      <div class="val-money">R$ {{ "{:,.2f}".format(vals.bruto).replace(",","X").replace(".",",").replace("X",".") }}</div>
+      {% if vals.taxa %}<div style="font-size:10px;color:var(--red)">(-) Taxas R$ {{ "%.2f"|format(vals.taxa) }} &rarr; Líquido R$ {{ "{:,.2f}".format(vals.liquido).replace(",","X").replace(".",",").replace("X",".") }}</div>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- DESPESAS POR MARCA -->
+{% if dre.desp_marca and (dre.desp_marca|length > 1 or (dre.desp_marca and 'Sem marca' not in dre.desp_marca)) %}
+<div class="dre-section mb-2">
+  <div class="dre-section-header">
+    <i class="bi bi-receipt"></i> Despesas por Marca
+  </div>
+  {% for marca_nome, val in dre.desp_marca.items() %}
+  <div class="dre-row">
+    <span class="label-desp">{{ marca_nome }}</span>
+    <span class="val-money" style="color:var(--red)">R$ {{ "{:,.2f}".format(val).replace(",","X").replace(".",",").replace("X",".") }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- DIAS COM LANÇAMENTOS -->
+<div class="card-dre text-center">
+  <h6>Dias com Lançamentos</h6>
+  <div class="val gold" style="font-size:28px">{{ dre.dias_lancados }}</div>
+  <div class="sub">Média diária: R$ {{ "{:,.2f}".format(dre.media_diaria).replace(",","X").replace(".",",").replace("X",".") }}</div>
+</div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const dre = {{ dre | tojson }};
+const tipos = {cmv:'CMV',fixa:'Fixas',motoboy:'Motoboy',balcao:'Balcão',financeira:'Financ.',outra:'Outras'};
+const cores = ['#c8a96e','#5b8dee','#3ecf8e','#f0a856','#9b7fe8','#888'];
+const isDark = !document.documentElement.classList.contains('tema-claro');
+const totais = Object.entries(dre.totais_desp).filter(([k,v])=>v>0);
+
+if(totais.length){
+  new Chart(document.getElementById('chartDespMes').getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels: totais.map(([k])=>tipos[k]||k),
+      datasets:[{data:totais.map(([,v])=>v),
+        backgroundColor:cores.slice(0,totais.length),
+        borderColor:isDark?'#1a1d27':'#ffffff',borderWidth:2}]
+    },
+    options:{cutout:'60%',
+      plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:8}},
+        tooltip:{callbacks:{label:c=>`R$ ${c.parsed.toLocaleString('pt-BR',{minimumFractionDigits:2})}`}}}
+    }
+  });
+}
+</script>
+{% endblock %}

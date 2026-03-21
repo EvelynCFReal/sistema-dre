@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Configurações · DRE Sunomono{% endblock %}
+{% block page_title %}Configurações do Sistema{% endblock %}
+
+{% block extra_head %}
+<style>
+.config-section{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px;margin-bottom:20px}
+.config-section h6{font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.item-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+.item-row:last-child{border-bottom:none}
+.item-nome{font-size:13px}
+.item-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.badge-tipo{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:.5px}
+.tp-cmv{background:rgba(200,169,110,.15);color:var(--gold)}
+.tp-fixa{background:rgba(91,141,238,.15);color:var(--blue)}
+.tp-motoboy{background:rgba(62,207,142,.15);color:var(--green)}
+.tp-balcao{background:rgba(240,168,86,.15);color:#f0a856}
+.tp-financeira{background:rgba(155,127,232,.15);color:#9b7fe8}
+.tp-outra{background:rgba(255,255,255,.07);color:var(--muted)}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;padding:4px 8px;
+  border-radius:4px;opacity:.6;transition:all .2s}
+.del-btn:hover{opacity:1;background:rgba(255,102,102,.1)}
+.inline-form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.inline-form .form-label{margin-bottom:4px}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- CONFIGURAÇÕES GERAIS -->
+<div class="config-section">
+  <h6><i class="bi bi-gear"></i> Parâmetros Gerais do DRE</h6>
+  <form method="post" class="form-dre">
+    <input type="hidden" name="acao" value="config_geral">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Royalties Mensais (R$)</label>
+        <input type="number" name="royalties" class="form-control" step="0.01" value="{{ royalties }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Verba de Marketing (R$)</label>
+        <input type="number" name="mkt" class="form-control" step="0.01" value="{{ mkt }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Meta Faturamento Mensal (R$)</label>
+        <input type="number" name="meta" class="form-control" step="0.01" value="{{ meta }}">
+      </div>
+    </div>
+    <button type="submit" class="btn-gold mt-3">Salvar Configurações</button>
+  </form>
+</div>
+
+<div class="row g-3">
+
+<!-- FORMAS DE PAGAMENTO -->
+<div class="col-lg-6">
+  <div class="config-section">
+    <h6><i class="bi bi-credit-card"></i> Formas de Pagamento / Taxas</h6>
+    {% for fp in fps %}
+    <div class="item-row">
+      <div>
+        <div class="item-nome">{{ fp.nome }}</div>
+        <div class="item-meta">Taxa atual: {{ "%.2f"|format(fp.taxa * 100) }}%</div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <form method="post" class="d-flex gap-1 align-items-center">
+          <input type="hidden" name="acao" value="taxa_fp">
+          <input type="hidden" name="fp_id" value="{{ fp.id }}">
+          <input type="number" name="taxa" value="{{ "%.2f"|format(fp.taxa*100) }}"
+            step="0.01" min="0" max="100" style="width:70px"
+            class="form-control form-control-sm" title="Taxa em %">
+          <span style="font-size:11px;color:var(--muted)">%</span>
+          <button type="submit" class="btn-sm" style="background:var(--gold);border:none;color:#0d0f14;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700">✓</button>
+        </form>
+        {% if user_tipo == 'master' %}
+        <form method="post" onsubmit="return confirm('Desativar '+{{ fp.nome|tojson }}+'?')">
+          <input type="hidden" name="acao" value="del_fp">
+          <input type="hidden" name="item_id" value="{{ fp.id }}">
+          <button class="del-btn" type="submit"><i class="bi bi-trash3"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <hr class="separator">
+    <form method="post" class="form-dre inline-form">
+      <input type="hidden" name="acao" value="nova_fp">
+      <div style="flex:2">
+        <label class="form-label">Nome</label>
+        <input type="text" name="fp_nome" class="form-control" placeholder="Nova forma..." required>
+      </div>
+      <div style="flex:1">
+        <label class="form-label">Taxa (%)</label>
+        <input type="number" name="fp_taxa" class="form-control" step="0.01" min="0" value="0">
+      </div>
+      <button type="submit" class="btn-gold">+ Adicionar</button>
+    </form>
+  </div>
+</div>
+
+<!-- PLATAFORMAS -->
+<div class="col-lg-6">
+  <div class="config-section">
+    <h6><i class="bi bi-shop"></i> Plataformas / Apps</h6>
+    {% for p in plats %}
+    <div class="item-row">
+      <div class="item-nome">{{ p.nome }}</div>
+      {% if user_tipo == 'master' %}
+      <form method="post" onsubmit="return confirm('Desativar?')">
+        <input type="hidden" name="acao" value="del_plat">
+        <input type="hidden" name="item_id" value="{{ p.id }}">
+        <button class="del-btn" type="submit"><i class="bi bi-trash3"></i></button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <hr class="separator">
+    <form method="post" class="form-dre inline-form">
+      <input type="hidden" name="acao" value="nova_plat">
+      <div style="flex:1">
+        <label class="form-label">Nome da plataforma</label>
+        <input type="text" name="plt_nome" class="form-control" placeholder="Nova plataforma..." required>
+      </div>
+      <button type="submit" class="btn-gold">+ Adicionar</button>
+    </form>
+  </div>
+</div>
+
+<!-- CATEGORIAS DESPESA -->
+<div class="col-lg-6">
+  <div class="config-section">
+    <h6><i class="bi bi-tags"></i> Categorias de Despesa</h6>
+    {% set tipos_label = {'cmv':'CMV','fixa':'Fixa','motoboy':'Motoboy','balcao':'Balcão','financeira':'Financeira','outra':'Outra'} %}
+    {% for c in cats %}
+    <div class="item-row">
+      <div>
+        <span class="item-nome">{{ c.nome }}</span>
+        <span class="badge-tipo tp-{{ c.tipo }} ms-2">{{ tipos_label[c.tipo] }}</span>
+      </div>
+      {% if user_tipo == 'master' %}
+      <form method="post" onsubmit="return confirm('Desativar?')">
+        <input type="hidden" name="acao" value="del_cat">
+        <input type="hidden" name="item_id" value="{{ c.id }}">
+        <button class="del-btn" type="submit"><i class="bi bi-trash3"></i></button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <hr class="separator">
+    <form method="post" class="form-dre inline-form">
+      <input type="hidden" name="acao" value="nova_cat">
+      <div style="flex:2">
+        <label class="form-label">Nome</label>
+        <input type="text" name="cat_nome" class="form-control" placeholder="Nova categoria..." required>
+      </div>
+      <div style="flex:1">
+        <label class="form-label">Tipo</label>
+        <select name="cat_tipo" class="form-select">
+          <option value="cmv">CMV</option>
+          <option value="fixa">Fixa</option>
+          <option value="motoboy">Motoboy</option>
+          <option value="balcao">Balcão</option>
+          <option value="financeira">Financeira</option>
+          <option value="outra">Outra</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-gold">+ Adicionar</button>
+    </form>
+  </div>
+</div>
+
+<!-- LOJAS (só Master) -->
+{% if user_tipo == 'master' %}
+<div class="col-lg-6">
+  <div class="config-section">
+    <h6><i class="bi bi-building"></i> Lojas</h6>
+    {% for l in lojas %}
+    <div class="item-row">
+      <div>
+        <div class="item-nome">{{ l.nome }}</div>
+        <div class="item-meta">ID: {{ l.id }} · {% if l.ativo %}Ativa{% else %}Inativa{% endif %}</div>
+      </div>
+      <form method="post" onsubmit="return confirm('Desativar loja?')">
+        <input type="hidden" name="acao" value="del_loja">
+        <input type="hidden" name="item_id" value="{{ l.id }}">
+        <button class="del-btn" type="submit"><i class="bi bi-trash3"></i></button>
+      </form>
+    </div>
+    {% endfor %}
+    <hr class="separator">
+    <form method="post" class="form-dre inline-form">
+      <input type="hidden" name="acao" value="nova_loja">
+      <div style="flex:1">
+        <label class="form-label">Nome da loja</label>
+        <input type="text" name="loja_nome" class="form-control" placeholder="Nova loja..." required>
+      </div>
+      <button type="submit" class="btn-gold">+ Adicionar</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+</div>
+{% endblock %}

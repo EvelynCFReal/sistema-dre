@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Sistema de DRE{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+/* ── TEMA ESCURO (padrão) ── */
+:root{
+  --bg:#0d0f14; --sidebar:#13161e; --card:#1a1d27; --card2:#1f2333;
+  --border:#2a2e3d; --gold:#c8a96e; --gold2:#e8c98e; --text:#e8eaf0;
+  --muted:#7a8099; --green:#3ecf8e; --red:#f66; --blue:#5b8dee;
+  --sidebar-w:250px;
+}
+/* ── TEMA CLARO ── */
+html.tema-claro{
+  --bg:#f4f1ec; --sidebar:#ffffff; --card:#ffffff; --card2:#f9f7f3;
+  --border:#e0dcd4; --gold:#8b6914; --gold2:#6b4e0f; --text:#1a1a2e;
+  --muted:#6b6b7b; --green:#1a8f5c; --red:#d44; --blue:#3a6fd8;
+}
+/* ── IDENTIDADE DA EMPRESA ── */
+{% if tema.cor_primaria and tema.cor_primaria != '#c8a96e' %}
+:root, html.tema-claro{
+  --gold: {{ tema.cor_primaria }};
+  --gold2: {{ tema.cor_secundaria or tema.cor_primaria }};
+}
+{% endif %}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;display:flex}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;z-index:100;overflow-y:auto;
+}
+.sidebar-logo{
+  padding:24px 18px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sidebar-logo img{width:36px;height:36px;border-radius:8px;object-fit:cover}
+.sidebar-logo .logo-placeholder{
+  width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,var(--gold),#8b6914);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;flex-shrink:0;
+}
+.sidebar-logo-text{flex:1;min-width:0}
+.sidebar-logo-text .brand-name{
+  font-family:'Playfair Display',serif;font-size:15px;color:var(--gold);
+  letter-spacing:.3px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sidebar-logo-text small{
+  display:block;font-size:9px;color:var(--muted);
+  letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;
+}
+
+/* Seletor de Ano no sidebar */
+.ano-selector{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.ano-selector label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap}
+.ano-selector select{
+  flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:4px 8px;font-size:12px;font-family:'DM Sans',sans-serif;
+}
+
+.nav-section{padding:14px 14px 6px;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;
+  color:var(--muted);text-decoration:none;border-radius:8px;margin:2px 8px;
+  transition:all .2s;font-weight:500;font-size:13px}
+.nav-item:hover,.nav-item.active{background:rgba(200,169,110,.1);color:var(--gold)}
+.nav-item i{font-size:15px;width:18px;text-align:center}
+
+/* DRE Mensal no sidebar – organização suspensa por ano */
+.nav-meses{padding:0 8px}
+.nav-mes{display:flex;align-items:center;justify-content:space-between;
+  padding:5px 12px;color:var(--muted);text-decoration:none;border-radius:6px;
+  margin:1px 0;font-size:12px;transition:all .2s}
+.nav-mes:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav-mes.mes-ativo{color:var(--gold);font-weight:600}
+.nav-mes .badge-mes{font-size:8px;padding:2px 5px;border-radius:4px;
+  background:rgba(200,169,110,.15);color:var(--gold)}
+.scrollable-meses{max-height:280px;overflow-y:auto}
+.scrollable-meses::-webkit-scrollbar{width:3px}
+.scrollable-meses::-webkit-scrollbar-track{background:transparent}
+.scrollable-meses::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.sidebar-footer{margin-top:auto;padding:14px;border-top:1px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:10px;padding:8px 10px;
+  background:var(--card);border-radius:8px;border:1px solid var(--border)}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#8b6914);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.badge-role{font-size:8px;padding:2px 6px;border-radius:10px;font-weight:600;letter-spacing:.5px}
+.badge-master{background:rgba(200,169,110,.2);color:var(--gold)}
+.badge-gestor{background:rgba(91,141,238,.2);color:var(--blue)}
+.badge-loja{background:rgba(62,207,142,.2);color:var(--green)}
+.badge-leitor{background:rgba(122,128,153,.2);color:var(--muted)}
+
+.sidebar-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;justify-content:center}
+.sidebar-actions a,.sidebar-actions button{
+  font-size:10px;color:var(--muted);text-decoration:none;
+  background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;
+  transition:all .15s;display:inline-flex;align-items:center;gap:3px}
+.sidebar-actions a:hover,.sidebar-actions button:hover{color:var(--gold);background:rgba(200,169,110,.08)}
+
+/* ── MAIN ── */
+#main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{
+  height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 24px;gap:12px;background:var(--bg);position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);flex:1}
+
+/* Seletor de loja no topbar */
+.loja-selector select{
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:5px 10px;font-size:12px;font-family:'DM Sans',sans-serif;
+}
+
+.page-content{padding:24px;flex:1}
+
+/* ── CARDS ── */
+.card-dre{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card-dre h6{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.card-dre .val{font-size:22px;font-family:'Playfair Display',serif;font-weight:700}
+.card-dre .val.pos{color:var(--green)}
+.card-dre .val.neg{color:var(--red)}
+.card-dre .val.gold{color:var(--gold)}
+.card-dre .sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+
+/* ── TABELA ── */
+.table-dre{width:100%;border-collapse:collapse}
+.table-dre th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600}
+.table-dre td{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.table-dre tr:hover td{background:rgba(255,255,255,.02)}
+.table-dre .money{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ── FORMS ── */
+.form-dre .form-control,.form-dre .form-select{
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:9px 14px;font-size:13px}
+.form-dre .form-control:focus,.form-dre .form-select:focus{
+  border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,169,110,.15);background:var(--card2);color:var(--text)}
+.form-dre .form-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px;font-weight:600}
+.form-dre .form-select option{background:var(--card)}
+.btn-gold{background:var(--gold);color:#0d0f14;font-weight:700;border:none;
+  border-radius:8px;padding:9px 20px;font-size:13px;transition:all .2s;cursor:pointer}
+.btn-gold:hover{background:var(--gold2);color:#0d0f14}
+.btn-outline-gold{background:transparent;color:var(--gold);border:1px solid var(--gold);
+  border-radius:8px;padding:8px 18px;font-size:13px;transition:all .2s;cursor:pointer;text-decoration:none}
+.btn-outline-gold:hover{background:rgba(200,169,110,.1);color:var(--gold2)}
+
+/* ── ALERTS ── */
+.alert{border:none;border-radius:8px;font-size:13px;padding:10px 16px}
+.alert-success{background:rgba(62,207,142,.1);color:var(--green);border-left:3px solid var(--green)}
+.alert-danger{background:rgba(255,102,102,.1);color:var(--red);border-left:3px solid var(--red)}
+.alert-info{background:rgba(91,141,238,.1);color:var(--blue);border-left:3px solid var(--blue)}
+.alert-warning{background:rgba(200,169,110,.1);color:var(--gold);border-left:3px solid var(--gold)}
+
+/* ── MISC ── */
+.separator{border:none;border-top:1px solid var(--border);margin:18px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--text);margin-bottom:14px}
+.text-gold{color:var(--gold)}
+.text-muted-dre{color:var(--muted)}
+
+/* ── IMPRESSÃO ── */
+@media print{
+  #sidebar,.topbar,.sidebar-actions,.no-print{display:none!important}
+  #main{margin-left:0!important}
+  body{background:#fff!important;color:#000!important}
+  .card-dre,.chart-card,.dre-section{border:1px solid #ccc!important;background:#fff!important}
+  .val,.val.gold,.val.pos,.val.neg,.text-gold{color:#000!important}
+}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% if tema_usuario == 'claro' %}
+<script>document.documentElement.classList.add('tema-claro');</script>
+{% endif %}
+
+<!-- ── SIDEBAR ── -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    {% if tema.logo_path %}
+      <img src="{{ url_for('logo_file', filename=tema.logo_path) }}" alt="Logo">
+    {% else %}
+      <div class="logo-placeholder"><i class="bi bi-bar-chart-line-fill"></i></div>
+    {% endif %}
+    <div class="sidebar-logo-text">
+      <div class="brand-name">{{ tema.nome or 'Sistema de DRE' }}</div>
+      <small>DRE · {{ ano }}</small>
+    </div>
+  </div>
+
+  <!-- Seletor de ano -->
+  <form class="ano-selector" method="post" action="{{ url_for('selecionar_ano_route') }}">
+    <label><i class="bi bi-calendar3"></i> Ano</label>
+    <select name="ano" onchange="this.form.submit()">
+      {% for a in anos %}
+      <option value="{{ a }}" {% if a == ano %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+  </form>
+
+  <div class="nav-section">Principal</div>
+
+  {% if user_tipo != 'loja' %}
+  <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-speedometer2"></i> Dashboards
+  </a>
+  {% endif %}
+
+  {% if user_tipo in ('master','gestor','loja') %}
+  <a href="{{ url_for('lancamentos') }}" class="nav-item {% if request.endpoint == 'lancamentos' %}active{% endif %}">
+    <i class="bi bi-pencil-square"></i> Lançamentos
+  </a>
+  {% endif %}
+
+  {% if user_tipo != 'loja' %}
+  <div class="nav-section">DRE Mensal</div>
+  <div class="nav-meses scrollable-meses">
+    {% for i in range(1, 13) %}
+    <a href="{{ url_for('dre_mensal', mes=i) }}"
+       class="nav-mes {% if request.endpoint == 'dre_mensal' and request.view_args.get('mes') == i %}mes-ativo{% endif %}">
+      <span>{{ meses[i-1] }}</span>
+      {% if i == mes_atual and ano == ano_atual_real %}<span class="badge-mes">atual</span>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if perfil_loja in ('master', 'gestor') %}
+  <div class="nav-section">Gestão</div>
+  <a href="{{ url_for('usuarios') }}" class="nav-item {% if request.endpoint == 'usuarios' %}active{% endif %}">
+    <i class="bi bi-people"></i> Usuários e Empresas
+  </a>
+  <a href="{{ url_for('parametros') }}" class="nav-item {% if request.endpoint == 'parametros' %}active{% endif %}">
+    <i class="bi bi-sliders"></i> Parâmetros Gerais
+  </a>
+  {% endif %}
+
+  {% if user_tipo == 'master' %}
+  <a href="{{ url_for('api_docs') }}" class="nav-item {% if request.endpoint == 'api_docs' %}active{% endif %}">
+    <i class="bi bi-code-slash"></i> API
+  </a>
+  {% endif %}
+
+  <div class="sidebar-footer">
+    <div class="user-pill">
+      <div class="user-avatar">{{ user_nome[0].upper() if user_nome else '?' }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ user_nome }}</div>
+        <span class="badge-role badge-{{ user_tipo }}">{{ user_tipo.upper() }}</span>
+      </div>
+      <a href="{{ url_for('logout') }}" class="text-muted-dre" title="Sair">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
+
+    <div class="sidebar-actions">
+      {% if user_tipo == 'master' %}
+      <form method="post" action="{{ url_for('alternar_tema') }}" style="display:inline">
+        <button type="submit" title="Alternar tema">
+          <i class="bi bi-{% if tema_usuario == 'escuro' %}sun{% else %}moon-stars{% endif %}"></i>
+          {{ 'Claro' if tema_usuario == 'escuro' else 'Escuro' }}
+        </button>
+      </form>
+      {% endif %}
+      <a href="#" onclick="document.getElementById('fmSenha').style.display=document.getElementById('fmSenha').style.display==='none'?'block':'none';return false">
+        <i class="bi bi-key"></i> Senha
+      </a>
+    </div>
+
+    <form action="{{ url_for('minha_senha') }}" method="post" id="fmSenha" style="display:none;margin-top:8px">
+      <input class="form-control form-control-sm mb-1" type="password" name="atual" placeholder="Senha atual"
+        style="background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:6px 10px">
+      <input class="form-control form-control-sm mb-1" type="password" name="nova" placeholder="Nova senha"
+        style="background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:6px 10px">
+      <button class="btn btn-sm btn-gold w-100" style="font-size:11px;padding:5px">Salvar</button>
+    </form>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div id="main">
+  <div class="topbar">
+    <span class="topbar-title">{% block page_title %}{% endblock %}</span>
+
+    {% block topbar_extra %}{% endblock %}
+
+    <!-- Seletor de loja (global, fica travado) -->
+    {% if lojas_user|length > 1 %}
+    <form class="loja-selector d-flex align-items-center gap-2" method="post" action="{{ url_for('selecionar_loja') }}">
+      <label style="font-size:10px;color:var(--muted);white-space:nowrap"><i class="bi bi-shop"></i></label>
+      <select name="loja_id" onchange="this.form.submit()">
+        {% for l in lojas_user %}
+        <option value="{{ l.id }}" {% if l.id == loja_id_sel %}selected{% endif %}>{{ l.nome }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% elif lojas_user|length == 1 %}
+    <span style="font-size:11px;color:var(--muted)"><i class="bi bi-shop"></i> {{ lojas_user[0].nome }}</span>
+    {% endif %}
+  </div>
+
+  <div class="page-content">
+    {% for cat in ['success','danger','info','warning'] %}
+      {% with msgs = get_flashed_messages(category_filter=[cat]) %}
+        {% if msgs %}{% for m in msgs %}
+          <div class="alert alert-{{ cat }} mb-3">{{ m }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+    {% endfor %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

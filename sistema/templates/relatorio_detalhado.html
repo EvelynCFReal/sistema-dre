@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatório Detalhado · {{ loja_nome }} · {{ periodo }} · Sistema de DRE</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{--gold:#c8a96e;--green:#3ecf8e;--red:#f66666;--bg:#0d0f14;--card:#1a1d27;
+  --border:rgba(255,255,255,0.08);--text:#e8eaf0;--muted:#7a8099}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);padding:30px 40px}
+
+.header{text-align:center;margin-bottom:30px;border-bottom:2px solid var(--gold);padding-bottom:20px}
+.header h1{font-size:20px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.header .sub{font-size:12px;color:var(--muted);letter-spacing:1px}
+
+.btn-bar{text-align:center;margin-bottom:20px}
+.btn-act{background:var(--card);border:1px solid var(--border);color:var(--muted);
+  border-radius:6px;padding:8px 18px;font-size:12px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
+.btn-act:hover{border-color:var(--gold);color:var(--gold)}
+
+.resumo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.resumo-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.resumo-card h6{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.resumo-card .val{font-size:18px;font-weight:700}
+
+.rel-section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px}
+.rel-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;
+  border-bottom:1px solid var(--border);padding-bottom:6px}
+.rel-table{width:100%;border-collapse:collapse;font-size:11px}
+.rel-table th{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);
+  padding:7px 8px;text-align:left;border-bottom:1px solid var(--border);font-weight:600}
+.rel-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.rel-table tr:last-child td{border-bottom:none}
+.val-pos{color:var(--green)}.val-neg{color:var(--red)}
+.turno-tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:600}
+.turno-almoco{background:rgba(200,169,110,.15);color:var(--gold)}
+.turno-jantar{background:rgba(91,141,238,.15);color:#5b8dee}
+.turno-pos{background:rgba(155,127,232,.15);color:#9b7fe8}
+
+.footer{text-align:center;margin-top:30px;padding-top:16px;border-top:1px solid var(--border);
+  font-size:10px;color:var(--muted)}
+
+@media print{
+  body{background:#fff!important;color:#000!important;padding:15px;font-size:10px}
+  .no-print{display:none!important}
+  .header{border-color:#8b7355}.header h1{color:#8b7355}
+  .resumo-card,.rel-section{border-color:#ccc;background:#f9f9f9}
+  .resumo-card .val{color:#000}.resumo-card h6{color:#555}
+  .rel-title{color:#8b7355;border-color:#ccc}
+  .rel-table th{color:#555}.rel-table td{color:#000;border-color:#ddd}
+  .val-pos{color:#1a8a4a!important}.val-neg{color:#cc3333!important}
+  .turno-tag{border:1px solid #ccc}
+  .footer{border-color:#ccc;color:#999}
+}
+@media(max-width:700px){.resumo-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="btn-bar no-print">
+  <button class="btn-act" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+  <button class="btn-act" onclick="window.close()"><i class="bi bi-x-lg"></i> Fechar</button>
+</div>
+
+<div class="header">
+  <h1><i class="bi bi-file-earmark-text"></i> Relatório Detalhado</h1>
+  <div class="sub">{{ loja_nome }} &mdash; {{ periodo }} &mdash; Sistema de DRE</div>
+</div>
+
+{% set turnos = {'almoco': 'Almoço (CX1)', 'jantar': 'Jantar (CX2)', 'pos_meia_noite': 'Pós-meia-noite (CX3)'} %}
+{% set turno_class = {'almoco': 'turno-almoco', 'jantar': 'turno-jantar', 'pos_meia_noite': 'turno-pos'} %}
+
+<!-- RESUMO -->
+{% set total_caixa = caixas|sum(attribute='valor') %}
+{% set total_taxas = namespace(val=0.0) %}
+{% for c in caixas %}{% set total_taxas.val = total_taxas.val + (c.valor * c.taxa_aplicada) %}{% endfor %}
+{% set total_despesas = despesas|sum(attribute='valor') %}
+{% set total_aportes = aportes|selectattr('tipo','equalto','aporte')|sum(attribute='valor') %}
+{% set total_sangrias = aportes|selectattr('tipo','equalto','sangria')|sum(attribute='valor') %}
+
+<div class="resumo-grid">
+  <div class="resumo-card">
+    <h6>Faturamento Bruto</h6>
+    <div class="val" style="color:var(--gold)">R$ {{ "{:,.2f}".format(total_caixa).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="resumo-card">
+    <h6>Taxas Descontadas</h6>
+    <div class="val val-neg">R$ {{ "{:,.2f}".format(total_taxas.val).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="resumo-card">
+    <h6>Despesas</h6>
+    <div class="val val-neg">R$ {{ "{:,.2f}".format(total_despesas).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="resumo-card">
+    <h6>Aportes</h6>
+    <div class="val val-pos">R$ {{ "{:,.2f}".format(total_aportes).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="resumo-card">
+    <h6>Sangrias</h6>
+    <div class="val val-neg">R$ {{ "{:,.2f}".format(total_sangrias).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="resumo-card">
+    <h6>Total Lançamentos</h6>
+    <div class="val" style="color:var(--gold)">{{ caixas|length + despesas|length + aportes|length }}</div>
+  </div>
+</div>
+
+<!-- FATURAMENTO POR MARCA -->
+{% set ns_marcas = namespace(dados={}) %}
+{% for c in caixas %}
+  {% set mk = c.marca or 'Sem marca' %}
+  {% if mk not in ns_marcas.dados %}
+    {% set _ = ns_marcas.dados.update({mk: 0}) %}
+  {% endif %}
+  {% set _ = ns_marcas.dados.update({mk: ns_marcas.dados[mk] + c.valor}) %}
+{% endfor %}
+{% if ns_marcas.dados|length > 0 %}
+<div class="rel-section">
+  <div class="rel-title"><i class="bi bi-tag"></i> Faturamento por Marca</div>
+  <table class="rel-table">
+    <thead><tr><th>Marca</th><th style="text-align:right">Faturamento</th><th style="text-align:right">% do Total</th></tr></thead>
+    <tbody>
+    {% for mk, val in ns_marcas.dados.items()|sort(attribute='1', reverse=true) %}
+      <tr>
+        <td>{{ mk }}</td>
+        <td style="text-align:right">R$ {{ "{:,.2f}".format(val).replace(",","X").replace(".",",").replace("X",".") }}</td>
+        <td style="text-align:right;color:var(--muted)">{% if total_caixa %}{{ "%.1f"|format(val/total_caixa*100) }}%{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- LANÇAMENTOS DE CAIXA -->
+<div class="rel-section">
+  <div class="rel-title"><i class="bi bi-cash-stack"></i> Lançamentos de Caixa ({{ caixas|length }})</div>
+  {% if caixas %}
+  <table class="rel-table">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Registro</th>
+        <th>Turno</th>
+        <th>Forma Pagamento</th>
+        <th>Plataforma</th>
+        <th>Marca</th>
+        <th style="text-align:right">Valor</th>
+        <th style="text-align:right">Taxa</th>
+        <th style="text-align:right">Líquido</th>
+        <th>Usuário</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in caixas %}
+      <tr>
+        <td>{{ c.data[8:10] }}/{{ c.data[5:7] }}/{{ c.data[0:4] }}</td>
+        <td style="color:var(--muted)">{{ c.criado_em[11:19] if c.criado_em and c.criado_em|length > 11 else '—' }}</td>
+        <td><span class="turno-tag {{ turno_class.get(c.turno, '') }}">{{ turnos.get(c.turno, c.turno) }}</span></td>
+        <td>{{ c.forma_pagamento }}</td>
+        <td>{{ c.plataforma or '—' }}</td>
+        <td>{{ c.marca or '—' }}</td>
+        <td style="text-align:right">R$ {{ "{:,.2f}".format(c.valor).replace(",","X").replace(".",",").replace("X",".") }}</td>
+        <td style="text-align:right;color:var(--muted)">{{ "%.2f"|format(c.taxa_aplicada * 100) }}%</td>
+        <td style="text-align:right" class="val-pos">R$ {{ "{:,.2f}".format(c.valor - c.valor * c.taxa_aplicada).replace(",","X").replace(".",",").replace("X",".") }}</td>
+        <td style="color:var(--muted);font-size:10px">{{ c.usuario }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:12px">Nenhum lançamento de caixa neste período.</p>
+  {% endif %}
+</div>
+
+<!-- LANÇAMENTOS DE DESPESA -->
+<div class="rel-section">
+  <div class="rel-title"><i class="bi bi-receipt"></i> Lançamentos de Despesa ({{ despesas|length }})</div>
+  {% if despesas %}
+  <table class="rel-table">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Registro</th>
+        <th>Categoria</th>
+        <th>Tipo</th>
+        <th>Marca</th>
+        <th>Descrição</th>
+        <th style="text-align:right">Valor</th>
+        <th>Usuário</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% set tipos_cat = {'cmv':'CMV','fixa':'Fixa','motoboy':'Motoboy','balcao':'Balcão','financeira':'Financeira','outra':'Outra'} %}
+    {% for d in despesas %}
+      <tr>
+        <td>{{ d.data[8:10] }}/{{ d.data[5:7] }}/{{ d.data[0:4] }}</td>
+        <td style="color:var(--muted)">{{ d.criado_em[11:19] if d.criado_em and d.criado_em|length > 11 else '—' }}</td>
+        <td>{{ d.categoria }}</td>
+        <td style="color:var(--muted)">{{ tipos_cat.get(d.tipo_cat, d.tipo_cat) }}</td>
+        <td>{{ d.marca or '—' }}</td>
+        <td>{{ d.descricao or '—' }}</td>
+        <td style="text-align:right" class="val-neg">R$ {{ "{:,.2f}".format(d.valor).replace(",","X").replace(".",",").replace("X",".") }}</td>
+        <td style="color:var(--muted);font-size:10px">{{ d.usuario }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:12px">Nenhum lançamento de despesa neste período.</p>
+  {% endif %}
+</div>
+
+<!-- APORTES E SANGRIAS -->
+<div class="rel-section">
+  <div class="rel-title"><i class="bi bi-arrow-left-right"></i> Aportes e Sangrias ({{ aportes|length }})</div>
+  {% if aportes %}
+  <table class="rel-table">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Registro</th>
+        <th>Tipo</th>
+        <th>Marca</th>
+        <th>Descrição</th>
+        <th style="text-align:right">Valor</th>
+        <th>Usuário</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in aportes %}
+      <tr>
+        <td>{{ a.data[8:10] }}/{{ a.data[5:7] }}/{{ a.data[0:4] }}</td>
+        <td style="color:var(--muted)">{{ a.criado_em[11:19] if a.criado_em and a.criado_em|length > 11 else '—' }}</td>
+        <td class="{{ 'val-pos' if a.tipo == 'aporte' else 'val-neg' }}">
+          {{ 'Aporte' if a.tipo == 'aporte' else 'Sangria' }}
+        </td>
+        <td>{{ a.marca or '—' }}</td>
+        <td>{{ a.descricao or '—' }}</td>
+        <td style="text-align:right" class="{{ 'val-pos' if a.tipo == 'aporte' else 'val-neg' }}">
+          R$ {{ "{:,.2f}".format(a.valor).replace(",","X").replace(".",",").replace("X",".") }}
+        </td>
+        <td style="color:var(--muted);font-size:10px">{{ a.usuario }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--muted);font-size:12px">Nenhum aporte ou sangria neste período.</p>
+  {% endif %}
+</div>
+
+<div class="footer">
+  Sistema de DRE · {{ loja_nome }} · {{ periodo }}
+</div>
+
+</body>
+</html>

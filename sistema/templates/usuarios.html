@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+{% block title %}Usuários e Empresas · Sistema de DRE{% endblock %}
+{% block page_title %}Usuários e Empresas{% endblock %}
+
+{% block extra_head %}
+<style>
+.user-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:all .2s}
+.user-card:hover{border-color:rgba(200,169,110,.3)}
+.user-card.bloqueado{opacity:.5}
+.user-avatar-lg{width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.av-master{background:linear-gradient(135deg,#c8a96e,#8b6914);color:#fff}
+.av-gestor{background:linear-gradient(135deg,#5b8dee,#3a5fb0);color:#fff}
+.av-loja{background:linear-gradient(135deg,#3ecf8e,#1a8f5c);color:#fff}
+.av-leitor{background:linear-gradient(135deg,#7a8099,#4a5070);color:#fff}
+.user-meta{flex:1;min-width:0}
+.user-meta .uname{font-weight:600;font-size:13px}
+.user-meta .umeta{font-size:10px;color:var(--muted);margin-top:2px}
+.vinculo-tag{display:inline-block;font-size:9px;padding:2px 7px;border-radius:4px;margin:1px 2px;font-weight:600}
+.vt-gestor{background:rgba(91,141,238,.15);color:var(--blue)}
+.vt-loja{background:rgba(62,207,142,.15);color:var(--green)}
+.vt-leitor{background:rgba(122,128,153,.15);color:var(--muted)}
+.user-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.btn-sm-dre{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600;
+  border:1px solid;cursor:pointer;transition:all .2s;background:transparent;line-height:1}
+.btn-verde{color:var(--green);border-color:var(--green)}.btn-verde:hover{background:rgba(62,207,142,.1)}
+.btn-verm{color:var(--red);border-color:var(--red)}.btn-verm:hover{background:rgba(255,102,102,.1)}
+.btn-azul{color:var(--blue);border-color:var(--blue)}.btn-azul:hover{background:rgba(91,141,238,.1)}
+.btn-gold-sm{color:var(--gold);border-color:var(--gold)}.btn-gold-sm:hover{background:rgba(200,169,110,.1)}
+
+/* Seções */
+.config-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.config-section h6{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.item-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.item-row:last-child{border-bottom:none}
+.item-nome{font-size:12px}
+.item-meta{font-size:10px;color:var(--muted);margin-top:1px}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;padding:3px 6px;border-radius:4px;opacity:.6;transition:all .2s}
+.del-btn:hover{opacity:1;background:rgba(255,102,102,.1)}
+.inline-form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+
+/* Modal */
+.modal-dre{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center}
+.modal-dre.show{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:24px;width:min(500px,95vw);max-height:90vh;overflow-y:auto}
+.modal-box h5{font-family:'Playfair Display',serif;font-size:16px;margin-bottom:14px;color:var(--gold)}
+.check-mes{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.check-mes label{display:flex;align-items:center;gap:4px;font-size:11px;
+  padding:4px 8px;border-radius:6px;background:var(--card2);cursor:pointer;
+  border:1px solid var(--border);transition:all .2s}
+.check-mes label:hover{border-color:var(--gold)}
+.check-mes label:has(input:checked){background:rgba(62,207,142,.1);border-color:var(--green)}
+.check-mes input[type=checkbox]:checked+span{color:var(--green);font-weight:600}
+
+/* Multilojas */
+.multi-loja-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.multi-loja-row select{flex:1}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+<!-- LISTA DE USUÁRIOS -->
+<div class="col-lg-8">
+  <div class="config-section">
+    <h6><i class="bi bi-people"></i> Usuários Cadastrados</h6>
+    {% set tipo_ordem = ['master','gestor','loja','leitor'] %}
+    {% for tipo_u in tipo_ordem %}
+      {% set grupo = lista|selectattr('tipo','eq',tipo_u)|list %}
+      {% if grupo %}
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;
+        color:var(--muted);margin:12px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border)">
+        {{ tipo_u|upper }}S
+      </div>
+      {% for u in grupo %}
+      <div class="user-card {% if not u.ativo %}bloqueado{% endif %}">
+        <div class="user-avatar-lg av-{{ u.tipo }}">{{ u.nome[0].upper() }}</div>
+        <div class="user-meta">
+          <div class="uname">{{ u.nome }}
+            {% if not u.ativo %}<span style="font-size:9px;color:var(--red);margin-left:4px">[BLOQUEADO]</span>{% endif %}
+          </div>
+          <div class="umeta">
+            Login: <strong>{{ u.login }}</strong>
+            &middot; Criado: {{ u.criado_em[:10] if u.criado_em else '—' }}
+          </div>
+          {% if u.vinculos %}
+          <div style="margin-top:3px">
+            {% for v in u.vinculos %}
+            <span class="vinculo-tag vt-{{ v.perfil }}">{{ v.loja_nome }} ({{ v.perfil }})</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="user-actions">
+          {% if u.tipo in ('loja','leitor') %}
+          <button class="btn-sm-dre btn-azul" onclick="abrirPermissoes({{ u.id }},'{{ u.nome }}')">
+            <i class="bi bi-calendar3"></i> Meses
+          </button>
+          {% endif %}
+
+          {% if u.tipo != 'master' %}
+          <button class="btn-sm-dre btn-gold-sm" onclick='abrirEditar({{ u.id }},{{ u.nome|tojson }},{{ u.vinculos|tojson }})'>
+            <i class="bi bi-pencil"></i> Editar
+          </button>
+          <button class="btn-sm-dre btn-gold-sm" onclick="abrirSenha({{ u.id }},'{{ u.nome }}')">
+            <i class="bi bi-key"></i>
+          </button>
+          <form method="post" action="{{ url_for('toggle_usuario', uid=u.id) }}" style="margin:0">
+            <button type="submit" class="btn-sm-dre {% if u.ativo %}btn-verm{% else %}btn-verde{% endif %}">
+              {% if u.ativo %}<i class="bi bi-lock"></i>{% else %}<i class="bi bi-unlock"></i>{% endif %}
+            </button>
+          </form>
+          {% endif %}
+
+          {% if user_tipo == 'master' and u.tipo != 'master' %}
+          <form method="post" action="{{ url_for('excluir_usuario', uid=u.id) }}"
+            onsubmit="return confirm('Excluir usuário {{ u.nome }}? Esta ação é irreversível.')" style="margin:0">
+            <button type="submit" class="btn-sm-dre btn-verm"><i class="bi bi-trash3"></i></button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- LOJAS / EMPRESAS -->
+  {% if user_tipo == 'master' %}
+  <div class="config-section">
+    <h6><i class="bi bi-building"></i> Empresas / Lojas</h6>
+    {% for l in lojas %}
+    <div class="item-row" style="{% if not l.ativo %}opacity:0.6;border-left:3px solid var(--red);padding-left:10px{% endif %}">
+      <div>
+        <div class="item-nome">{{ l.nome }}</div>
+        <div class="item-meta">
+          ID: {{ l.id }}
+          {% if l.cnpj %} &middot; CNPJ: {{ l.cnpj }}{% endif %}
+          &middot; {% if l.ativo %}<span style="color:var(--green)"><i class="bi bi-check-circle"></i> Ativa</span>{% else %}<span style="color:var(--red)"><i class="bi bi-x-circle"></i> Inativa</span>{% endif %}
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn-sm-dre btn-gold-sm" onclick='abrirEditarLoja({{ l|tojson }})'>
+          <i class="bi bi-pencil"></i>
+        </button>
+        {% if l.ativo %}
+        <form method="post" action="{{ url_for('desativar_loja', lid=l.id) }}" onsubmit="return confirm('Desativar a empresa {{ l.nome }}?\n\nOs usuários vinculados apenas a esta empresa perderão acesso ao sistema.\nOs dados serão preservados.')">
+          <button class="btn-sm-dre btn-verm" type="submit" title="Desativar empresa"><i class="bi bi-lock"></i></button>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('ativar_loja', lid=l.id) }}" onsubmit="return confirm('Reativar a empresa {{ l.nome }}?')">
+          <button class="btn-sm-dre btn-verde" type="submit" title="Reativar empresa"><i class="bi bi-unlock"></i></button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('excluir_loja', lid=l.id) }}" onsubmit="return confirm('EXCLUIR PERMANENTEMENTE a empresa {{ l.nome }}?\n\nTodos os dados (lançamentos, despesas, aportes, parâmetros) serão perdidos.\n\nEssa ação NÃO pode ser desfeita!')">
+          <button class="del-btn" type="submit" title="Excluir permanentemente"><i class="bi bi-trash3"></i></button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+
+    <hr class="separator">
+    <form method="post" action="{{ url_for('nova_loja') }}" class="form-dre inline-form">
+      <div style="flex:2">
+        <label class="form-label">Nome da loja</label>
+        <input type="text" name="loja_nome" class="form-control" placeholder="Nova loja..." required>
+      </div>
+      <div style="flex:1">
+        <label class="form-label">CNPJ</label>
+        <input type="text" name="loja_cnpj" class="form-control" placeholder="00.000.000/0000-00">
+      </div>
+      <button type="submit" class="btn-gold">+ Criar Loja</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<!-- NOVO USUÁRIO -->
+<div class="col-lg-4">
+  <div class="config-section">
+    <h6><i class="bi bi-person-plus"></i> Novo Usuário</h6>
+    <form method="post" action="{{ url_for('novo_usuario') }}" class="form-dre" id="formNovoUser">
+      <div class="mb-3">
+        <label class="form-label">Nome completo</label>
+        <input type="text" name="nome" class="form-control" placeholder="Nome do usuário" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Login</label>
+        <input type="text" name="login" class="form-control" placeholder="Login único" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Senha inicial</label>
+        <input type="password" name="senha" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Tipo de usuário</label>
+        <select name="tipo" class="form-select" required id="selTipoNovo">
+          {% if user_tipo == 'master' %}
+          <option value="gestor">Gestor</option>
+          {% endif %}
+          <option value="loja">Loja</option>
+          <option value="leitor">Leitor</option>
+        </select>
+      </div>
+
+      <!-- Multilojas -->
+      <div class="mb-3">
+        <label class="form-label">Vincular às Lojas</label>
+        <div id="multiLojaContainer">
+          <div class="multi-loja-row">
+            <select name="loja_ids" class="form-select">
+              <option value="">-- Selecione --</option>
+              {% for l in lojas_disponiveis %}
+              <option value="{{ l.id }}">{{ l.nome }}</option>
+              {% endfor %}
+            </select>
+            <select name="perfis" class="form-select" style="max-width:120px">
+              {% if user_tipo == 'master' %}<option value="gestor">Gestor</option>{% endif %}
+              <option value="loja">Loja</option>
+              <option value="leitor">Leitor</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn-outline-gold mt-2" style="font-size:11px;padding:4px 12px" onclick="addLojaRow()">
+          + Adicionar outra loja
+        </button>
+      </div>
+
+      <button type="submit" class="btn-gold w-100">Criar Usuário</button>
+    </form>
+  </div>
+</div>
+
+</div>
+
+<!-- MODAL PERMISSÕES DE MESES -->
+<div class="modal-dre" id="modalPerm">
+  <div class="modal-box">
+    <h5><i class="bi bi-calendar3"></i> Permissões de Meses</h5>
+    <p id="permNome" style="color:var(--muted);font-size:12px;margin-bottom:12px"></p>
+    <form method="post" id="formPerm" class="form-dre">
+      <div class="mb-3">
+        <label class="form-label">Ano</label>
+        <select name="ano_perm" class="form-select" id="selAnoPerm" onchange="carregarPermissoes()">
+          {% for a in anos %}
+          <option value="{{ a }}" {% if a == ano %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Loja</label>
+        <select name="loja_perm" class="form-select" id="selLojaPerm" onchange="carregarPermissoes()">
+          {% for l in lojas_disponiveis %}
+          <option value="{{ l.id }}">{{ l.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="check-mes" id="checkMeses">
+        {% for i in range(1,13) %}
+        <label><input type="checkbox" name="meses" value="{{ i }}"><span>{{ meses[i-1] }}</span></label>
+        {% endfor %}
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn-gold" style="flex:1">Salvar Permissões</button>
+        <button type="button" class="btn-outline-gold" onclick="fecharModal('modalPerm')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL SENHA -->
+<div class="modal-dre" id="modalSenha">
+  <div class="modal-box">
+    <h5><i class="bi bi-key"></i> Trocar Senha</h5>
+    <p id="senhaNome" style="color:var(--muted);font-size:12px;margin-bottom:12px"></p>
+    <form method="post" id="formSenha" class="form-dre">
+      <div class="mb-3">
+        <label class="form-label">Nova senha</label>
+        <input type="password" name="nova_senha" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn-gold" style="flex:1">Salvar</button>
+        <button type="button" class="btn-outline-gold" onclick="fecharModal('modalSenha')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDITAR USUÁRIO -->
+<div class="modal-dre" id="modalEditar">
+  <div class="modal-box">
+    <h5><i class="bi bi-pencil"></i> Editar Usuário</h5>
+    <p id="editNome" style="color:var(--muted);font-size:12px;margin-bottom:12px"></p>
+    <form method="post" id="formEditar" class="form-dre">
+      <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <input type="text" name="nome" class="form-control" id="editNomeInput" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Vínculos com Lojas</label>
+        <div id="editMultiLoja"></div>
+        <button type="button" class="btn-outline-gold mt-2" style="font-size:11px;padding:4px 12px" onclick="addEditLojaRow()">
+          + Adicionar loja
+        </button>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn-gold" style="flex:1">Salvar</button>
+        <button type="button" class="btn-outline-gold" onclick="fecharModal('modalEditar')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDITAR LOJA -->
+{% if user_tipo == 'master' %}
+<div class="modal-dre" id="modalLoja">
+  <div class="modal-box">
+    <h5><i class="bi bi-building"></i> Editar Empresa / Loja</h5>
+    <form method="post" id="formLoja" class="form-dre" enctype="multipart/form-data">
+      <div class="row g-2 mb-3">
+        <div class="col-12">
+          <label class="form-label">Nome</label>
+          <input type="text" name="nome" class="form-control" id="lojaEditNome" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">CNPJ</label>
+          <input type="text" name="cnpj" class="form-control" id="lojaEditCnpj">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Razão Social</label>
+          <input type="text" name="razao_social" class="form-control" id="lojaEditRazao">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Endereço</label>
+          <input type="text" name="endereco" class="form-control" id="lojaEditEnd">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Telefone</label>
+          <input type="text" name="telefone" class="form-control" id="lojaEditTel">
+        </div>
+        <div class="col-6">
+          <label class="form-label">E-mail</label>
+          <input type="email" name="email" class="form-control" id="lojaEditEmail">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Logo</label>
+        <input type="file" name="logo" class="form-control" accept="image/*">
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <label class="form-label">Cor Primária</label>
+          <input type="color" name="cor_primaria" class="form-control form-control-color" id="lojaEditCor1" style="height:38px">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Cor Secundária</label>
+          <input type="color" name="cor_secundaria" class="form-control form-control-color" id="lojaEditCor2" style="height:38px">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Cor de Fundo</label>
+          <input type="color" name="cor_fundo" class="form-control form-control-color" id="lojaEditCorBg" style="height:38px">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Cor do Texto</label>
+          <input type="color" name="cor_texto" class="form-control form-control-color" id="lojaEditCorTxt" style="height:38px">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Tema</label>
+        <select name="tema" class="form-select" id="lojaEditTema">
+          <option value="escuro">Escuro</option>
+          <option value="claro">Claro</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn-gold" style="flex:1">Salvar Empresa</button>
+        <button type="button" class="btn-outline-gold" onclick="fecharModal('modalLoja')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const lojasDisp = {{ lojas_disponiveis|tojson }};
+let permUid = 0;
+
+function lojaOptionsHTML(selectedId){
+  let h = '<option value="">-- Selecione --</option>';
+  lojasDisp.forEach(l=>{
+    h += `<option value="${l.id}" ${l.id==selectedId?'selected':''}>${l.nome}</option>`;
+  });
+  return h;
+}
+
+function perfilOptionsHTML(sel){
+  let h = '';
+  {% if user_tipo == 'master' %}h += `<option value="gestor" ${sel=='gestor'?'selected':''}>Gestor</option>`;{% endif %}
+  h += `<option value="loja" ${sel=='loja'?'selected':''}>Loja</option>`;
+  h += `<option value="leitor" ${sel=='leitor'?'selected':''}>Leitor</option>`;
+  return h;
+}
+
+function addLojaRow(){
+  const c = document.getElementById('multiLojaContainer');
+  const d = document.createElement('div');
+  d.className = 'multi-loja-row';
+  d.innerHTML = `<select name="loja_ids" class="form-select">${lojaOptionsHTML('')}</select>
+    <select name="perfis" class="form-select" style="max-width:120px">${perfilOptionsHTML('loja')}</select>
+    <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer"><i class="bi bi-x-lg"></i></button>`;
+  c.appendChild(d);
+}
+
+function addEditLojaRow(lid, perfil){
+  const c = document.getElementById('editMultiLoja');
+  const d = document.createElement('div');
+  d.className = 'multi-loja-row';
+  d.innerHTML = `<select name="loja_ids" class="form-select">${lojaOptionsHTML(lid||'')}</select>
+    <select name="perfis" class="form-select" style="max-width:120px">${perfilOptionsHTML(perfil||'loja')}</select>
+    <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer"><i class="bi bi-x-lg"></i></button>`;
+  c.appendChild(d);
+}
+
+// Permissões
+async function abrirPermissoes(uid, nome){
+  permUid = uid;
+  document.getElementById('permNome').textContent = 'Usuário: ' + nome;
+  document.getElementById('formPerm').action = `/usuarios/${uid}/permissoes`;
+  await carregarPermissoes();
+  document.getElementById('modalPerm').classList.add('show');
+}
+
+async function carregarPermissoes(){
+  if(!permUid) return;
+  const ano = document.getElementById('selAnoPerm').value;
+  const loja = document.getElementById('selLojaPerm').value;
+  const resp = await fetch(`/api/permissoes/${permUid}?ano=${ano}&loja=${loja}`);
+  const data = await resp.json();
+  document.querySelectorAll('#checkMeses input[type=checkbox]').forEach(cb=>{
+    cb.checked = data.meses.includes(parseInt(cb.value));
+  });
+}
+
+function abrirSenha(uid, nome){
+  document.getElementById('senhaNome').textContent = 'Usuário: ' + nome;
+  document.getElementById('formSenha').action = `/usuarios/${uid}/senha`;
+  document.getElementById('modalSenha').classList.add('show');
+}
+
+function abrirEditar(uid, nome, vinculos){
+  document.getElementById('editNome').textContent = 'Editando: ' + nome;
+  document.getElementById('editNomeInput').value = nome;
+  document.getElementById('formEditar').action = `/usuarios/${uid}/editar`;
+  const c = document.getElementById('editMultiLoja');
+  c.innerHTML = '';
+  if(vinculos && vinculos.length){
+    vinculos.forEach(v => addEditLojaRow(v.loja_id, v.perfil));
+  } else {
+    addEditLojaRow('','loja');
+  }
+  document.getElementById('modalEditar').classList.add('show');
+}
+
+{% if user_tipo == 'master' %}
+function abrirEditarLoja(loja){
+  document.getElementById('formLoja').action = `/lojas/${loja.id}/editar`;
+  document.getElementById('lojaEditNome').value = loja.nome || '';
+  document.getElementById('lojaEditCnpj').value = loja.cnpj || '';
+  document.getElementById('lojaEditRazao').value = loja.razao_social || '';
+  document.getElementById('lojaEditEnd').value = loja.endereco || '';
+  document.getElementById('lojaEditTel').value = loja.telefone || '';
+  document.getElementById('lojaEditEmail').value = loja.email || '';
+  document.getElementById('lojaEditCor1').value = loja.cor_primaria || '#c8a96e';
+  document.getElementById('lojaEditCor2').value = loja.cor_secundaria || '#3ecf8e';
+  document.getElementById('lojaEditCorBg').value = loja.cor_fundo || '#0d0f14';
+  document.getElementById('lojaEditCorTxt').value = loja.cor_texto || '#e8eaf0';
+  document.getElementById('lojaEditTema').value = loja.tema || 'escuro';
+  document.getElementById('modalLoja').classList.add('show');
+}
+{% endif %}
+
+function fecharModal(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-dre').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('show'); });
+});
+</script>
+{% endblock %}

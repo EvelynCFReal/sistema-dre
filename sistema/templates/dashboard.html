@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Sistema de DRE{% endblock %}
+{% block page_title %}Dashboard Anual — {{ ano }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.chart-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.progress-bar-custom{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .6s ease}
+.progress-fill.neg{background:linear-gradient(90deg,var(--red),#ff9999)}
+.mes-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;
+  transition:all .2s;text-decoration:none;display:block;cursor:pointer}
+.mes-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.mes-card .mes-nome{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.mes-card .mes-fat{font-size:15px;font-weight:600;color:var(--text);margin:4px 0}
+.mes-card .mes-res{font-size:11px}
+.grid-12{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.grid-12{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.grid-12{grid-template-columns:repeat(2,1fr)}}
+.btn-print{background:var(--card);border:1px solid var(--border);color:var(--muted);
+  border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;transition:all .2s}
+.btn-print:hover{border-color:var(--gold);color:var(--gold)}
+.modal-dre{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center}
+.modal-dre.show{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:24px;width:90%;max-width:500px}
+.modal-box h5{font-size:16px;margin-bottom:14px;color:var(--gold)}
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<div class="d-flex align-items-center gap-2 no-print">
+  <select class="form-select" style="width:auto;font-size:11px;padding:5px 28px 5px 10px"
+    onchange="var url=new URL(window.location); if(this.value) url.searchParams.set('marca_id',this.value); else url.searchParams.delete('marca_id'); window.location=url;">
+    <option value="">Todas as Marcas</option>
+    {% for m in marcas %}
+    <option value="{{ m.id }}" {% if marca_sel == m.id %}selected{% endif %}>{{ m.nome }}</option>
+    {% endfor %}
+  </select>
+  <a href="{{ url_for('relatorio_resumido') }}" target="_blank" class="btn-print" title="Relatório resumido do ano">
+    <i class="bi bi-printer"></i> Resumido
+  </a>
+  <button class="btn-print" onclick="document.getElementById('modalDetalhado').classList.add('show')" title="Relatório detalhado com lançamentos">
+    <i class="bi bi-file-earmark-text"></i> Detalhado
+  </button>
+</div>
+
+<!-- Modal seletor de mês para relatório detalhado -->
+<div class="modal-dre" id="modalDetalhado">
+  <div class="modal-box" style="max-width:340px">
+    <h5><i class="bi bi-file-earmark-text"></i> Relatório Detalhado — {{ ano }}</h5>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:16px">Escolha o período:</p>
+    <div class="d-flex flex-column gap-3">
+      <select id="mesDetalhado" class="form-select">
+        <option value="">Ano completo ({{ ano }})</option>
+        {% for m in range(1,13) %}
+        <option value="{{ m }}">{{ meses[m-1] }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn-gold" onclick="(function(){ var m=document.getElementById('mesDetalhado').value; var url='{{ url_for('relatorio_detalhado') }}'; if(m) url+='?mes='+m; window.open(url,'_blank'); document.getElementById('modalDetalhado').classList.remove('show'); })()">
+        <i class="bi bi-printer"></i> Gerar Relatório
+      </button>
+      <button type="button" class="btn-outline-gold" onclick="document.getElementById('modalDetalhado').classList.remove('show')">Cancelar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="kpi-grid mb-4">
+  <div class="card-dre">
+    <h6>Faturamento Anual</h6>
+    <div class="val gold">R$ {{ "{:,.2f}".format(fat_total).replace(",","X").replace(".",",").replace("X",".") }}</div>
+    <div class="sub">Meta mensal: R$ {{ "{:,.0f}".format(meta).replace(",","X").replace(".",",").replace("X",".") }}</div>
+  </div>
+  <div class="card-dre">
+    <h6>Resultado Acumulado</h6>
+    <div class="val {% if res_total >= 0 %}pos{% else %}neg{% endif %}">
+      R$ {{ "{:,.2f}".format(res_total).replace(",","X").replace(".",",").replace("X",".") }}
+    </div>
+    <div class="sub">
+      {% if fat_total %}Margem: {{ "%.1f"|format(res_total/fat_total*100) }}%{% endif %}
+    </div>
+  </div>
+  <div class="card-dre">
+    <h6>Despesas Acumuladas</h6>
+    <div class="val" style="color:var(--red)">R$ {{ "{:,.2f}".format(desp_total).replace(",","X").replace(".",",").replace("X",".") }}</div>
+    <div class="sub">
+      {% if fat_total %}{{ "%.1f"|format(desp_total/fat_total*100) }}% do faturamento{% endif %}
+    </div>
+  </div>
+  <div class="card-dre">
+    <h6>Mês Referência — {{ meses[mes_ref-1] }}</h6>
+    <div class="val gold">R$ {{ "{:,.2f}".format(dre_mes.total_bruto).replace(",","X").replace(".",",").replace("X",".") }}</div>
+    <div class="sub">
+      Resultado: <span class="{% if dre_mes.resultado>=0 %}text-success{% else %}text-danger{% endif %}">
+        R$ {{ "{:,.2f}".format(dre_mes.resultado).replace(",","X").replace(".",",").replace("X",".") }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- GRÁFICOS -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="chart-card">
+      <div class="chart-title">Faturamento e Resultado por Mês — {{ ano }}</div>
+      <canvas id="chartAnual" height="100"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="chart-card">
+      <div class="chart-title">Despesas por Categoria — {{ meses[mes_ref-1] }}</div>
+      <canvas id="chartDesp" height="200"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="chart-card">
+      <div class="chart-title">Faturamento por Plataforma — {{ meses[mes_ref-1] }}</div>
+      <canvas id="chartApps" height="150"></canvas>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="chart-card">
+      <div class="chart-title">Margem de Resultado por Mês (%)</div>
+      <canvas id="chartMargem" height="150"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARATIVO POR MARCA -->
+{% if comp_marcas.comparativo %}
+<div class="chart-card mb-4">
+  <div class="chart-title mb-3"><i class="bi bi-tag"></i> Comparativo por Marca — {{ meses[mes_ref-1] }} {{ ano }}</div>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border)">
+        <th style="padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Marca</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">{{ meses[mes_ref-1] }}</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">{{ comp_marcas.mes_anterior }}</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Variação</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in comp_marcas.comparativo %}
+      <tr style="border-bottom:1px solid rgba(255,255,255,.03){% if item.marca == comp_marcas.melhor_marca %};background:rgba(200,169,110,.06){% endif %}">
+        <td style="padding:8px 12px;font-weight:{% if item.marca == comp_marcas.melhor_marca %}700{% else %}400{% endif %}">
+          {{ item.marca }}
+          {% if item.marca == comp_marcas.melhor_marca %}
+          <span style="font-size:9px;color:var(--gold);margin-left:4px"><i class="bi bi-trophy"></i></span>
+          {% endif %}
+        </td>
+        <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">
+          R$ {{ "{:,.2f}".format(item.fat_atual).replace(",","X").replace(".",",").replace("X",".") }}
+        </td>
+        <td style="padding:8px 12px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">
+          R$ {{ "{:,.2f}".format(item.fat_anterior).replace(",","X").replace(".",",").replace("X",".") }}
+        </td>
+        <td style="padding:8px 12px;text-align:right;font-weight:600;color:{% if item.variacao >= 0 %}var(--green){% else %}var(--red){% endif %}">
+          {% if item.variacao >= 0 %}<i class="bi bi-arrow-up-short"></i>{% else %}<i class="bi bi-arrow-down-short"></i>{% endif %}
+          {{ "%.1f"|format(item.variacao) }}%
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- COMPARATIVO MULTI-ANO -->
+<div class="chart-card mb-4">
+  <div class="chart-title">Comparativo de Faturamento e Resultado — {{ ANO_INICIO }} a {{ ANO_FIM }}</div>
+  <canvas id="chartMultiAno" height="80"></canvas>
+</div>
+
+<!-- CALENDÁRIO DE MESES -->
+<div class="chart-card">
+  <div class="chart-title mb-3">Visão Geral dos Meses — {{ ano }}</div>
+  <div class="grid-12">
+    {% for m in anual %}
+    <a href="{{ url_for('dre_mensal', mes=m.mes) }}" class="mes-card">
+      <div class="mes-nome">{{ m.nome_mes }}</div>
+      <div class="mes-fat">
+        {% if m.faturamento > 0 %}
+          R$ {{ "{:,.0f}".format(m.faturamento).replace(",","X").replace(".",",").replace("X",".") }}
+        {% else %}
+          <span style="color:var(--muted);font-size:12px">Sem dados</span>
+        {% endif %}
+      </div>
+      {% if m.faturamento > 0 %}
+      <div class="mes-res {% if m.resultado>=0 %}text-success{% else %}text-danger{% endif %}">
+        {{ '+' if m.resultado>=0 else '' }}R$ {{ "{:,.0f}".format(m.resultado).replace(",","X").replace(".",",").replace("X",".") }}
+      </div>
+      <div class="progress-bar-custom">
+        <div class="progress-fill {% if m.resultado<0 %}neg{% endif %}"
+          style="width:{{ [[(m.faturamento/meta*100)|round|int, 0]|max, 100]|min }}%"></div>
+      </div>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const anual = {{ anual | tojson }};
+const todosAnos = {{ todos_anos | tojson }};
+const lojaId = {{ loja_sel }};
+const mesRef = {{ mes_ref }};
+
+const GOLD='#c8a96e',GREEN='#3ecf8e',RED='#f66666',BLUE='#5b8dee',
+      PURPLE='#9b7fe8',ORANGE='#f0a856',GRAY='#3a3f54';
+
+const isDark = !document.documentElement.classList.contains('tema-claro');
+Chart.defaults.color = isDark ? '#7a8099' : '#6b6b7b';
+Chart.defaults.borderColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+
+// Gráfico 1: Barras Faturamento + Linha Resultado
+new Chart(document.getElementById('chartAnual').getContext('2d'), {
+  data: {
+    labels: anual.map(m=>MESES_ABREV[m.mes-1]),
+    datasets: [
+      {type:'bar',label:'Faturamento',data:anual.map(m=>m.faturamento),
+       backgroundColor:anual.map(m=>m.faturamento>0?'rgba(200,169,110,.4)':GRAY),
+       borderColor:anual.map(m=>m.faturamento>0?GOLD:GRAY),borderWidth:1,borderRadius:4},
+      {type:'bar',label:'Despesas',data:anual.map(m=>m.despesas),
+       backgroundColor:'rgba(255,102,102,.2)',borderColor:RED,borderWidth:1,borderRadius:4},
+      {type:'line',label:'Resultado',data:anual.map(m=>m.resultado),
+       borderColor:GREEN,backgroundColor:'rgba(62,207,142,.05)',
+       pointBackgroundColor:anual.map(m=>m.resultado>=0?GREEN:RED),
+       pointRadius:4,tension:.3,fill:true,yAxisID:'y2'}
+    ]
+  },
+  options:{responsive:true,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14,font:{size:11}}}},
+    scales:{y:{ticks:{callback:v=>'R$'+v.toLocaleString('pt-BR')}},
+            y2:{position:'right',grid:{display:false},ticks:{callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}
+});
+
+// Gráfico 2: Donut Despesas + Gráfico 3: Apps
+fetch(`/api/dre/${lojaId}/${mesRef}?ano={{ ano }}`)
+.then(r=>r.json())
+.then(dre=>{
+  const totais=dre.totais_desp;
+  const labels={cmv:'CMV',fixa:'Fixas',motoboy:'Motoboy',balcao:'Balcão',financeira:'Financeiras',outra:'Outras'};
+  const cores=[GOLD,BLUE,GREEN,ORANGE,PURPLE,'#888'];
+  const vals=Object.entries(totais).filter(([k,v])=>v>0);
+  if(vals.length){
+    new Chart(document.getElementById('chartDesp').getContext('2d'),{
+      type:'doughnut',
+      data:{labels:vals.map(([k])=>labels[k]||k),
+        datasets:[{data:vals.map(([,v])=>v),backgroundColor:cores.slice(0,vals.length),
+          borderColor:isDark?'#1a1d27':'#ffffff',borderWidth:2}]},
+      options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}
+    });
+  }
+  const apps=dre.fat_app;
+  const appLabels=Object.keys(apps);
+  if(appLabels.length){
+    new Chart(document.getElementById('chartApps').getContext('2d'),{
+      type:'bar',
+      data:{labels:appLabels,datasets:[
+        {label:'Almoço',data:appLabels.map(k=>apps[k].almoco),backgroundColor:'rgba(200,169,110,.6)',borderRadius:4},
+        {label:'Jantar',data:appLabels.map(k=>apps[k].jantar),backgroundColor:'rgba(91,141,238,.6)',borderRadius:4},
+        {label:'Pós-meia-noite',data:appLabels.map(k=>apps[k].pos),backgroundColor:'rgba(155,127,232,.6)',borderRadius:4}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},
+        scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}
+    });
+  }
+});
+
+// Gráfico 4: Margem %
+new Chart(document.getElementById('chartMargem').getContext('2d'),{
+  type:'line',
+  data:{labels:anual.map(m=>MESES_ABREV[m.mes-1]),
+    datasets:[{label:'Margem (%)',data:anual.map(m=>parseFloat(m.margem.toFixed(1))),
+      borderColor:anual.some(m=>m.margem<0)?RED:GREEN,backgroundColor:'rgba(62,207,142,.08)',
+      pointBackgroundColor:anual.map(m=>m.margem>=0?GREEN:RED),pointRadius:4,tension:.35,fill:true}]},
+  options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Margem: ${c.parsed.y}%`}}},
+    scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.06)'}}}}
+});
+
+// Gráfico 5: Comparativo Multi-Ano
+if(todosAnos&&todosAnos.length){
+  new Chart(document.getElementById('chartMultiAno').getContext('2d'),{
+    type:'bar',
+    data:{labels:todosAnos.map(a=>a.ano),datasets:[
+      {label:'Faturamento',data:todosAnos.map(a=>a.faturamento),
+       backgroundColor:todosAnos.map(a=>a.faturamento>0?'rgba(200,169,110,.5)':'rgba(128,128,128,.2)'),
+       borderColor:todosAnos.map(a=>a.faturamento>0?GOLD:GRAY),borderWidth:1,borderRadius:4},
+      {label:'Resultado',data:todosAnos.map(a=>a.resultado),
+       backgroundColor:todosAnos.map(a=>a.resultado>=0?'rgba(62,207,142,.4)':'rgba(255,102,102,.4)'),
+       borderColor:todosAnos.map(a=>a.resultado>=0?GREEN:RED),borderWidth:1,borderRadius:4}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:14,font:{size:11}}}},
+      scales:{y:{ticks:{callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  sunomono:
+    build: .
+    container_name: dre-sunomono-local
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./static/logos:/app/static/logos
+    env_file:
+      - .env

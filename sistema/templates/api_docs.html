@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Documentação da API · Sistema de DRE{% endblock %}
+{% block page_title %}Documentação da API{% endblock %}
+
+{% block extra_head %}
+<style>
+.api-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.api-section h5{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);margin-bottom:12px}
+.api-section h6{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.endpoint{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px}
+.endpoint .method{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;
+  border-radius:4px;margin-right:8px;font-family:monospace}
+.method-get{background:rgba(62,207,142,.15);color:var(--green)}
+.method-post{background:rgba(91,141,238,.15);color:var(--blue)}
+.endpoint .path{font-family:monospace;font-size:13px;color:var(--text)}
+.endpoint .desc{font-size:12px;color:var(--muted);margin-top:6px}
+.code-block{background:#0d0f14;border:1px solid var(--border);border-radius:8px;padding:14px;
+  font-family:monospace;font-size:12px;color:var(--green);overflow-x:auto;margin-top:8px;white-space:pre}
+.param-table{width:100%;border-collapse:collapse;margin-top:8px}
+.param-table th{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+  padding:6px 10px;border-bottom:1px solid var(--border);font-weight:600;text-align:left}
+.param-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.param-table code{background:var(--card2);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--gold)}
+.badge-auth{font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(200,169,110,.15);color:var(--gold);font-weight:600;margin-left:8px}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- VISÃO GERAL -->
+<div class="api-section">
+  <h5><i class="bi bi-code-slash"></i> Visão Geral</h5>
+  <p style="font-size:13px;color:var(--muted);line-height:1.6">
+    A API REST do Sistema de DRE permite integrar dados financeiros com outros sistemas.
+    Todas as requisições devem incluir autenticação via chave de API.
+    O fuso horário padrão é <strong>America/Sao_Paulo (UTC-3)</strong>.
+    Intervalo de anos suportado: <strong>{{ ANO_INICIO }}–{{ ANO_FIM }}</strong>.
+  </p>
+
+  <h6>Autenticação</h6>
+  <p style="font-size:12px;color:var(--muted)">
+    Inclua a chave de API em todas as requisições de uma das formas:
+  </p>
+  <div class="code-block">Header: X-API-Key: snm_sua_chave_aqui
+
+Query string: ?api_key=snm_sua_chave_aqui</div>
+
+  <h6>URL Base</h6>
+  <div class="code-block">{{ request.url_root }}api/v1/</div>
+
+  <h6>Respostas</h6>
+  <p style="font-size:12px;color:var(--muted)">
+    Todas as respostas são em formato JSON (UTF-8). Em caso de erro, o campo <code>erro</code> conterá a descrição.
+  </p>
+</div>
+
+<!-- ENDPOINTS DE LEITURA -->
+<div class="api-section">
+  <h5><i class="bi bi-arrow-down-circle"></i> Endpoints de Leitura</h5>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/status</span>
+    <span class="badge-auth">Sem autenticação</span>
+    <div class="desc">Verifica se o sistema está operacional.</div>
+    <div class="code-block">{
+  "status": "ok",
+  "versao": "3.0",
+  "anos": "{{ ANO_INICIO }}-{{ ANO_FIM }}",
+  "fuso": "America/Sao_Paulo"
+}</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/dre/{loja_id}/{ano}/{mes}</span>
+    <span class="badge-auth">read</span>
+    <div class="desc">Retorna o DRE completo de uma loja em determinado mês/ano.</div>
+    <table class="param-table">
+      <thead><tr><th>Parâmetro</th><th>Tipo</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><code>loja_id</code></td><td>int</td><td>ID da loja</td></tr>
+        <tr><td><code>ano</code></td><td>int</td><td>Ano ({{ ANO_INICIO }}–{{ ANO_FIM }})</td></tr>
+        <tr><td><code>mes</code></td><td>int</td><td>Mês (1–12)</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block">{
+  "loja_id": 1, "ano": 2026, "mes": 3,
+  "nome_mes": "Março",
+  "faturamento_bruto": 45000.00,
+  "total_taxas": 2100.50,
+  "faturamento_liquido": 42899.50,
+  "total_despesas": 18500.00,
+  "royalties": 1500.00,
+  "resultado": 22899.50,
+  "margem_percentual": 50.89,
+  "dias_com_lancamentos": 28
+}</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/resumo-anual/{loja_id}/{ano}</span>
+    <span class="badge-auth">read</span>
+    <div class="desc">Retorna o resumo de todos os 12 meses do ano para a loja.</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/lojas</span>
+    <span class="badge-auth">read</span>
+    <div class="desc">Lista todas as lojas ativas com ID, nome, CNPJ e razão social.</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/formas-pagamento</span>
+    <span class="badge-auth">read</span>
+    <div class="desc">Lista formas de pagamento ativas com taxa.</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/categorias-despesa</span>
+    <span class="badge-auth">read</span>
+    <div class="desc">Lista categorias de despesa ativas com tipo.</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-get">GET</span>
+    <span class="path">/api/v1/plataformas</span>
+    <span class="badge-auth">read</span>
+    <div class="desc">Lista plataformas/apps ativos.</div>
+  </div>
+</div>
+
+<!-- ENDPOINTS DE ESCRITA -->
+<div class="api-section">
+  <h5><i class="bi bi-arrow-up-circle"></i> Endpoints de Escrita</h5>
+
+  <div class="endpoint">
+    <span class="method method-post">POST</span>
+    <span class="path">/api/v1/lancamentos/caixa</span>
+    <span class="badge-auth">write</span>
+    <div class="desc">Cria um novo lançamento de caixa.</div>
+    <h6 style="margin-top:10px">Corpo (JSON)</h6>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><code>loja_id</code></td><td>int</td><td>Sim</td><td>ID da loja</td></tr>
+        <tr><td><code>data</code></td><td>string</td><td>Sim</td><td>Data no formato AAAA-MM-DD</td></tr>
+        <tr><td><code>turno</code></td><td>string</td><td>Sim</td><td>almoco, jantar ou pos_meia_noite</td></tr>
+        <tr><td><code>forma_pagamento_id</code></td><td>int</td><td>Sim</td><td>ID da forma de pagamento</td></tr>
+        <tr><td><code>plataforma_id</code></td><td>int</td><td>Não</td><td>ID da plataforma</td></tr>
+        <tr><td><code>valor</code></td><td>float</td><td>Sim</td><td>Valor em reais</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block">curl -X POST {{ request.url_root }}api/v1/lancamentos/caixa \
+  -H "X-API-Key: snm_sua_chave" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "loja_id": 1,
+    "data": "2026-03-15",
+    "turno": "almoco",
+    "forma_pagamento_id": 1,
+    "valor": 1250.00
+  }'</div>
+  </div>
+
+  <div class="endpoint">
+    <span class="method method-post">POST</span>
+    <span class="path">/api/v1/lancamentos/despesa</span>
+    <span class="badge-auth">write</span>
+    <div class="desc">Cria um novo lançamento de despesa.</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
+      <tbody>
+        <tr><td><code>loja_id</code></td><td>int</td><td>Sim</td><td>ID da loja</td></tr>
+        <tr><td><code>data</code></td><td>string</td><td>Sim</td><td>Data no formato AAAA-MM-DD</td></tr>
+        <tr><td><code>categoria_id</code></td><td>int</td><td>Sim</td><td>ID da categoria de despesa</td></tr>
+        <tr><td><code>valor</code></td><td>float</td><td>Sim</td><td>Valor em reais</td></tr>
+        <tr><td><code>descricao</code></td><td>string</td><td>Não</td><td>Descrição ou observação</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CÓDIGOS DE RESPOSTA -->
+<div class="api-section">
+  <h5><i class="bi bi-info-circle"></i> Códigos de Resposta</h5>
+  <table class="param-table">
+    <thead><tr><th>Código</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>200</code></td><td>Sucesso na consulta</td></tr>
+      <tr><td><code>201</code></td><td>Recurso criado com sucesso</td></tr>
+      <tr><td><code>400</code></td><td>Requisição inválida (parâmetros incorretos)</td></tr>
+      <tr><td><code>401</code></td><td>Autenticação necessária (API key ausente)</td></tr>
+      <tr><td><code>403</code></td><td>Sem permissão (chave inválida ou sem acesso à loja)</td></tr>
+      <tr><td><code>422</code></td><td>Erro de processamento</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- LOJAS DISPONÍVEIS -->
+<div class="api-section">
+  <h5><i class="bi bi-building"></i> Lojas Cadastradas</h5>
+  <table class="param-table">
+    <thead><tr><th>ID</th><th>Nome</th></tr></thead>
+    <tbody>
+      {% for l in lojas %}
+      <tr><td><code>{{ l.id }}</code></td><td>{{ l.nome }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

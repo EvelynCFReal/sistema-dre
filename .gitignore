@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.pyo
+sistema/data/
+sistema/.env
+.claude/settings.local.json
