@@ -811,7 +811,8 @@ def comparativo_marcas(loja_id, ano, mes):
 def resumo_todos_anos(loja_id):
     resultado = []
     for ano in ANOS:
-        dados = resumo_anual(loja_id, ano)
+        resumo = resumo_anual(loja_id, ano)
+        dados = resumo["meses"]
         fat = sum(m["faturamento"] for m in dados)
         res = sum(m["resultado"] for m in dados)
         desp = sum(m["despesas"] for m in dados)
