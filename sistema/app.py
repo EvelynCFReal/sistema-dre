@@ -38,6 +38,13 @@ ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "svg", "webp"}
 FUSO_BR = timezone(timedelta(hours=-3))
 
 
+@app.after_request
+def allow_iframe(response):
+    """Permite incorporação via iframe em qualquer domínio."""
+    response.headers.pop("X-Frame-Options", None)
+    return response
+
+
 def agora_br():
     return datetime.now(FUSO_BR)
 
