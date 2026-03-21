@@ -1225,6 +1225,13 @@ def parametros():
                 conn.commit()
                 flash("Tipo de lançamento criado.", "success")
 
+        elif acao == "del_api_key" and tipo_sess == "master":
+            kid = request.form.get("key_id")
+            if kid:
+                conn.execute("DELETE FROM api_keys WHERE id=?", (kid,))
+                conn.commit()
+                flash("API Key excluída.", "info")
+
         # Exclusões (deletam de verdade para master, desativam para gestor)
         elif acao.startswith("del_"):
             item_id = request.form.get("item_id")
