@@ -223,77 +223,80 @@ def init_db():
     );
     """)
 
-    # Seed: loja padrão
-    c.execute(
-        "INSERT OR IGNORE INTO lojas(id, nome) VALUES(1, 'Loja Principal')"
-    )
-
-    # Seed: usuário master (credencial via env ou padrão seguro)
-    master_login = os.environ.get("MASTER_LOGIN", "Evelyn")
-    master_senha = os.environ.get("MASTER_SENHA", "4@ru4@v4i@me@proteger")
-    master_nome = os.environ.get("MASTER_NOME", "Evelyn (Master)")
-
-    if not c.execute(
-        "SELECT 1 FROM usuarios WHERE tipo='master'"
-    ).fetchone():
+    # ── SEED: só executa na PRIMEIRA inicialização do banco ──
+    # Isso impede que dados deletados pelo usuário sejam recriados após atualizações
+    if db_is_new:
+        # Seed: loja padrão
         c.execute(
-            "INSERT INTO usuarios(login, senha_hash, nome, tipo) VALUES(?,?,?,?)",
-            (master_login, generate_password_hash(master_senha), master_nome, "master"),
+            "INSERT OR IGNORE INTO lojas(id, nome) VALUES(1, 'Loja Principal')"
         )
 
-    # Seed: formas de pagamento padrão (vinculadas à loja 1)
-    fps = [
-        ("Crédito", 0.018), ("Débito", 0.008),
-        ("Pagamento Online Ifood", 0.115), ("Outros pgtos Ifood", 0.08),
-        ("Pagamento Online DD", 0.03), ("Pix Loja", 0.0),
-        ("ALELO", 0.0399), ("VR", 0.068), ("TR", 0.0399),
-        ("SODEXHO", 0.0399), ("Dinheiro", 0.0), ("Moeda", 0.0),
-    ]
-    for nome, taxa in fps:
-        if not c.execute("SELECT 1 FROM formas_pagamento WHERE nome=? AND loja_id=1", (nome,)).fetchone():
+        # Seed: usuário master (credencial via env ou padrão seguro)
+        master_login = os.environ.get("MASTER_LOGIN", "Evelyn")
+        master_senha = os.environ.get("MASTER_SENHA", "4@ru4@v4i@me@proteger")
+        master_nome = os.environ.get("MASTER_NOME", "Evelyn (Master)")
+
+        if not c.execute(
+            "SELECT 1 FROM usuarios WHERE tipo='master'"
+        ).fetchone():
             c.execute(
-                "INSERT INTO formas_pagamento(nome, taxa, loja_id) VALUES(?,?,1)",
-                (nome, taxa),
+                "INSERT INTO usuarios(login, senha_hash, nome, tipo) VALUES(?,?,?,?)",
+                (master_login, generate_password_hash(master_senha), master_nome, "master"),
             )
 
-    # Seed: plataformas padrão
-    for p in ["DELIVERY DIRETO", "MONO BOX", "SUNOMONO", "MONO POKE", "SUSHILÍCIA"]:
-        if not c.execute("SELECT 1 FROM plataformas WHERE nome=? AND loja_id=1", (p,)).fetchone():
-            c.execute("INSERT INTO plataformas(nome, loja_id) VALUES(?,1)", (p,))
+        # Seed: formas de pagamento padrão (vinculadas à loja 1)
+        fps = [
+            ("Crédito", 0.018), ("Débito", 0.008),
+            ("Pagamento Online Ifood", 0.115), ("Outros pgtos Ifood", 0.08),
+            ("Pagamento Online DD", 0.03), ("Pix Loja", 0.0),
+            ("ALELO", 0.0399), ("VR", 0.068), ("TR", 0.0399),
+            ("SODEXHO", 0.0399), ("Dinheiro", 0.0), ("Moeda", 0.0),
+        ]
+        for nome, taxa in fps:
+            if not c.execute("SELECT 1 FROM formas_pagamento WHERE nome=? AND loja_id=1", (nome,)).fetchone():
+                c.execute(
+                    "INSERT INTO formas_pagamento(nome, taxa, loja_id) VALUES(?,?,1)",
+                    (nome, taxa),
+                )
 
-    # Seed: marcas padrão
-    for marca in ["SUNOMONO", "MONO BOX", "MONO POKE", "SUSHILÍCIA"]:
-        if not c.execute("SELECT 1 FROM marcas WHERE nome=? AND loja_id=1", (marca,)).fetchone():
-            c.execute("INSERT INTO marcas(nome, loja_id) VALUES(?,1)", (marca,))
+        # Seed: plataformas padrão
+        for p in ["DELIVERY DIRETO", "MONO BOX", "SUNOMONO", "MONO POKE", "SUSHILÍCIA"]:
+            if not c.execute("SELECT 1 FROM plataformas WHERE nome=? AND loja_id=1", (p,)).fetchone():
+                c.execute("INSERT INTO plataformas(nome, loja_id) VALUES(?,1)", (p,))
 
-    # Seed: categorias de despesa padrão
-    cats = [
-        ("Hortifrutti", "cmv"), ("Mercado", "cmv"), ("Bebidas", "cmv"),
-        ("Salmão", "cmv"), ("Atum", "cmv"), ("Peixe Branco", "cmv"),
-        ("Camarão", "cmv"), ("Kani", "cmv"), ("Embalagens", "cmv"),
-        ("Aluguel", "fixa"), ("Passagem", "fixa"), ("Salários", "fixa"),
-        ("Light", "fixa"), ("Gás", "fixa"), ("Contador", "fixa"),
-        ("Motoboys", "motoboy"), ("Despesas Balcão", "balcao"),
-        ("Taxas/Financeiras", "financeira"), ("Outras Despesas", "outra"),
-    ]
-    for nome, tipo in cats:
-        if not c.execute("SELECT 1 FROM categorias_despesa WHERE nome=? AND loja_id=1", (nome,)).fetchone():
-            c.execute(
-                "INSERT INTO categorias_despesa(nome, tipo, loja_id) VALUES(?,?,1)",
-                (nome, tipo),
-            )
+        # Seed: marcas padrão
+        for marca in ["SUNOMONO", "MONO BOX", "MONO POKE", "SUSHILÍCIA"]:
+            if not c.execute("SELECT 1 FROM marcas WHERE nome=? AND loja_id=1", (marca,)).fetchone():
+                c.execute("INSERT INTO marcas(nome, loja_id) VALUES(?,1)", (marca,))
 
-    # Seed: configurações padrão (vinculadas à loja 1)
-    for ch, v in [
-        ("royalties", "1500"),
-        ("verba_marketing", "0"),
-        ("meta_faturamento_mensal", "50000"),
-    ]:
-        if not c.execute("SELECT 1 FROM configuracoes WHERE chave=? AND loja_id=1", (ch,)).fetchone():
-            c.execute(
-                "INSERT INTO configuracoes(chave, valor, loja_id) VALUES(?,?,1)",
-                (ch, v),
-            )
+        # Seed: categorias de despesa padrão
+        cats = [
+            ("Hortifrutti", "cmv"), ("Mercado", "cmv"), ("Bebidas", "cmv"),
+            ("Salmão", "cmv"), ("Atum", "cmv"), ("Peixe Branco", "cmv"),
+            ("Camarão", "cmv"), ("Kani", "cmv"), ("Embalagens", "cmv"),
+            ("Aluguel", "fixa"), ("Passagem", "fixa"), ("Salários", "fixa"),
+            ("Light", "fixa"), ("Gás", "fixa"), ("Contador", "fixa"),
+            ("Motoboys", "motoboy"), ("Despesas Balcão", "balcao"),
+            ("Taxas/Financeiras", "financeira"), ("Outras Despesas", "outra"),
+        ]
+        for nome, tipo in cats:
+            if not c.execute("SELECT 1 FROM categorias_despesa WHERE nome=? AND loja_id=1", (nome,)).fetchone():
+                c.execute(
+                    "INSERT INTO categorias_despesa(nome, tipo, loja_id) VALUES(?,?,1)",
+                    (nome, tipo),
+                )
+
+        # Seed: configurações padrão (vinculadas à loja 1)
+        for ch, v in [
+            ("royalties", "1500"),
+            ("verba_marketing", "0"),
+            ("meta_faturamento_mensal", "50000"),
+        ]:
+            if not c.execute("SELECT 1 FROM configuracoes WHERE chave=? AND loja_id=1", (ch,)).fetchone():
+                c.execute(
+                    "INSERT INTO configuracoes(chave, valor, loja_id) VALUES(?,?,1)",
+                    (ch, v),
+                )
 
     conn.commit()
     conn.close()
