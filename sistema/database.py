@@ -700,6 +700,8 @@ def calcular_dre(loja_id, ano, mes, marca_id=None):
 
 def resumo_anual(loja_id, ano, marca_id=None):
     dados = []
+    fat_marca_anual = {}   # {marca_nome: {bruto, taxa, liquido}}
+    desp_marca_anual = {}  # {marca_nome: total}
     for mes in range(1, 13):
         dre = calcular_dre(loja_id, ano, mes, marca_id=marca_id)
         dados.append({
@@ -712,7 +714,21 @@ def resumo_anual(loja_id, ano, marca_id=None):
             "resultado": dre["resultado"],
             "margem": dre["margem"],
         })
-    return dados
+        # Acumula faturamento por marca
+        for nome, vals in dre["fat_marca"].items():
+            if nome not in fat_marca_anual:
+                fat_marca_anual[nome] = {"bruto": 0, "taxa": 0, "liquido": 0}
+            fat_marca_anual[nome]["bruto"] += vals["bruto"]
+            fat_marca_anual[nome]["taxa"] += vals["taxa"]
+            fat_marca_anual[nome]["liquido"] += vals["liquido"]
+        # Acumula despesas por marca
+        for nome, val in dre["desp_marca"].items():
+            desp_marca_anual[nome] = desp_marca_anual.get(nome, 0) + val
+    return {
+        "meses": dados,
+        "fat_marca_anual": fat_marca_anual,
+        "desp_marca_anual": desp_marca_anual,
+    }
 
 
 def comparativo_marcas(loja_id, ano, mes):
