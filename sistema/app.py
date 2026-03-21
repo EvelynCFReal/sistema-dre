@@ -1491,7 +1491,8 @@ def api_plats():
 @login_required
 def api_anual(loja_id):
     ano = int(request.args.get("ano", ano_selecionado()))
-    return jsonify(resumo_anual(loja_id, ano))
+    resumo = resumo_anual(loja_id, ano)
+    return jsonify(resumo)
 
 
 @app.route("/api/dre/<int:loja_id>/<int:mes>")
