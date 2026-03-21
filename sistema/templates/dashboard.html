@@ -204,7 +204,7 @@
         {% for nome, val in desp_marca_anual.items() %}
           {% set nsd.total_desp = nsd.total_desp + val %}
         {% endfor %}
-        {% for nome, val in desp_marca_anual|dictsort(reverse=true) %}
+        {% for nome, val in desp_marca_anual.items()|sort(attribute='1', reverse=true) %}
           <tr style="border-bottom:1px solid rgba(255,255,255,.03)">
             <td style="padding:8px 12px;font-weight:600">{{ nome }}</td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--red)">
