@@ -134,7 +134,7 @@
 </div>
 
 <!-- FATURAMENTO ANUAL POR MARCA -->
-{% if fat_marca_anual %}
+{% if fat_marca_anual|length > 0 %}
 <div class="row g-3 mb-4">
   <div class="col-md-6">
     <div class="chart-card">
@@ -152,23 +152,23 @@
         </thead>
         <tbody>
         {% set ns = namespace(total_bruto=0) %}
-        {% for nome, vals in fat_marca_anual.items() %}
-          {% set ns.total_bruto = ns.total_bruto + vals.bruto %}
+        {% for item in fat_marca_anual %}
+          {% set ns.total_bruto = ns.total_bruto + item.bruto %}
         {% endfor %}
-        {% for nome, vals in fat_marca_anual.items()|sort(attribute='1.bruto', reverse=true) %}
+        {% for item in fat_marca_anual %}
           <tr style="border-bottom:1px solid rgba(255,255,255,.03)">
-            <td style="padding:8px 12px;font-weight:600">{{ nome }}</td>
+            <td style="padding:8px 12px;font-weight:600">{{ item.nome }}</td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--gold)">
-              R$ {{ "{:,.2f}".format(vals.bruto).replace(",","X").replace(".",",").replace("X",".") }}
+              R$ {{ "{:,.2f}".format(item.bruto).replace(",","X").replace(".",",").replace("X",".") }}
             </td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--red)">
-              R$ {{ "{:,.2f}".format(vals.taxa).replace(",","X").replace(".",",").replace("X",".") }}
+              R$ {{ "{:,.2f}".format(item.taxa).replace(",","X").replace(".",",").replace("X",".") }}
             </td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums">
-              R$ {{ "{:,.2f}".format(vals.liquido).replace(",","X").replace(".",",").replace("X",".") }}
+              R$ {{ "{:,.2f}".format(item.liquido).replace(",","X").replace(".",",").replace("X",".") }}
             </td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">
-              {% if ns.total_bruto > 0 %}{{ "%.1f"|format(vals.bruto / ns.total_bruto * 100) }}%{% else %}-{% endif %}
+              {% if ns.total_bruto > 0 %}{{ "%.1f"|format(item.bruto / ns.total_bruto * 100) }}%{% else %}-{% endif %}
             </td>
           </tr>
         {% endfor %}
@@ -189,7 +189,7 @@
   <div class="col-md-6">
     <div class="chart-card">
       <div class="chart-title"><i class="bi bi-tag"></i> Despesas Anuais por Marca — {{ ano }}</div>
-      {% if desp_marca_anual %}
+      {% if desp_marca_anual|length > 0 %}
       <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
@@ -201,17 +201,17 @@
         </thead>
         <tbody>
         {% set nsd = namespace(total_desp=0) %}
-        {% for nome, val in desp_marca_anual.items() %}
-          {% set nsd.total_desp = nsd.total_desp + val %}
+        {% for item in desp_marca_anual %}
+          {% set nsd.total_desp = nsd.total_desp + item.total %}
         {% endfor %}
-        {% for nome, val in desp_marca_anual.items()|sort(attribute='1', reverse=true) %}
+        {% for item in desp_marca_anual %}
           <tr style="border-bottom:1px solid rgba(255,255,255,.03)">
-            <td style="padding:8px 12px;font-weight:600">{{ nome }}</td>
+            <td style="padding:8px 12px;font-weight:600">{{ item.nome }}</td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--red)">
-              R$ {{ "{:,.2f}".format(val).replace(",","X").replace(".",",").replace("X",".") }}
+              R$ {{ "{:,.2f}".format(item.total).replace(",","X").replace(".",",").replace("X",".") }}
             </td>
             <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">
-              {% if nsd.total_desp > 0 %}{{ "%.1f"|format(val / nsd.total_desp * 100) }}%{% else %}-{% endif %}
+              {% if nsd.total_desp > 0 %}{{ "%.1f"|format(item.total / nsd.total_desp * 100) }}%{% else %}-{% endif %}
             </td>
           </tr>
         {% endfor %}
