@@ -355,7 +355,10 @@ def relatorio_resumido():
 
     loja_id = loja_selecionada()
     ano = ano_selecionado()
-    anual = resumo_anual(loja_id, ano)
+    resumo = resumo_anual(loja_id, ano)
+    anual = resumo["meses"]
+    fat_marca_anual = resumo["fat_marca_anual"]
+    desp_marca_anual = resumo["desp_marca_anual"]
     fat_total = sum(m["faturamento"] for m in anual)
     res_total = sum(m["resultado"] for m in anual)
     desp_total = sum(m["despesas"] for m in anual)
@@ -378,6 +381,8 @@ def relatorio_resumido():
         loja_nome=loja["nome"] if loja else "",
         meta=float(get_config("meta_faturamento_mensal", loja_id, "50000")),
         dres_mensal=dres_mensal,
+        fat_marca_anual=fat_marca_anual,
+        desp_marca_anual=desp_marca_anual,
     )
 
 
