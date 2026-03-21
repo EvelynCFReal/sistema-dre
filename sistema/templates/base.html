@@ -367,9 +367,15 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
 </nav>
 
+<!-- ── OVERLAY MOBILE ── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
 <!-- ── MAIN ── -->
 <div id="main">
   <div class="topbar">
+    <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+      <i class="bi bi-list"></i>
+    </button>
     <span class="topbar-title">{% block page_title %}{% endblock %}</span>
 
     {% block topbar_extra %}{% endblock %}
