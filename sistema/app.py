@@ -310,8 +310,8 @@ def dashboard():
 
     resumo = resumo_anual(loja_id, ano, marca_id=marca_id)
     anual = resumo["meses"]
-    fat_marca_anual = resumo["fat_marca_anual"]
-    desp_marca_anual = resumo["desp_marca_anual"]
+    fat_marca_anual_raw = resumo["fat_marca_anual"]
+    desp_marca_anual_raw = resumo["desp_marca_anual"]
     agora = agora_br()
     mes_ref = agora.month if ano == agora.year else 12
     dre_mes = calcular_dre(loja_id, ano, mes_ref, marca_id=marca_id)
@@ -322,6 +322,16 @@ def dashboard():
 
     # Comparativo de marcas do mês de referência
     comp_marcas = comparativo_marcas(loja_id, ano, mes_ref)
+
+    # Converte dicts em listas ordenadas para o template
+    fat_marca_anual = sorted(
+        [{"nome": k, **v} for k, v in fat_marca_anual_raw.items()],
+        key=lambda x: x["bruto"], reverse=True
+    )
+    desp_marca_anual = sorted(
+        [{"nome": k, "total": v} for k, v in desp_marca_anual_raw.items()],
+        key=lambda x: x["total"], reverse=True
+    )
 
     return render_template(
         "dashboard.html",
