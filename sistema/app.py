@@ -308,7 +308,10 @@ def dashboard():
 
     marca_id = request.args.get("marca_id", type=int)
 
-    anual = resumo_anual(loja_id, ano, marca_id=marca_id)
+    resumo = resumo_anual(loja_id, ano, marca_id=marca_id)
+    anual = resumo["meses"]
+    fat_marca_anual = resumo["fat_marca_anual"]
+    desp_marca_anual = resumo["desp_marca_anual"]
     agora = agora_br()
     mes_ref = agora.month if ano == agora.year else 12
     dre_mes = calcular_dre(loja_id, ano, mes_ref, marca_id=marca_id)
@@ -334,6 +337,8 @@ def dashboard():
         marcas=marcas_lista,
         marca_sel=marca_id,
         comp_marcas=comp_marcas,
+        fat_marca_anual=fat_marca_anual,
+        desp_marca_anual=desp_marca_anual,
     )
 
 
