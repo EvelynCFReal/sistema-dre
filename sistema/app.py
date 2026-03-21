@@ -1268,12 +1268,6 @@ def parametros():
             conn.commit()
             flash(f"API Key criada: {chave}", "success")
 
-        elif acao == "del_api_key" and tipo_sess == "master":
-            kid = request.form.get("key_id")
-            conn.execute("DELETE FROM api_keys WHERE id=?", (kid,))
-            conn.commit()
-            flash("API Key excluída.", "info")
-
         conn.close()
         return redirect(url_for("parametros"))
 
