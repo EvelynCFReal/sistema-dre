@@ -36,8 +36,20 @@ def get_db():
 #  INICIALIZAÇÃO DO BANCO
 # ──────────────────────────────────────────
 def init_db():
+    # Verifica se o banco já foi inicializado (tabela lojas já existe com dados)
+    db_is_new = not os.path.exists(DB_PATH) or os.path.getsize(DB_PATH) == 0
     conn = get_db()
     c = conn.cursor()
+    # Se o banco já tem lojas cadastradas, não é novo
+    if not db_is_new:
+        try:
+            row = c.execute("SELECT COUNT(*) FROM lojas").fetchone()
+            if row and row[0] > 0:
+                db_is_new = False
+            else:
+                db_is_new = True
+        except Exception:
+            db_is_new = True
     c.executescript("""
     /* Empresas / Lojas */
     CREATE TABLE IF NOT EXISTS lojas (
