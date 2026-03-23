@@ -754,6 +754,8 @@ def usuarios():
             "tipo": u["tipo"], "ativo": u["ativo"],
             "criado_em": u["criado_em"],
             "vinculos": [dict(v) for v in vinculos],
+            "acesso_talentos_sunomono": u["acesso_talentos_sunomono"] if "acesso_talentos_sunomono" in u.keys() else 0,
+            "acesso_talentos_monopizza": u["acesso_talentos_monopizza"] if "acesso_talentos_monopizza" in u.keys() else 0,
         })
 
     # Master vê todas as lojas (inclusive inativas) para poder gerenciar
