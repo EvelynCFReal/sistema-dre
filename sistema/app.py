@@ -1615,7 +1615,7 @@ def fetch_sheet_csv(banco):
     if not cfg:
         return []
 
-    url = f"https://docs.google.com/spreadsheets/d/{cfg['id']}/export?format=csv&gid={cfg['gid']}"
+    url = f"https://docs.google.com/spreadsheets/d/{cfg['id']}/gviz/tq?tqx=out:csv&gid={cfg['gid']}"
     try:
         req = urlreq.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urlreq.urlopen(req, timeout=15) as resp:
