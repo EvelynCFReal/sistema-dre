@@ -1656,7 +1656,7 @@ def banco_talentos(banco="sunomono"):
     tipo = session["tipo"]
 
     # Valida banco
-    if banco not in ("sunomono", "monopizza"):
+    if banco not in ("sunomono", "monopizza", "grupomono"):
         flash("Banco de talentos inválido.", "danger")
         return redirect(url_for("dashboard"))
 
@@ -1668,18 +1668,15 @@ def banco_talentos(banco="sunomono"):
             return redirect(url_for("lancamentos"))
         return redirect(url_for("dashboard"))
 
-    # Busca dados da planilha
+    # Busca dados do banco de talentos
     candidatos = []
-    unidades = set()
     areas = set()
 
-    if banco == "sunomono":
-        rows = fetch_sheet_csv("sunomono")
+    if banco in SHEETS_CONFIG:
+        rows = fetch_sheet_csv(banco)
         for i, r in enumerate(rows):
             uni_raw = r.get("Unidade interesse", r.get("Unidade Interesse", r.get("Unidade_interesse", "")))
             unidade = extrair_unidade(uni_raw)
-            if unidade:
-                unidades.add(unidade)
             area = r.get("Area de interesse", r.get("Area_de_interesse", "")).strip()
             if area:
                 areas.add(area)
@@ -1707,8 +1704,7 @@ def banco_talentos(banco="sunomono"):
     # Busca notas salvas no banco
     notas = get_talentos_notas(banco)
 
-    # Aplica filtros
-    filtro_unidade = request.args.get("unidade", "")
+    # Aplica filtro de área de interesse
     filtro_area = request.args.get("area", "")
 
     return render_template(
@@ -1716,9 +1712,7 @@ def banco_talentos(banco="sunomono"):
         banco=banco,
         candidatos=candidatos,
         notas=notas,
-        unidades=sorted(unidades),
         areas=sorted(areas),
-        filtro_unidade=filtro_unidade,
         filtro_area=filtro_area,
         acesso=acesso,
     )
