@@ -268,6 +268,36 @@
         <div class="label">Unidade de Interesse</div>
         <div class="value">{{ c.unidade_interesse or '—' }}</div>
       </div>
+      {% if c.area_interesse %}
+      <div class="cand-detail">
+        <div class="label">Área de Interesse</div>
+        <div class="value">{{ c.area_interesse }}</div>
+      </div>
+      {% endif %}
+      {% if c.tem_experiencia %}
+      <div class="cand-detail">
+        <div class="label">Experiência</div>
+        <div class="value">{{ c.tem_experiencia }}{% if c.tempo_experiencia %} ({{ c.tempo_experiencia }}){% endif %}</div>
+      </div>
+      {% endif %}
+      {% if c.disponibilidade %}
+      <div class="cand-detail">
+        <div class="label">Disponibilidade</div>
+        <div class="value">{{ c.disponibilidade }}</div>
+      </div>
+      {% endif %}
+      {% if c.pretensao_salarial %}
+      <div class="cand-detail">
+        <div class="label">Pretensão Salarial</div>
+        <div class="value">{{ c.pretensao_salarial }}</div>
+      </div>
+      {% endif %}
+      {% if c.resumo_experiencias %}
+      <div class="cand-detail" style="grid-column:1/-1">
+        <div class="label">Resumo de Experiências</div>
+        <div class="value">{{ c.resumo_experiencias }}</div>
+      </div>
+      {% endif %}
     </div>
 
     <form method="post" action="{{ url_for('salvar_nota_talento', banco=banco) }}" class="cand-actions">
