@@ -229,6 +229,24 @@
         </button>
       </div>
 
+      {% if user_tipo == 'master' %}
+      <div class="mb-3">
+        <label class="form-label">Banco de Talentos</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
+            padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
+            <input type="checkbox" name="acesso_talentos_sunomono" value="1">
+            <span>Liberar acesso Banco de Talentos <strong>Sunomono</strong></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
+            padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
+            <input type="checkbox" name="acesso_talentos_monopizza" value="1">
+            <span>Liberar acesso Banco de Talentos <strong>Mono Pizza</strong></span>
+          </label>
+        </div>
+      </div>
+      {% endif %}
+
       <button type="submit" class="btn-gold w-100">Criar Usuário</button>
     </form>
   </div>
