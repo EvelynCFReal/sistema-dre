@@ -1593,7 +1593,7 @@ def consultar_cnpj(cnpj):
 # ──────────────────────────────────────────
 # Cache em memória para os dados do Google Sheets (evita bater na API a cada request)
 _sheets_cache = {}  # {banco: {"data": [...], "ts": timestamp}}
-SHEETS_CACHE_TTL = 300  # 5 minutos
+SHEETS_CACHE_TTL = 30  # 30 segundos – sincronia quase instantânea com a planilha
 
 SHEETS_CONFIG = {
     "sunomono": {
