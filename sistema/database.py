@@ -402,6 +402,26 @@ def migrar_db():
             atualizado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(banco, candidato_email)
         )""")
+    else:
+        # Migra tabela para aceitar 'grupomono' no CHECK constraint
+        tbl_sql = c.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='talentos_notas'").fetchone()
+        if tbl_sql and "grupomono" not in tbl_sql[0]:
+            c.execute("ALTER TABLE talentos_notas RENAME TO _talentos_notas_old")
+            c.execute("""
+            CREATE TABLE talentos_notas (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                banco           TEXT NOT NULL CHECK(banco IN ('sunomono','monopizza','grupomono')),
+                candidato_email TEXT NOT NULL,
+                ex_funcionario  INTEGER DEFAULT 0,
+                contratou       INTEGER DEFAULT 0,
+                observacao      TEXT DEFAULT '',
+                atualizado_por  INTEGER REFERENCES usuarios(id),
+                atualizado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(banco, candidato_email)
+            )""")
+            c.execute("""INSERT INTO talentos_notas(id,banco,candidato_email,ex_funcionario,contratou,observacao,atualizado_por,atualizado_em)
+                         SELECT id,banco,candidato_email,ex_funcionario,contratou,observacao,atualizado_por,atualizado_em FROM _talentos_notas_old""")
+            c.execute("DROP TABLE _talentos_notas_old")
 
     # Adiciona colunas de acesso ao Banco de Talentos nos usuários
     cols_usr = [r[1] for r in c.execute("PRAGMA table_info(usuarios)").fetchall()]
