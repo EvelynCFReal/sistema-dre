@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Banco de Talentos · Sistema de DRE{% endblock %}
+{% block page_title %}Banco de Talentos{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Tabs ── */
+.tab-banco{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.tab-banco a{
+  padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;
+  text-decoration:none;transition:all .2s;border:1px solid var(--border);
+  color:var(--muted);background:var(--card);display:inline-flex;align-items:center;gap:8px
+}
+.tab-banco a:hover{border-color:var(--gold);color:var(--gold)}
+.tab-banco a.active{background:rgba(200,169,110,.12);border-color:var(--gold);color:var(--gold)}
+.tab-banco a.disabled{opacity:.4;pointer-events:none}
+
+/* ── Toolbar ── */
+.talentos-toolbar{
+  display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;
+  padding:14px 16px;background:var(--card);border:1px solid var(--border);border-radius:10px
+}
+.talentos-toolbar .search-box{
+  flex:1;min-width:200px;position:relative
+}
+.talentos-toolbar .search-box input{
+  width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:9px 14px 9px 36px;font-size:13px
+}
+.talentos-toolbar .search-box input:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+.talentos-toolbar .search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
+
+/* ── Stats ── */
+.talentos-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat-pill{
+  padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;
+  background:var(--card);border:1px solid var(--border);display:flex;align-items:center;gap:6px
+}
+.stat-pill .stat-num{font-size:16px;font-family:'Playfair Display',serif;color:var(--gold)}
+.stat-pill.green .stat-num{color:var(--green)}
+.stat-pill.red .stat-num{color:var(--red)}
+.stat-pill.blue .stat-num{color:var(--blue)}
+
+/* ── Candidato Card ── */
+.candidato-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:10px;transition:all .2s
+}
+.candidato-card:hover{border-color:rgba(200,169,110,.3)}
+.candidato-card.ex-func{border-left:3px solid var(--red)}
+.candidato-card.contratado{border-left:3px solid var(--green)}
+.cand-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cand-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#8b6914);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;color:#fff;flex-shrink:0
+}
+.cand-info{flex:1;min-width:0}
+.cand-nome{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cand-meta{font-size:11px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:8px}
+.cand-meta span{display:inline-flex;align-items:center;gap:3px}
+.cand-badges{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.badge-talent{
+  font-size:9px;padding:3px 8px;border-radius:5px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase
+}
+.badge-ex{background:rgba(255,102,102,.15);color:var(--red)}
+.badge-hired{background:rgba(62,207,142,.15);color:var(--green)}
+.badge-unit{background:rgba(91,141,238,.12);color:var(--blue)}
+
+/* ── Grid de detalhes ── */
+.cand-details{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;
+  margin:10px 0;padding:10px;background:var(--card2);border-radius:8px
+}
+.cand-detail{font-size:12px}
+.cand-detail .label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;font-weight:600}
+.cand-detail .value{color:var(--text);word-break:break-all}
+.cand-detail .value a{color:var(--gold);text-decoration:none}
+.cand-detail .value a:hover{text-decoration:underline}
+
+/* ── Observação/Ações ── */
+.cand-actions{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-top:10px}
+.cand-actions .obs-area{flex:1;min-width:200px}
+.cand-actions textarea{
+  width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:8px 12px;font-size:12px;resize:vertical;min-height:36px;
+  font-family:'DM Sans',sans-serif
+}
+.cand-actions textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+.cand-actions .action-btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.toggle-btn{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;
+  font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border);
+  background:transparent;color:var(--muted)
+}
+.toggle-btn:hover{border-color:var(--gold);color:var(--gold)}
+.toggle-btn.active-red{background:rgba(255,102,102,.12);border-color:var(--red);color:var(--red)}
+.toggle-btn.active-green{background:rgba(62,207,142,.12);border-color:var(--green);color:var(--green)}
+.btn-save-nota{
+  padding:6px 16px;border-radius:6px;font-size:11px;font-weight:700;
+  background:var(--gold);color:#0d0f14;border:none;cursor:pointer;transition:all .2s
+}
+.btn-save-nota:hover{background:var(--gold2)}
+
+/* ── Vazio ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state i{font-size:48px;margin-bottom:14px;display:block;opacity:.4}
+.empty-state p{font-size:14px;margin-top:8px}
+
+/* ── Responsivo ── */
+@media(max-width:768px){
+  .cand-details{grid-template-columns:1fr 1fr}
+  .cand-actions{flex-direction:column}
+  .cand-header{flex-wrap:wrap}
+  .talentos-toolbar{flex-direction:column}
+  .talentos-toolbar .search-box{min-width:100%}
+  .stat-pill{padding:6px 12px;font-size:11px}
+  .stat-pill .stat-num{font-size:14px}
+}
+@media(max-width:480px){
+  .cand-details{grid-template-columns:1fr}
+  .tab-banco a{padding:8px 14px;font-size:12px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- TABS -->
+<div class="tab-banco">
+  {% if acesso.sunomono %}
+  <a href="{{ url_for('banco_talentos', banco='sunomono') }}"
+     class="{% if banco == 'sunomono' %}active{% endif %}">
+    <i class="bi bi-people-fill"></i> Sunomono
+  </a>
+  {% endif %}
+  {% if acesso.monopizza %}
+  <a href="{{ url_for('banco_talentos', banco='monopizza') }}"
+     class="{% if banco == 'monopizza' %}active{% endif %}">
+    <i class="bi bi-people-fill"></i> Mono Pizza
+  </a>
+  {% else %}
+  <a class="disabled"><i class="bi bi-people-fill"></i> Mono Pizza <small style="font-size:9px;opacity:.6">(em breve)</small></a>
+  {% endif %}
+</div>
+
+{% if banco == 'monopizza' and not candidatos %}
+<div class="empty-state">
+  <i class="bi bi-inbox"></i>
+  <h5 style="color:var(--text);font-family:'Playfair Display',serif">Mono Pizza</h5>
+  <p>A planilha de candidatos ainda não foi configurada.<br>Em breve os dados estarão disponíveis aqui.</p>
+</div>
+{% elif banco == 'sunomono' %}
+
+<!-- TOOLBAR -->
+<div class="talentos-toolbar">
+  <div class="search-box">
+    <i class="bi bi-search"></i>
+    <input type="text" id="searchCandidatos" placeholder="Buscar por nome, cidade, bairro..." oninput="filtrarCandidatos()">
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap">
+      <i class="bi bi-funnel"></i> Unidade
+    </label>
+    <select id="filtroUnidade" class="form-select" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px;min-width:150px"
+      onchange="window.location.href='{{ url_for('banco_talentos', banco=banco) }}?unidade='+this.value">
+      <option value="">Todas as unidades</option>
+      {% for u in unidades %}
+      <option value="{{ u }}" {% if u == filtro_unidade %}selected{% endif %}>{{ u }}</option>
+      {% endfor %}
+    </select>
+    <a href="{{ url_for('refresh_talentos', banco=banco, unidade=filtro_unidade) }}"
+       class="btn-outline-gold" style="font-size:11px;padding:7px 14px;white-space:nowrap"
+       title="Atualizar dados da planilha">
+      <i class="bi bi-arrow-clockwise"></i> Atualizar
+    </a>
+  </div>
+</div>
+
+<!-- STATS -->
+{% set total = candidatos|length %}
+{% set filtrados = [] %}
+{% for c in candidatos %}
+  {% if not filtro_unidade or c.unidade == filtro_unidade %}
+    {% if filtrados.append(c) %}{% endif %}
+  {% endif %}
+{% endfor %}
+{% set n_ex = [] %}
+{% set n_cont = [] %}
+{% for c in filtrados %}
+  {% set nota = notas.get(c.email) %}
+  {% if nota and nota.ex_funcionario %}{% if n_ex.append(1) %}{% endif %}{% endif %}
+  {% if nota and nota.contratou %}{% if n_cont.append(1) %}{% endif %}{% endif %}
+{% endfor %}
+
+<div class="talentos-stats">
+  <div class="stat-pill">
+    <span class="stat-num">{{ filtrados|length }}</span>
+    <span>candidato{{ 's' if filtrados|length != 1 else '' }}{% if filtro_unidade %} em {{ filtro_unidade }}{% endif %}</span>
+  </div>
+  <div class="stat-pill green">
+    <span class="stat-num">{{ n_cont|length }}</span>
+    <span>contratado{{ 's' if n_cont|length != 1 else '' }}</span>
+  </div>
+  <div class="stat-pill red">
+    <span class="stat-num">{{ n_ex|length }}</span>
+    <span>ex-funcionário{{ 's' if n_ex|length != 1 else '' }}</span>
+  </div>
+  {% if total != filtrados|length %}
+  <div class="stat-pill blue">
+    <span class="stat-num">{{ total }}</span>
+    <span>total geral</span>
+  </div>
+  {% endif %}
+</div>
+
+<!-- CANDIDATOS -->
+<div id="listaCandidatos">
+{% for c in candidatos %}
+  {% if not filtro_unidade or c.unidade == filtro_unidade %}
+  {% set nota = notas.get(c.email, {}) %}
+  {% set is_ex = nota.get('ex_funcionario', 0) %}
+  {% set is_cont = nota.get('contratou', 0) %}
+  <div class="candidato-card {% if is_cont %}contratado{% elif is_ex %}ex-func{% endif %}" data-search="{{ c.nome|lower }} {{ c.cidade|lower }} {{ c.bairro|lower }} {{ c.unidade|lower }} {{ c.email|lower }}">
+    <div class="cand-header">
+      <div class="cand-avatar">{{ c.nome[0].upper() if c.nome else '?' }}</div>
+      <div class="cand-info">
+        <div class="cand-nome">{{ c.nome or 'Sem nome' }}</div>
+        <div class="cand-meta">
+          {% if c.data %}<span><i class="bi bi-clock"></i> {{ c.data[:16] }}</span>{% endif %}
+          {% if c.unidade %}<span><i class="bi bi-geo-alt"></i> {{ c.unidade }}</span>{% endif %}
+          {% if c.cidade %}<span><i class="bi bi-building"></i> {{ c.cidade }}{% if c.bairro %} - {{ c.bairro }}{% endif %}</span>{% endif %}
+        </div>
+      </div>
+      <div class="cand-badges">
+        {% if c.unidade %}<span class="badge-talent badge-unit">{{ c.unidade }}</span>{% endif %}
+        {% if is_ex %}<span class="badge-talent badge-ex">Ex-Func.</span>{% endif %}
+        {% if is_cont %}<span class="badge-talent badge-hired">Contratado</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="cand-details">
+      <div class="cand-detail">
+        <div class="label">E-mail</div>
+        <div class="value"><a href="mailto:{{ c.email }}">{{ c.email or '—' }}</a></div>
+      </div>
+      <div class="cand-detail">
+        <div class="label">Telefone</div>
+        <div class="value">
+          {% if c.telefone %}<a href="https://wa.me/55{{ c.telefone|replace('(', '')|replace(')', '')|replace('-', '')|replace(' ', '') }}" target="_blank">{{ c.telefone }}</a>{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="cand-detail">
+        <div class="label">Tel. Recado</div>
+        <div class="value">{{ c.telefone_recado or '—' }}</div>
+      </div>
+      <div class="cand-detail">
+        <div class="label">CEP</div>
+        <div class="value">{{ c.cep or '—' }}</div>
+      </div>
+      <div class="cand-detail">
+        <div class="label">Cidade / Bairro</div>
+        <div class="value">{{ c.cidade or '—' }}{% if c.bairro %} - {{ c.bairro }}{% endif %}</div>
+      </div>
+      <div class="cand-detail">
+        <div class="label">Unidade de Interesse</div>
+        <div class="value">{{ c.unidade_interesse or '—' }}</div>
+      </div>
+    </div>
+
+    <form method="post" action="{{ url_for('salvar_nota_talento', banco=banco) }}" class="cand-actions">
+      <input type="hidden" name="email" value="{{ c.email }}">
+      <input type="hidden" name="filtro_unidade" value="{{ filtro_unidade }}">
+      <div class="obs-area">
+        <textarea name="observacao" placeholder="Observações sobre o candidato..." rows="2">{{ nota.get('observacao', '') }}</textarea>
+      </div>
+      <div class="action-btns">
+        <label class="toggle-btn {% if is_ex %}active-red{% endif %}" title="Marcar como ex-funcionário">
+          <input type="checkbox" name="ex_funcionario" value="1" {% if is_ex %}checked{% endif %} style="display:none"
+            onchange="this.parentElement.classList.toggle('active-red',this.checked)">
+          <i class="bi bi-person-x"></i> Ex-Func.
+        </label>
+        <label class="toggle-btn {% if is_cont %}active-green{% endif %}" title="Marcar como contratado">
+          <input type="checkbox" name="contratou" value="1" {% if is_cont %}checked{% endif %} style="display:none"
+            onchange="this.parentElement.classList.toggle('active-green',this.checked)">
+          <i class="bi bi-person-check"></i> Contratou
+        </label>
+        <button type="submit" class="btn-save-nota">
+          <i class="bi bi-check-lg"></i> Salvar
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+{% endfor %}
+</div>
+
+{% if not candidatos %}
+<div class="empty-state">
+  <i class="bi bi-inbox"></i>
+  <h5 style="color:var(--text);font-family:'Playfair Display',serif">Nenhum candidato encontrado</h5>
+  <p>Não foi possível carregar os dados da planilha.<br>Tente clicar em "Atualizar" para recarregar.</p>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filtrarCandidatos(){
+  const q = document.getElementById('searchCandidatos').value.toLowerCase().trim();
+  document.querySelectorAll('.candidato-card').forEach(function(card){
+    const txt = card.getAttribute('data-search') || '';
+    card.style.display = (!q || txt.includes(q)) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}
