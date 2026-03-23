@@ -1757,7 +1757,8 @@ def refresh_talentos(banco):
         del _sheets_cache[banco]
     flash("Dados atualizados da planilha.", "success")
     unidade = request.args.get("unidade", "")
-    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade))
+    area = request.args.get("area", "")
+    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade, area=area))
 
 
 # ── Rota legada para manter compatibilidade ──
