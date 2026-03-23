@@ -208,7 +208,7 @@
 <div class="talentos-stats">
   <div class="stat-pill">
     <span class="stat-num">{{ filtrados|length }}</span>
-    <span>candidato{{ 's' if filtrados|length != 1 else '' }}{% if filtro_unidade %} em {{ filtro_unidade }}{% endif %}</span>
+    <span>candidato{{ 's' if filtrados|length != 1 else '' }}{% if filtro_unidade %} em {{ filtro_unidade }}{% endif %}{% if filtro_area %} · {{ filtro_area }}{% endif %}</span>
   </div>
   <div class="stat-pill green">
     <span class="stat-num">{{ n_cont|length }}</span>
