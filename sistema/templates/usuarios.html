@@ -488,7 +488,7 @@ function abrirSenha(uid, nome){
   document.getElementById('modalSenha').classList.add('show');
 }
 
-function abrirEditar(uid, nome, vinculos){
+function abrirEditar(uid, nome, vinculos, talentosSun, talentosMp){
   document.getElementById('editNome').textContent = 'Editando: ' + nome;
   document.getElementById('editNomeInput').value = nome;
   document.getElementById('formEditar').action = `/usuarios/${uid}/editar`;
@@ -499,6 +499,11 @@ function abrirEditar(uid, nome, vinculos){
   } else {
     addEditLojaRow('','loja');
   }
+  // Banco de Talentos checkboxes
+  var cbSun = document.getElementById('editTalentosSun');
+  var cbMp = document.getElementById('editTalentosMp');
+  if(cbSun) cbSun.checked = !!talentosSun;
+  if(cbMp) cbMp.checked = !!talentosMp;
   document.getElementById('modalEditar').classList.add('show');
 }
 
