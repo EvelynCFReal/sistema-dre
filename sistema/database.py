@@ -393,7 +393,7 @@ def migrar_db():
         c.execute("""
         CREATE TABLE talentos_notas (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            banco           TEXT NOT NULL CHECK(banco IN ('sunomono','monopizza')),
+            banco           TEXT NOT NULL CHECK(banco IN ('sunomono','monopizza','grupomono')),
             candidato_email TEXT NOT NULL,
             ex_funcionario  INTEGER DEFAULT 0,
             contratou       INTEGER DEFAULT 0,
