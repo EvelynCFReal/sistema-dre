@@ -193,7 +193,7 @@
 {% set total = candidatos|length %}
 {% set filtrados = [] %}
 {% for c in candidatos %}
-  {% if not filtro_unidade or c.unidade == filtro_unidade %}
+  {% if (not filtro_unidade or c.unidade == filtro_unidade) and (not filtro_area or c.area_interesse == filtro_area) %}
     {% if filtrados.append(c) %}{% endif %}
   {% endif %}
 {% endfor %}
