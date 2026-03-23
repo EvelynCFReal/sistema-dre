@@ -856,9 +856,10 @@ def novo_usuario():
         if tipo_sess == "master":
             at_sun = 1 if request.form.get("acesso_talentos_sunomono") else 0
             at_mp = 1 if request.form.get("acesso_talentos_monopizza") else 0
+            at_gm = 1 if request.form.get("acesso_talentos_grupomono") else 0
             conn.execute(
-                "UPDATE usuarios SET acesso_talentos_sunomono=?, acesso_talentos_monopizza=? WHERE id=?",
-                (at_sun, at_mp, novo_id),
+                "UPDATE usuarios SET acesso_talentos_sunomono=?, acesso_talentos_monopizza=?, acesso_talentos_grupomono=? WHERE id=?",
+                (at_sun, at_mp, at_gm, novo_id),
             )
 
         conn.commit()
