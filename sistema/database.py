@@ -388,6 +388,28 @@ def migrar_db():
     c.execute("DELETE FROM configuracoes WHERE loja_id IS NULL AND chave IN (SELECT chave FROM configuracoes WHERE loja_id=1)")
     c.execute("UPDATE configuracoes SET loja_id=1 WHERE loja_id IS NULL")
 
+    # ── Tabela talentos_notas (Banco de Talentos) ──
+    if "talentos_notas" not in tabelas:
+        c.execute("""
+        CREATE TABLE talentos_notas (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            banco           TEXT NOT NULL CHECK(banco IN ('sunomono','monopizza')),
+            candidato_email TEXT NOT NULL,
+            ex_funcionario  INTEGER DEFAULT 0,
+            contratou       INTEGER DEFAULT 0,
+            observacao      TEXT DEFAULT '',
+            atualizado_por  INTEGER REFERENCES usuarios(id),
+            atualizado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(banco, candidato_email)
+        )""")
+
+    # Adiciona colunas de acesso ao Banco de Talentos nos usuários
+    cols_usr = [r[1] for r in c.execute("PRAGMA table_info(usuarios)").fetchall()]
+    if "acesso_talentos_sunomono" not in cols_usr:
+        c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_sunomono INTEGER DEFAULT 0")
+    if "acesso_talentos_monopizza" not in cols_usr:
+        c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_monopizza INTEGER DEFAULT 0")
+
     conn.commit()
     conn.close()
 
