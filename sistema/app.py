@@ -1749,13 +1749,12 @@ def salvar_nota_talento(banco):
 @app.route("/banco-talentos/<banco>/refresh")
 @login_required
 def refresh_talentos(banco):
-    """Força atualização dos dados da planilha (limpa cache)."""
+    """Força atualização dos dados do banco de talentos (limpa cache)."""
     if banco in _sheets_cache:
         del _sheets_cache[banco]
-    flash("Dados atualizados da planilha.", "success")
-    unidade = request.args.get("unidade", "")
+    flash("Banco de talentos atualizado.", "success")
     area = request.args.get("area", "")
-    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade, area=area))
+    return redirect(url_for("banco_talentos", banco=banco, area=area))
 
 
 # ── Rota legada para manter compatibilidade ──
