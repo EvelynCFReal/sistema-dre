@@ -166,6 +166,11 @@ def inject_globals():
         # Perfil do usuário na loja atualmente selecionada
         perfil_loja = get_perfil_loja(uid, loja_id, tipo) if tipo != "master" else "master"
 
+    # Acesso ao Banco de Talentos
+    acesso_talentos = {"sunomono": False, "monopizza": False}
+    if uid:
+        acesso_talentos = get_acesso_talentos(uid, tipo)
+
     return dict(
         meses=MESES,
         anos=ANOS,
@@ -182,6 +187,7 @@ def inject_globals():
         perfil_loja=perfil_loja,
         ANO_INICIO=ANO_INICIO,
         ANO_FIM=ANO_FIM,
+        acesso_talentos=acesso_talentos,
     )
 
 
