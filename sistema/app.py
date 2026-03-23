@@ -1562,6 +1562,163 @@ def consultar_cnpj(cnpj):
         return jsonify({"erro": "Não foi possível consultar. Preencha manualmente.", "cnpj": cnpj_limpo}), 422
 
 
+# ──────────────────────────────────────────
+#  BANCO DE TALENTOS
+# ──────────────────────────────────────────
+# Cache em memória para os dados do Google Sheets (evita bater na API a cada request)
+_sheets_cache = {}  # {banco: {"data": [...], "ts": timestamp}}
+SHEETS_CACHE_TTL = 300  # 5 minutos
+
+SHEETS_CONFIG = {
+    "sunomono": {
+        "id": "18DlMtVIvDzQPvRAx9mASWttpJL4ib4bW36m8xqEc-10",
+        "gid": "1788712909",
+    },
+    # monopizza será adicionado quando a planilha for fornecida
+}
+
+
+def fetch_sheet_csv(banco):
+    """Busca dados do Google Sheets via CSV export, com cache."""
+    now = time.time()
+    cached = _sheets_cache.get(banco)
+    if cached and (now - cached["ts"]) < SHEETS_CACHE_TTL:
+        return cached["data"]
+
+    cfg = SHEETS_CONFIG.get(banco)
+    if not cfg:
+        return []
+
+    url = f"https://docs.google.com/spreadsheets/d/{cfg['id']}/export?format=csv&gid={cfg['gid']}"
+    try:
+        req = urlreq.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urlreq.urlopen(req, timeout=15) as resp:
+            raw = resp.read().decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(raw))
+        rows = []
+        for r in reader:
+            # Normaliza nomes das colunas (remove espaços extras)
+            cleaned = {k.strip(): v.strip() if v else "" for k, v in r.items() if k}
+            rows.append(cleaned)
+        _sheets_cache[banco] = {"data": rows, "ts": now}
+        return rows
+    except Exception:
+        # Se falhar, retorna cache antigo se existir
+        if cached:
+            return cached["data"]
+        return []
+
+
+def extrair_unidade(unidade_interesse):
+    """Extrai o nome da unidade do campo 'Unidade interesse' (parte antes do @)."""
+    if not unidade_interesse:
+        return ""
+    if "@" in unidade_interesse:
+        return unidade_interesse.split("@")[0].strip()
+    return unidade_interesse.strip()
+
+
+@app.route("/banco-talentos")
+@app.route("/banco-talentos/<banco>")
+@login_required
+def banco_talentos(banco="sunomono"):
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+
+    # Valida banco
+    if banco not in ("sunomono", "monopizza"):
+        flash("Banco de talentos inválido.", "danger")
+        return redirect(url_for("dashboard"))
+
+    # Verifica permissão de acesso
+    acesso = get_acesso_talentos(uid, tipo)
+    if not acesso.get(banco):
+        flash("Você não tem acesso a este Banco de Talentos.", "danger")
+        if tipo == "loja":
+            return redirect(url_for("lancamentos"))
+        return redirect(url_for("dashboard"))
+
+    # Busca dados da planilha
+    candidatos = []
+    unidades = set()
+
+    if banco == "sunomono":
+        rows = fetch_sheet_csv("sunomono")
+        for i, r in enumerate(rows):
+            uni_raw = r.get("Unidade interesse", r.get("Unidade Interesse", ""))
+            unidade = extrair_unidade(uni_raw)
+            if unidade:
+                unidades.add(unidade)
+            candidatos.append({
+                "idx": i,
+                "data": r.get("Data", ""),
+                "nome": r.get("Nome", ""),
+                "email": r.get("Email", r.get("email", "")),
+                "telefone": r.get("Telefone", ""),
+                "telefone_recado": r.get("Telefone recado", r.get("Telefone Recado", "")),
+                "cep": r.get("Cep", r.get("CEP", "")),
+                "cidade": r.get("Cidade", ""),
+                "bairro": r.get("Bairro", ""),
+                "unidade_interesse": uni_raw,
+                "unidade": unidade,
+            })
+
+    # Busca notas salvas no banco
+    notas = get_talentos_notas(banco)
+
+    # Aplica filtro de unidade se solicitado
+    filtro_unidade = request.args.get("unidade", "")
+
+    return render_template(
+        "banco_talentos.html",
+        banco=banco,
+        candidatos=candidatos,
+        notas=notas,
+        unidades=sorted(unidades),
+        filtro_unidade=filtro_unidade,
+        acesso=acesso,
+    )
+
+
+@app.route("/banco-talentos/<banco>/nota", methods=["POST"])
+@login_required
+def salvar_nota_talento(banco):
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+
+    acesso = get_acesso_talentos(uid, tipo)
+    if not acesso.get(banco):
+        flash("Sem permissão.", "danger")
+        return redirect(url_for("banco_talentos", banco=banco))
+
+    email = request.form.get("email", "").strip()
+    if not email:
+        flash("Candidato não identificado.", "danger")
+        return redirect(url_for("banco_talentos", banco=banco))
+
+    ex_func = 1 if request.form.get("ex_funcionario") else 0
+    contratou = 1 if request.form.get("contratou") else 0
+    obs = request.form.get("observacao", "").strip()
+
+    salvar_talento_nota(banco, email, ex_func, contratou, obs, uid)
+    flash("Informações do candidato atualizadas.", "success")
+
+    # Mantém filtro de unidade se existir
+    unidade = request.form.get("filtro_unidade", "")
+    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade))
+
+
+@app.route("/banco-talentos/<banco>/refresh")
+@login_required
+def refresh_talentos(banco):
+    """Força atualização dos dados da planilha (limpa cache)."""
+    if banco in _sheets_cache:
+        del _sheets_cache[banco]
+    flash("Dados atualizados da planilha.", "success")
+    unidade = request.args.get("unidade", "")
+    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade))
+
+
 # ── Rota legada para manter compatibilidade ──
 @app.route("/configuracoes")
 @login_required
