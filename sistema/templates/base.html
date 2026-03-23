@@ -315,7 +315,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
   {% endif %}
 
-  {% if acesso_talentos.sunomono or acesso_talentos.monopizza %}
+  {% if acesso_talentos.sunomono or acesso_talentos.monopizza or acesso_talentos.grupomono %}
   <div class="nav-section">Talentos</div>
   <a href="{{ url_for('banco_talentos') }}" class="nav-item {% if request.endpoint == 'banco_talentos' %}active{% endif %}">
     <i class="bi bi-person-badge"></i> Banco de Talentos
