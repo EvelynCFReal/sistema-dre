@@ -409,6 +409,8 @@ def migrar_db():
         c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_sunomono INTEGER DEFAULT 0")
     if "acesso_talentos_monopizza" not in cols_usr:
         c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_monopizza INTEGER DEFAULT 0")
+    if "acesso_talentos_grupomono" not in cols_usr:
+        c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_grupomono INTEGER DEFAULT 0")
 
     conn.commit()
     conn.close()
