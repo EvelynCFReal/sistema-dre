@@ -1667,6 +1667,7 @@ def banco_talentos(banco="sunomono"):
     # Busca dados da planilha
     candidatos = []
     unidades = set()
+    areas = set()
 
     if banco == "sunomono":
         rows = fetch_sheet_csv("sunomono")
@@ -1675,6 +1676,9 @@ def banco_talentos(banco="sunomono"):
             unidade = extrair_unidade(uni_raw)
             if unidade:
                 unidades.add(unidade)
+            area = r.get("Area de interesse", r.get("Area_de_interesse", "")).strip()
+            if area:
+                areas.add(area)
             candidatos.append({
                 "idx": i,
                 "data": r.get("Data", ""),
@@ -1688,7 +1692,7 @@ def banco_talentos(banco="sunomono"):
                 "bairro": r.get("Bairro", ""),
                 "unidade_interesse": uni_raw,
                 "unidade": unidade,
-                "area_interesse": r.get("Area de interesse", r.get("Area_de_interesse", "")),
+                "area_interesse": area,
                 "tem_experiencia": r.get("Tem experiencia", r.get("Tem_experiencia", "")),
                 "tempo_experiencia": r.get("Tempo de experiencia", r.get("Tempo_de_experiencia", "")),
                 "disponibilidade": r.get("Disponibilidade", ""),
@@ -1699,8 +1703,9 @@ def banco_talentos(banco="sunomono"):
     # Busca notas salvas no banco
     notas = get_talentos_notas(banco)
 
-    # Aplica filtro de unidade se solicitado
+    # Aplica filtros
     filtro_unidade = request.args.get("unidade", "")
+    filtro_area = request.args.get("area", "")
 
     return render_template(
         "banco_talentos.html",
@@ -1708,7 +1713,9 @@ def banco_talentos(banco="sunomono"):
         candidatos=candidatos,
         notas=notas,
         unidades=sorted(unidades),
+        areas=sorted(areas),
         filtro_unidade=filtro_unidade,
+        filtro_area=filtro_area,
         acesso=acesso,
     )
 
