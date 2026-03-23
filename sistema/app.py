@@ -1671,13 +1671,14 @@ def banco_talentos(banco="sunomono"):
     if banco == "sunomono":
         rows = fetch_sheet_csv("sunomono")
         for i, r in enumerate(rows):
-            uni_raw = r.get("Unidade interesse", r.get("Unidade Interesse", ""))
+            uni_raw = r.get("Unidade interesse", r.get("Unidade Interesse", r.get("Unidade_interesse", "")))
             unidade = extrair_unidade(uni_raw)
             if unidade:
                 unidades.add(unidade)
             candidatos.append({
                 "idx": i,
                 "data": r.get("Data", ""),
+                "status": r.get("Status", ""),
                 "nome": r.get("Nome", ""),
                 "email": r.get("Email", r.get("email", "")),
                 "telefone": r.get("Telefone", ""),
@@ -1687,6 +1688,12 @@ def banco_talentos(banco="sunomono"):
                 "bairro": r.get("Bairro", ""),
                 "unidade_interesse": uni_raw,
                 "unidade": unidade,
+                "area_interesse": r.get("Area de interesse", r.get("Area_de_interesse", "")),
+                "tem_experiencia": r.get("Tem experiencia", r.get("Tem_experiencia", "")),
+                "tempo_experiencia": r.get("Tempo de experiencia", r.get("Tempo_de_experiencia", "")),
+                "disponibilidade": r.get("Disponibilidade", ""),
+                "pretensao_salarial": r.get("Pretensao salarial", r.get("Pretensao_salarial", "")),
+                "resumo_experiencias": r.get("Resumo experiencias", r.get("Resumo_experiencias", "")),
             })
 
     # Busca notas salvas no banco
