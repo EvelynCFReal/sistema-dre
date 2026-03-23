@@ -861,3 +861,51 @@ def resumo_todos_anos(loja_id):
             "margem": (res / fat * 100) if fat else 0,
         })
     return resultado
+
+
+# ──────────────────────────────────────────
+#  BANCO DE TALENTOS
+# ──────────────────────────────────────────
+def get_talentos_notas(banco):
+    """Retorna dict de notas por email do candidato."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM talentos_notas WHERE banco=?", (banco,)
+    ).fetchall()
+    conn.close()
+    return {r["candidato_email"]: dict(r) for r in rows}
+
+
+def salvar_talento_nota(banco, email, ex_funcionario, contratou, observacao, usuario_id):
+    """Insere ou atualiza nota de um candidato."""
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO talentos_notas(banco, candidato_email, ex_funcionario, contratou, observacao, atualizado_por, atualizado_em)
+        VALUES(?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(banco, candidato_email) DO UPDATE SET
+            ex_funcionario=excluded.ex_funcionario,
+            contratou=excluded.contratou,
+            observacao=excluded.observacao,
+            atualizado_por=excluded.atualizado_por,
+            atualizado_em=CURRENT_TIMESTAMP
+    """, (banco, email, ex_funcionario, contratou, observacao, usuario_id))
+    conn.commit()
+    conn.close()
+
+
+def get_acesso_talentos(usuario_id, tipo_usuario):
+    """Retorna dict com permissões de acesso ao banco de talentos."""
+    if tipo_usuario == "master":
+        return {"sunomono": True, "monopizza": True}
+    conn = get_db()
+    r = conn.execute(
+        "SELECT acesso_talentos_sunomono, acesso_talentos_monopizza FROM usuarios WHERE id=?",
+        (usuario_id,),
+    ).fetchone()
+    conn.close()
+    if not r:
+        return {"sunomono": False, "monopizza": False}
+    return {
+        "sunomono": bool(r["acesso_talentos_sunomono"]),
+        "monopizza": bool(r["acesso_talentos_monopizza"]),
+    }
