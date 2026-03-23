@@ -324,6 +324,23 @@
           + Adicionar loja
         </button>
       </div>
+      {% if user_tipo == 'master' %}
+      <div class="mb-3">
+        <label class="form-label">Banco de Talentos</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
+            padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
+            <input type="checkbox" name="acesso_talentos_sunomono" value="1" id="editTalentosSun">
+            <span>Liberar acesso Banco de Talentos <strong>Sunomono</strong></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
+            padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
+            <input type="checkbox" name="acesso_talentos_monopizza" value="1" id="editTalentosMp">
+            <span>Liberar acesso Banco de Talentos <strong>Mono Pizza</strong></span>
+          </label>
+        </div>
+      </div>
+      {% endif %}
       <div class="d-flex gap-2">
         <button type="submit" class="btn-gold" style="flex:1">Salvar</button>
         <button type="button" class="btn-outline-gold" onclick="fecharModal('modalEditar')">Cancelar</button>
