@@ -360,5 +360,15 @@ function filtrarCandidatos(){
     card.style.display = (!q || txt.includes(q)) ? '' : 'none';
   });
 }
+function aplicarFiltros(){
+  var u = document.getElementById('filtroUnidade').value;
+  var a = document.getElementById('filtroArea').value;
+  var url = '{{ url_for("banco_talentos", banco=banco) }}';
+  var params = [];
+  if(u) params.push('unidade='+encodeURIComponent(u));
+  if(a) params.push('area='+encodeURIComponent(a));
+  if(params.length) url += '?' + params.join('&');
+  window.location.href = url;
+}
 </script>
 {% endblock %}
