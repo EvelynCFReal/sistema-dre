@@ -165,13 +165,23 @@
       <i class="bi bi-funnel"></i> Unidade
     </label>
     <select id="filtroUnidade" class="form-select" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px;min-width:150px"
-      onchange="window.location.href='{{ url_for('banco_talentos', banco=banco) }}?unidade='+this.value">
+      onchange="aplicarFiltros()">
       <option value="">Todas as unidades</option>
       {% for u in unidades %}
       <option value="{{ u }}" {% if u == filtro_unidade %}selected{% endif %}>{{ u }}</option>
       {% endfor %}
     </select>
-    <a href="{{ url_for('refresh_talentos', banco=banco, unidade=filtro_unidade) }}"
+    <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap">
+      <i class="bi bi-briefcase"></i> Área
+    </label>
+    <select id="filtroArea" class="form-select" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px;min-width:150px"
+      onchange="aplicarFiltros()">
+      <option value="">Todas as áreas</option>
+      {% for a in areas %}
+      <option value="{{ a }}" {% if a == filtro_area %}selected{% endif %}>{{ a }}</option>
+      {% endfor %}
+    </select>
+    <a href="{{ url_for('refresh_talentos', banco=banco, unidade=filtro_unidade, area=filtro_area) }}"
        class="btn-outline-gold" style="font-size:11px;padding:7px 14px;white-space:nowrap"
        title="Atualizar dados da planilha">
       <i class="bi bi-arrow-clockwise"></i> Atualizar
