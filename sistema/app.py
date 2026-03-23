@@ -918,6 +918,15 @@ def editar_usuario(uid):
                     (uid, int(lid), perfil),
                 )
 
+    # Permissões Banco de Talentos (só master pode definir)
+    if tipo_sess == "master":
+        at_sun = 1 if request.form.get("acesso_talentos_sunomono") else 0
+        at_mp = 1 if request.form.get("acesso_talentos_monopizza") else 0
+        conn.execute(
+            "UPDATE usuarios SET acesso_talentos_sunomono=?, acesso_talentos_monopizza=? WHERE id=?",
+            (at_sun, at_mp, uid),
+        )
+
     conn.commit()
     conn.close()
     flash("Usuário atualizado.", "success")
