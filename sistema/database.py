@@ -918,16 +918,17 @@ def salvar_talento_nota(banco, email, ex_funcionario, contratou, observacao, usu
 def get_acesso_talentos(usuario_id, tipo_usuario):
     """Retorna dict com permissões de acesso ao banco de talentos."""
     if tipo_usuario == "master":
-        return {"sunomono": True, "monopizza": True}
+        return {"sunomono": True, "monopizza": True, "grupomono": True}
     conn = get_db()
     r = conn.execute(
-        "SELECT acesso_talentos_sunomono, acesso_talentos_monopizza FROM usuarios WHERE id=?",
+        "SELECT acesso_talentos_sunomono, acesso_talentos_monopizza, acesso_talentos_grupomono FROM usuarios WHERE id=?",
         (usuario_id,),
     ).fetchone()
     conn.close()
     if not r:
-        return {"sunomono": False, "monopizza": False}
+        return {"sunomono": False, "monopizza": False, "grupomono": False}
     return {
         "sunomono": bool(r["acesso_talentos_sunomono"]),
         "monopizza": bool(r["acesso_talentos_monopizza"]),
+        "grupomono": bool(r["acesso_talentos_grupomono"]),
     }
