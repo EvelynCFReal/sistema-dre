@@ -68,6 +68,7 @@
 .badge-ex{background:rgba(255,102,102,.15);color:var(--red)}
 .badge-hired{background:rgba(62,207,142,.15);color:var(--green)}
 .badge-unit{background:rgba(91,141,238,.12);color:var(--blue)}
+.badge-area{background:rgba(200,169,110,.12);color:var(--gold)}
 
 /* ── Grid de detalhes ── */
 .cand-details{
@@ -139,6 +140,14 @@
   {% if acesso.monopizza %}
   <a href="{{ url_for('banco_talentos', banco='monopizza') }}"
      class="{% if banco == 'monopizza' %}active{% endif %}">
+    <i class="bi bi-people-fill"></i> Mono Pizza
+  </a>
+  {% else %}
+  <a class="disabled"><i class="bi bi-people-fill"></i> Mono Pizza <small style="font-size:9px;opacity:.6">(em breve)</small></a>
+  {% endif %}
+  {% if acesso.grupomono %}
+  <a href="{{ url_for('banco_talentos', banco='grupomono') }}"
+     class="{% if banco == 'grupomono' %}active{% endif %}">
     <i class="bi bi-people-fill"></i> Grupo Mono
   </a>
   {% else %}
@@ -146,13 +155,13 @@
   {% endif %}
 </div>
 
-{% if banco == 'monopizza' and not candidatos %}
+{% if (banco == 'monopizza' or banco == 'grupomono') and not candidatos %}
 <div class="empty-state">
   <i class="bi bi-inbox"></i>
-  <h5 style="color:var(--text);font-family:'Playfair Display',serif">Grupo Mono</h5>
-  <p>A planilha de candidatos ainda não foi configurada.<br>Em breve os dados estarão disponíveis aqui.</p>
+  <h5 style="color:var(--text);font-family:'Playfair Display',serif">{{ 'Mono Pizza' if banco == 'monopizza' else 'Grupo Mono' }}</h5>
+  <p>O banco de talentos ainda não foi configurado.<br>Em breve os dados estarão disponíveis aqui.</p>
 </div>
-{% elif banco == 'sunomono' %}
+{% elif candidatos or banco == 'sunomono' %}
 
 <!-- TOOLBAR -->
 <div class="talentos-toolbar">
@@ -162,28 +171,18 @@
   </div>
   <div class="d-flex align-items-center gap-2 flex-wrap">
     <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap">
-      <i class="bi bi-funnel"></i> Unidade
-    </label>
-    <select id="filtroUnidade" class="form-select" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px;min-width:150px"
-      onchange="aplicarFiltros()">
-      <option value="">Todas as unidades</option>
-      {% for u in unidades %}
-      <option value="{{ u }}" {% if u == filtro_unidade %}selected{% endif %}>{{ u }}</option>
-      {% endfor %}
-    </select>
-    <label style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap">
-      <i class="bi bi-briefcase"></i> Área
+      <i class="bi bi-briefcase"></i> Área de Interesse
     </label>
     <select id="filtroArea" class="form-select" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px;min-width:150px"
-      onchange="aplicarFiltros()">
+      onchange="aplicarFiltro()">
       <option value="">Todas as áreas</option>
       {% for a in areas %}
       <option value="{{ a }}" {% if a == filtro_area %}selected{% endif %}>{{ a }}</option>
       {% endfor %}
     </select>
-    <a href="{{ url_for('refresh_talentos', banco=banco, unidade=filtro_unidade, area=filtro_area) }}"
+    <a href="{{ url_for('refresh_talentos', banco=banco, area=filtro_area) }}"
        class="btn-outline-gold" style="font-size:11px;padding:7px 14px;white-space:nowrap"
-       title="Atualizar dados da planilha">
+       title="Atualizar banco de talentos">
       <i class="bi bi-arrow-clockwise"></i> Atualizar
     </a>
   </div>
@@ -193,7 +192,7 @@
 {% set total = candidatos|length %}
 {% set filtrados = [] %}
 {% for c in candidatos %}
-  {% if (not filtro_unidade or c.unidade == filtro_unidade) and (not filtro_area or c.area_interesse == filtro_area) %}
+  {% if not filtro_area or c.area_interesse == filtro_area %}
     {% if filtrados.append(c) %}{% endif %}
   {% endif %}
 {% endfor %}
@@ -208,7 +207,7 @@
 <div class="talentos-stats">
   <div class="stat-pill">
     <span class="stat-num">{{ filtrados|length }}</span>
-    <span>candidato{{ 's' if filtrados|length != 1 else '' }}{% if filtro_unidade %} em {{ filtro_unidade }}{% endif %}{% if filtro_area %} · {{ filtro_area }}{% endif %}</span>
+    <span>candidato{{ 's' if filtrados|length != 1 else '' }}{% if filtro_area %} · {{ filtro_area }}{% endif %}</span>
   </div>
   <div class="stat-pill green">
     <span class="stat-num">{{ n_cont|length }}</span>
@@ -229,11 +228,11 @@
 <!-- CANDIDATOS -->
 <div id="listaCandidatos">
 {% for c in candidatos %}
-  {% if (not filtro_unidade or c.unidade == filtro_unidade) and (not filtro_area or c.area_interesse == filtro_area) %}
+  {% if not filtro_area or c.area_interesse == filtro_area %}
   {% set nota = notas.get(c.email, {}) %}
   {% set is_ex = nota.get('ex_funcionario', 0) %}
   {% set is_cont = nota.get('contratou', 0) %}
-  <div class="candidato-card {% if is_cont %}contratado{% elif is_ex %}ex-func{% endif %}" data-search="{{ c.nome|lower }} {{ c.cidade|lower }} {{ c.bairro|lower }} {{ c.unidade|lower }} {{ c.email|lower }}">
+  <div class="candidato-card {% if is_cont %}contratado{% elif is_ex %}ex-func{% endif %}" data-search="{{ c.nome|lower }} {{ c.cidade|lower }} {{ c.bairro|lower }} {{ c.unidade|lower }} {{ c.email|lower }} {{ c.area_interesse|lower }}">
     <div class="cand-header">
       <div class="cand-avatar">{{ c.nome[0].upper() if c.nome else '?' }}</div>
       <div class="cand-info">
@@ -245,6 +244,7 @@
         </div>
       </div>
       <div class="cand-badges">
+        {% if c.area_interesse %}<span class="badge-talent badge-area">{{ c.area_interesse }}</span>{% endif %}
         {% if c.unidade %}<span class="badge-talent badge-unit">{{ c.unidade }}</span>{% endif %}
         {% if c.status and c.status != 'Novo' %}<span class="badge-talent" style="background:rgba(200,169,110,.12);color:var(--gold)">{{ c.status }}</span>{% endif %}
         {% if is_ex %}<span class="badge-talent badge-ex">Ex-Func.</span>{% endif %}
@@ -313,7 +313,6 @@
 
     <form method="post" action="{{ url_for('salvar_nota_talento', banco=banco) }}" class="cand-actions">
       <input type="hidden" name="email" value="{{ c.email }}">
-      <input type="hidden" name="filtro_unidade" value="{{ filtro_unidade }}">
       <input type="hidden" name="filtro_area" value="{{ filtro_area }}">
       <div class="obs-area">
         <textarea name="observacao" placeholder="Observações sobre o candidato..." rows="2">{{ nota.get('observacao', '') }}</textarea>
@@ -343,7 +342,7 @@
 <div class="empty-state">
   <i class="bi bi-inbox"></i>
   <h5 style="color:var(--text);font-family:'Playfair Display',serif">Nenhum candidato encontrado</h5>
-  <p>Não foi possível carregar os dados da planilha.<br>Tente clicar em "Atualizar" para recarregar.</p>
+  <p>Não foi possível carregar os dados.<br>Tente clicar em "Atualizar" para recarregar.</p>
 </div>
 {% endif %}
 
@@ -360,14 +359,10 @@ function filtrarCandidatos(){
     card.style.display = (!q || txt.includes(q)) ? '' : 'none';
   });
 }
-function aplicarFiltros(){
-  var u = document.getElementById('filtroUnidade').value;
+function aplicarFiltro(){
   var a = document.getElementById('filtroArea').value;
   var url = '{{ url_for("banco_talentos", banco=banco) }}';
-  var params = [];
-  if(u) params.push('unidade='+encodeURIComponent(u));
-  if(a) params.push('area='+encodeURIComponent(a));
-  if(params.length) url += '?' + params.join('&');
+  if(a) url += '?area='+encodeURIComponent(a);
   window.location.href = url;
 }
 </script>
