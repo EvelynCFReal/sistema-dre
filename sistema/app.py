@@ -23,6 +23,7 @@ from database import (
     get_tema, gerar_api_key, validar_api_key,
     get_lojas_usuario, get_perfil_loja, get_lojas_gestor,
     copiar_parametros_loja,
+    get_talentos_notas, salvar_talento_nota, get_acesso_talentos,
 )
 
 # ──────────────────────────────────────────
