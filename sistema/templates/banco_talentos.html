@@ -314,6 +314,7 @@
     <form method="post" action="{{ url_for('salvar_nota_talento', banco=banco) }}" class="cand-actions">
       <input type="hidden" name="email" value="{{ c.email }}">
       <input type="hidden" name="filtro_unidade" value="{{ filtro_unidade }}">
+      <input type="hidden" name="filtro_area" value="{{ filtro_area }}">
       <div class="obs-area">
         <textarea name="observacao" placeholder="Observações sobre o candidato..." rows="2">{{ nota.get('observacao', '') }}</textarea>
       </div>
