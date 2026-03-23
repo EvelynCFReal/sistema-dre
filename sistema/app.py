@@ -1743,9 +1743,10 @@ def salvar_nota_talento(banco):
     salvar_talento_nota(banco, email, ex_func, contratou, obs, uid)
     flash("Informações do candidato atualizadas.", "success")
 
-    # Mantém filtro de unidade se existir
+    # Mantém filtros se existirem
     unidade = request.form.get("filtro_unidade", "")
-    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade))
+    area = request.form.get("filtro_area", "")
+    return redirect(url_for("banco_talentos", banco=banco, unidade=unidade, area=area))
 
 
 @app.route("/banco-talentos/<banco>/refresh")
