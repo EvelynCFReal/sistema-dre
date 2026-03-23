@@ -315,6 +315,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </div>
   {% endif %}
 
+  {% if acesso_talentos.sunomono or acesso_talentos.monopizza %}
+  <div class="nav-section">Talentos</div>
+  <a href="{{ url_for('banco_talentos') }}" class="nav-item {% if request.endpoint == 'banco_talentos' %}active{% endif %}">
+    <i class="bi bi-person-badge"></i> Banco de Talentos
+  </a>
+  {% endif %}
+
   {% if perfil_loja in ('master', 'gestor') %}
   <div class="nav-section">Gestão</div>
   <a href="{{ url_for('usuarios') }}" class="nav-item {% if request.endpoint == 'usuarios' %}active{% endif %}">
