@@ -167,7 +167,7 @@ def inject_globals():
         perfil_loja = get_perfil_loja(uid, loja_id, tipo) if tipo != "master" else "master"
 
     # Acesso ao Banco de Talentos
-    acesso_talentos = {"sunomono": False, "monopizza": False}
+    acesso_talentos = {"sunomono": False, "monopizza": False, "grupomono": False}
     if uid:
         acesso_talentos = get_acesso_talentos(uid, tipo)
 
