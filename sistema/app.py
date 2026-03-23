@@ -1594,16 +1594,17 @@ def consultar_cnpj(cnpj):
 # ──────────────────────────────────────────
 #  BANCO DE TALENTOS
 # ──────────────────────────────────────────
-# Cache em memória para os dados do Google Sheets (evita bater na API a cada request)
+# Cache em memória para os dados do Banco de Talentos
 _sheets_cache = {}  # {banco: {"data": [...], "ts": timestamp}}
-SHEETS_CACHE_TTL = 30  # 30 segundos – sincronia quase instantânea com a planilha
+SHEETS_CACHE_TTL = 30  # 30 segundos – sincronia quase instantânea
 
 SHEETS_CONFIG = {
     "sunomono": {
         "id": "18DlMtVIvDzQPvRAx9mASWttpJL4ib4bW36m8xqEc-10",
         "gid": "1788712909",
     },
-    # grupomono será adicionado quando a planilha for fornecida
+    # "monopizza": será adicionado quando a planilha for fornecida
+    # "grupomono": será adicionado quando a planilha for fornecida
 }
 
 
