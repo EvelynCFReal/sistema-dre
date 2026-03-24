@@ -919,7 +919,7 @@ def salvar_talento_nota(banco, email, ex_funcionario, contratou, observacao, usu
             observacao=excluded.observacao,
             atualizado_por=excluded.atualizado_por,
             atualizado_em=excluded.atualizado_em
-    """, (banco, email, ex_funcionario, contratou, observacao, usuario_id))
+    """, (banco, email, ex_funcionario, contratou, observacao, usuario_id, agora))
     conn.commit()
     conn.close()
 
