@@ -749,8 +749,8 @@ def calcular_dre(loja_id, ano, mes, marca_id=None):
         despesas[r["tipo"]][r["nome"]] = r["total"] or 0
         totais_desp[r["tipo"]] += r["total"] or 0
 
-    royalties = float(get_config("royalties", loja_id, "0"))
-    mkt = float(get_config("verba_marketing", loja_id, "0"))
+    royalties = get_config_mensal_valor(loja_id, int(ano_str), int(mes_str), "royalties", 0.0)
+    mkt = get_config_mensal_valor(loja_id, int(ano_str), int(mes_str), "verba_marketing", 0.0)
     total_despesas = sum(totais_desp.values())
     resultado = total_bruto - total_taxas - total_despesas - royalties - mkt
 
