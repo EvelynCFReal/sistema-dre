@@ -1,10 +1,11 @@
 """
-database.py – Sistema de DRE | 2026–2036
+database.py – Sistema de DRE
 Banco SQLite com suporte a multilojas, permissões por loja e 4 níveis de usuário.
 """
 import sqlite3
 import os
 import secrets
+from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash
 
 DB_PATH = os.environ.get(
@@ -13,7 +14,8 @@ DB_PATH = os.environ.get(
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 ANO_INICIO = 2026
-ANO_FIM = 2036
+_ano_atual = datetime.now(timezone(timedelta(hours=-3))).year
+ANO_FIM = max(_ano_atual + 5, 2031)
 ANOS = list(range(ANO_INICIO, ANO_FIM + 1))
 
 MESES = [
