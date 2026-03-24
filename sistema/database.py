@@ -889,10 +889,13 @@ def resumo_todos_anos(loja_id):
 #  BANCO DE TALENTOS
 # ──────────────────────────────────────────
 def get_talentos_notas(banco):
-    """Retorna dict de notas por email do candidato."""
+    """Retorna dict de notas por email do candidato, com nome de quem atualizou."""
     conn = get_db()
     rows = conn.execute(
-        "SELECT * FROM talentos_notas WHERE banco=?", (banco,)
+        """SELECT t.*, u.nome AS atualizado_por_nome
+           FROM talentos_notas t
+           LEFT JOIN usuarios u ON u.id = t.atualizado_por
+           WHERE t.banco=?""", (banco,)
     ).fetchall()
     conn.close()
     return {r["candidato_email"]: dict(r) for r in rows}
