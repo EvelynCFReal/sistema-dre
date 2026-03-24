@@ -582,6 +582,43 @@ def set_config(chave, valor, loja_id=None):
     conn.close()
 
 
+def get_config_mensal(loja_id, ano, chave):
+    """Retorna dict {mes: valor} para uma chave (royalties/verba_marketing) em um ano."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT mes, valor FROM config_mensal WHERE loja_id=? AND ano=? AND chave=?",
+        (loja_id, ano, chave),
+    ).fetchall()
+    conn.close()
+    return {r["mes"]: r["valor"] for r in rows}
+
+
+def get_config_mensal_valor(loja_id, ano, mes, chave, default=0.0):
+    """Retorna o valor de uma chave para um mês/ano específico. Fallback para config fixa."""
+    conn = get_db()
+    r = conn.execute(
+        "SELECT valor FROM config_mensal WHERE loja_id=? AND ano=? AND mes=? AND chave=?",
+        (loja_id, ano, mes, chave),
+    ).fetchone()
+    conn.close()
+    if r is not None:
+        return r["valor"]
+    # Fallback: valor fixo antigo da tabela configuracoes
+    return float(get_config(chave, loja_id, str(default)))
+
+
+def set_config_mensal(loja_id, ano, mes, chave, valor):
+    """Define valor mensal para uma chave."""
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO config_mensal(loja_id, ano, mes, chave, valor)
+        VALUES(?, ?, ?, ?, ?)
+        ON CONFLICT(loja_id, ano, mes, chave) DO UPDATE SET valor=excluded.valor
+    """, (loja_id, ano, mes, chave, valor))
+    conn.commit()
+    conn.close()
+
+
 # ──────────────────────────────────────────
 #  IDENTIDADE VISUAL
 # ──────────────────────────────────────────
