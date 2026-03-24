@@ -274,6 +274,15 @@ def login():
                     return render_template("login.html", erro=erro)
                 loja_inicial = lojas[0]["id"]
 
+            # Registra último acesso
+            conn2 = get_db()
+            conn2.execute(
+                "UPDATE usuarios SET ultimo_acesso = CURRENT_TIMESTAMP WHERE id = ?",
+                (u["id"],),
+            )
+            conn2.commit()
+            conn2.close()
+
             session.update(
                 usuario_id=u["id"],
                 nome=u["nome"],
