@@ -63,20 +63,53 @@ document.addEventListener('DOMContentLoaded', function(){
   <h6><i class="bi bi-gear"></i> Configurações do DRE</h6>
   <form method="post" class="form-dre">
     <input type="hidden" name="acao" value="config_geral">
-    <div class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label">Royalties Mensais (R$)</label>
-        <input type="number" name="royalties" class="form-control" step="0.01" value="{{ royalties }}" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Verba de Marketing (R$)</label>
-        <input type="number" name="mkt" class="form-control" step="0.01" value="{{ mkt }}">
-      </div>
+    <input type="hidden" name="ano_config" value="{{ ano_config }}">
+
+    <div class="row g-3 mb-3">
       <div class="col-md-4">
         <label class="form-label">Meta Faturamento Mensal (R$)</label>
         <input type="number" name="meta" class="form-control" step="0.01" value="{{ meta }}">
       </div>
+      <div class="col-md-4">
+        <label class="form-label">Ano dos valores mensais</label>
+        <select id="anoConfigSel" class="form-select" onchange="trocarAnoConfig(this.value)">
+          {% for a in anos %}
+          <option value="{{ a }}" {% if a == ano_config %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex align-items-end gap-2">
+        <button type="button" class="btn-preencher" onclick="preencherTodos('royalties')">
+          <i class="bi bi-clipboard-fill"></i> Preencher todos Royalties
+        </button>
+        <button type="button" class="btn-preencher" onclick="preencherTodos('mkt')">
+          <i class="bi bi-clipboard-fill"></i> Preencher todos Marketing
+        </button>
+      </div>
     </div>
+
+    <div class="mensal-section-label"><i class="bi bi-currency-dollar"></i> Royalties Mensais (R$) — {{ ano_config }}</div>
+    <div class="mensal-grid">
+      {% for m in range(1, 13) %}
+      <div class="mensal-cell">
+        <label>{{ meses[m-1][:3] }}</label>
+        <input type="number" name="royalties_{{ m }}" id="royalties_{{ m }}" step="0.01" min="0"
+          value="{{ '%.2f'|format(royalties_mensal.get(m, 0)) }}" placeholder="0.00">
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="mensal-section-label" style="margin-top:18px"><i class="bi bi-megaphone"></i> Verba de Marketing (R$) — {{ ano_config }}</div>
+    <div class="mensal-grid">
+      {% for m in range(1, 13) %}
+      <div class="mensal-cell">
+        <label>{{ meses[m-1][:3] }}</label>
+        <input type="number" name="mkt_{{ m }}" id="mkt_{{ m }}" step="0.01" min="0"
+          value="{{ '%.2f'|format(mkt_mensal.get(m, 0)) }}" placeholder="0.00">
+      </div>
+      {% endfor %}
+    </div>
+
     <button type="submit" class="btn-gold mt-3">Salvar Configurações</button>
   </form>
 </div>
