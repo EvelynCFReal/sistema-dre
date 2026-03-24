@@ -1331,15 +1331,21 @@ def parametros():
         return redirect(url_for("parametros"))
 
     conn.close()
+    ano_config = int(request.args.get("ano_config", agora_br().year))
+    royalties_mensal = get_config_mensal(loja_id, ano_config, "royalties")
+    mkt_mensal = get_config_mensal(loja_id, ano_config, "verba_marketing")
     return render_template(
         "parametros.html",
         fps=fps, plats=plats, cats=cats,
         marcas=marcas, tipos_fat=tipos_fat,
         tipos_desp=tipos_desp, tipos_lanc=tipos_lanc,
         lojas=lojas, api_keys=api_keys,
-        royalties=get_config("royalties", loja_id, "1500"),
-        mkt=get_config("verba_marketing", loja_id, "0"),
         meta=get_config("meta_faturamento_mensal", loja_id, "50000"),
+        royalties_mensal=royalties_mensal,
+        mkt_mensal=mkt_mensal,
+        ano_config=ano_config,
+        anos=ANOS,
+        meses=MESES,
     )
 
 
