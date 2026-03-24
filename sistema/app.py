@@ -23,6 +23,7 @@ from database import (
     get_db, init_db, migrar_db,
     calcular_dre, resumo_anual, resumo_todos_anos, comparativo_marcas,
     usuario_pode_mes, get_config, set_config,
+    get_config_mensal, set_config_mensal,
     MESES, ANOS, ANO_INICIO, ANO_FIM, TIPOS_USUARIO,
     get_tema, gerar_api_key, validar_api_key,
     get_lojas_usuario, get_perfil_loja, get_lojas_gestor,
