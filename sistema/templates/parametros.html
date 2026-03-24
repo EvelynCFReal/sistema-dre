@@ -56,6 +56,22 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 });
+
+function trocarAnoConfig(ano){
+  var url = new URL(window.location.href);
+  url.searchParams.set('ano_config', ano);
+  window.location.href = url.toString();
+}
+
+function preencherTodos(tipo){
+  var valor = prompt('Digite o valor para preencher todos os meses de ' + (tipo === 'royalties' ? 'Royalties' : 'Marketing') + ':');
+  if(valor === null) return;
+  valor = parseFloat(valor) || 0;
+  for(var m = 1; m <= 12; m++){
+    var input = document.getElementById(tipo === 'royalties' ? 'royalties_' + m : 'mkt_' + m);
+    if(input) input.value = valor.toFixed(2);
+  }
+}
 </script>
 
 <!-- CONFIGURAÇÕES GERAIS DO DRE -->
