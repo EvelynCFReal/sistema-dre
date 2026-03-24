@@ -25,6 +25,24 @@
 {% endblock %}
 
 {% block content %}
+<script>
+// Salva posição do scroll antes de submitar qualquer form
+document.addEventListener('DOMContentLoaded', function(){
+  // Restaura posição se existir
+  var pos = sessionStorage.getItem('paramScrollPos');
+  if(pos){
+    window.scrollTo(0, parseInt(pos));
+    sessionStorage.removeItem('paramScrollPos');
+  }
+  // Salva antes de cada submit
+  document.querySelectorAll('form').forEach(function(f){
+    f.addEventListener('submit', function(){
+      sessionStorage.setItem('paramScrollPos', window.scrollY.toString());
+    });
+  });
+});
+</script>
+
 <!-- CONFIGURAÇÕES GERAIS DO DRE -->
 <div class="config-section">
   <h6><i class="bi bi-gear"></i> Configurações do DRE</h6>
