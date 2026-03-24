@@ -432,6 +432,10 @@ def migrar_db():
     if "acesso_talentos_grupomono" not in cols_usr:
         c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_grupomono INTEGER DEFAULT 0")
 
+    # Coluna de último acesso
+    if "ultimo_acesso" not in cols_usr:
+        c.execute("ALTER TABLE usuarios ADD COLUMN ultimo_acesso TIMESTAMP")
+
     conn.commit()
     conn.close()
 
