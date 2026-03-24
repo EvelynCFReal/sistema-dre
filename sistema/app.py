@@ -762,6 +762,7 @@ def usuarios():
             "id": u["id"], "login": u["login"], "nome": u["nome"],
             "tipo": u["tipo"], "ativo": u["ativo"],
             "criado_em": u["criado_em"],
+            "ultimo_acesso": u["ultimo_acesso"] if "ultimo_acesso" in u.keys() else None,
             "vinculos": [dict(v) for v in vinculos],
             "acesso_talentos_sunomono": u["acesso_talentos_sunomono"] if "acesso_talentos_sunomono" in u.keys() else 0,
             "acesso_talentos_monopizza": u["acesso_talentos_monopizza"] if "acesso_talentos_monopizza" in u.keys() else 0,
