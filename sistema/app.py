@@ -1781,7 +1781,7 @@ init_db()
 migrar_db()
 
 if __name__ == "__main__":
-    print("\n  Sistema de DRE | 2026–2036")
+    print("\n  Sistema de DRE")
     print("  http://localhost:5000\n")
     debug = os.environ.get("FLASK_ENV", "production") == "development"
     app.run(debug=debug, host="0.0.0.0", port=5000)
