@@ -85,6 +85,14 @@
           <div class="umeta">
             Login: <strong>{{ u.login }}</strong>
             &middot; Criado: {{ u.criado_em[:10] if u.criado_em else '—' }}
+            {% if user_tipo == 'master' %}
+            &middot; <i class="bi bi-clock-history"></i>
+            {% if u.ultimo_acesso %}
+              Último acesso: <strong style="color:var(--green)">{{ u.ultimo_acesso[:16] }}</strong>
+            {% else %}
+              <span style="color:var(--red)">Nunca acessou</span>
+            {% endif %}
+            {% endif %}
           </div>
           {% if u.vinculos %}
           <div style="margin-top:3px">
