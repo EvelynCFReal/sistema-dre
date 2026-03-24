@@ -438,6 +438,19 @@ def migrar_db():
     if "ultimo_acesso" not in cols_usr:
         c.execute("ALTER TABLE usuarios ADD COLUMN ultimo_acesso TIMESTAMP")
 
+    # ── Tabela config_mensal (Royalties e Marketing por mês) ──
+    if "config_mensal" not in tabelas:
+        c.execute("""
+        CREATE TABLE config_mensal (
+            id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            loja_id INTEGER NOT NULL REFERENCES lojas(id),
+            ano     INTEGER NOT NULL,
+            mes     INTEGER NOT NULL,
+            chave   TEXT NOT NULL,
+            valor   REAL DEFAULT 0,
+            UNIQUE(loja_id, ano, mes, chave)
+        )""")
+
     conn.commit()
     conn.close()
 
