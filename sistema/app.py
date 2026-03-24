@@ -1,5 +1,5 @@
 """
-app.py – Sistema de DRE | 2026–2036
+app.py – Sistema de DRE
 Flask + SQLite | 4 níveis de usuário | Multilojas | Fuso: America/Sao_Paulo
 """
 import os
