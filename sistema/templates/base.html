@@ -34,10 +34,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 /* ── SIDEBAR ── */
 #sidebar{
-  width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);
+  width:var(--sidebar-w);height:100vh;background:var(--sidebar);
   border-right:1px solid var(--border);display:flex;flex-direction:column;
   position:fixed;top:0;left:0;z-index:100;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(200,169,110,.3) transparent;
 }
+#sidebar::-webkit-scrollbar{width:5px}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(200,169,110,.3);border-radius:3px}
+#sidebar::-webkit-scrollbar-track{background:transparent}
 .sidebar-logo{
   padding:24px 18px 16px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:10px;
