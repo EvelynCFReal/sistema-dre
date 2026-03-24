@@ -1214,9 +1214,16 @@ def parametros():
 
         if acao == "config_geral":
             if tipo_sess in ("master", "gestor"):
-                set_config("royalties", request.form.get("royalties", "0"), loja_id)
-                set_config("verba_marketing", request.form.get("mkt", "0"), loja_id)
                 set_config("meta_faturamento_mensal", request.form.get("meta", "50000"), loja_id)
+                # Salvar royalties e marketing por mês
+                ano_cfg = int(request.form.get("ano_config", agora_br().year))
+                for m in range(1, 13):
+                    val_roy = request.form.get(f"royalties_{m}", "")
+                    val_mkt = request.form.get(f"mkt_{m}", "")
+                    if val_roy != "":
+                        set_config_mensal(loja_id, ano_cfg, m, "royalties", float(val_roy or 0))
+                    if val_mkt != "":
+                        set_config_mensal(loja_id, ano_cfg, m, "verba_marketing", float(val_mkt or 0))
                 flash("Configurações salvas.", "success")
 
         elif acao == "taxa_fp" and tipo_sess in ("master", "gestor"):
