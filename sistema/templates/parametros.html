@@ -21,6 +21,21 @@
 .del-btn:hover{opacity:1;background:rgba(255,102,102,.1)}
 .inline-form{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
 .inline-form .form-label{margin-bottom:4px}
+
+/* Grade mensal */
+.mensal-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:10px}
+.mensal-cell{display:flex;flex-direction:column;gap:2px}
+.mensal-cell label{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mensal-cell input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:12px;width:100%;text-align:right}
+.mensal-cell input:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+.mensal-section-label{font-size:11px;font-weight:700;color:var(--text);margin-top:14px;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.mensal-section-label i{color:var(--gold)}
+.ano-selector{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ano-selector select{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px}
+.btn-preencher{font-size:10px;padding:4px 10px;border-radius:5px;background:rgba(200,169,110,.12);border:1px solid var(--gold);color:var(--gold);cursor:pointer;transition:all .2s}
+.btn-preencher:hover{background:rgba(200,169,110,.25)}
+@media(max-width:768px){.mensal-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:480px){.mensal-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 {% endblock %}
 
