@@ -907,16 +907,18 @@ def get_talentos_notas(banco):
 
 def salvar_talento_nota(banco, email, ex_funcionario, contratou, observacao, usuario_id):
     """Insere ou atualiza nota de um candidato."""
+    from datetime import datetime, timezone, timedelta
+    agora = datetime.now(timezone(timedelta(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
     conn = get_db()
     conn.execute("""
         INSERT INTO talentos_notas(banco, candidato_email, ex_funcionario, contratou, observacao, atualizado_por, atualizado_em)
-        VALUES(?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        VALUES(?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(banco, candidato_email) DO UPDATE SET
             ex_funcionario=excluded.ex_funcionario,
             contratou=excluded.contratou,
             observacao=excluded.observacao,
             atualizado_por=excluded.atualizado_por,
-            atualizado_em=CURRENT_TIMESTAMP
+            atualizado_em=excluded.atualizado_em
     """, (banco, email, ex_funcionario, contratou, observacao, usuario_id))
     conn.commit()
     conn.close()
