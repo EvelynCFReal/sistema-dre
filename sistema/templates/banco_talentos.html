@@ -311,6 +311,15 @@
       {% endif %}
     </div>
 
+    {% if nota.get('atualizado_por_nome') and (is_ex or is_cont) %}
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <i class="bi bi-info-circle"></i>
+      {% if is_cont %}<span>Contratação informada por <strong style="color:var(--green)">{{ nota.atualizado_por_nome }}</strong></span>{% endif %}
+      {% if is_ex %}<span>{% if is_cont %} · {% endif %}Ex-funcionário informado por <strong style="color:var(--red)">{{ nota.atualizado_por_nome }}</strong></span>{% endif %}
+      {% if nota.get('atualizado_em') %}<span style="opacity:.6">· {{ nota.atualizado_em[:16] }}</span>{% endif %}
+    </div>
+    {% endif %}
+
     <form method="post" action="{{ url_for('salvar_nota_talento', banco=banco) }}" class="cand-actions">
       <input type="hidden" name="email" value="{{ c.email }}">
       <input type="hidden" name="filtro_area" value="{{ filtro_area }}">
