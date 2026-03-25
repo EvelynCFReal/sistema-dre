@@ -29,6 +29,8 @@ from database import (
     get_lojas_usuario, get_perfil_loja, get_lojas_gestor,
     copiar_parametros_loja,
     get_talentos_notas, salvar_talento_nota, get_acesso_talentos,
+    salvar_chat_mensagem, get_chat_historico,
+    salvar_sugestao, get_sugestoes, marcar_sugestao_lida,
 )
 
 # ──────────────────────────────────────────
