@@ -1918,6 +1918,29 @@ def suporte_chat_sugestao():
     return jsonify({"ok": True})
 
 
+@app.route("/suporte-chat/avaliar", methods=["POST"])
+@login_required
+def suporte_chat_avaliar():
+    uid = session["usuario_id"]
+    nome = session.get("nome", "")
+    data = request.get_json(silent=True) or {}
+    estrelas = int(data.get("estrelas", 0))
+    feedback = (data.get("feedback") or "").strip()[:1000]
+    if estrelas < 1 or estrelas > 5:
+        return jsonify({"erro": "Avaliação inválida."}), 400
+    # Salva como sugestão tipo 'avaliacao'
+    from datetime import datetime, timezone, timedelta
+    agora = datetime.now(timezone(timedelta(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO chat_sugestoes(usuario_id, nome_usuario, sugestao, criado_em, estrelas, tipo) VALUES(?,?,?,?,?,?)",
+        (uid, nome, feedback or f"Avaliação: {estrelas} estrela(s)", agora, estrelas, "avaliacao"),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
 @app.route("/suporte-chat/sugestoes")
 @login_required
 @role_required("master")
