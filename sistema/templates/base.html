@@ -342,6 +342,11 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
   </a>
   {% endif %}
 
+  <div class="nav-section">Suporte</div>
+  <a href="{{ url_for('suporte_chat') }}" class="nav-item {% if request.endpoint in ('suporte_chat','suporte_chat_sugestoes') %}active{% endif %}">
+    <i class="bi bi-headset"></i> Chat de Suporte
+  </a>
+
   <div class="sidebar-footer">
     <div class="user-pill">
       <div class="user-avatar">{{ user_nome[0].upper() if user_nome else '?' }}</div>
