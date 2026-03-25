@@ -655,21 +655,11 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
   }
 
   function carregarHistorico(){
-    fetch('{{ url_for("suporte_chat") }}?session_id='+sessionId,{headers:{'Accept':'application/json'}})
-    .then(function(r){return r.text()})
-    .then(function(html){
-      /* Histórico vem da rota principal - se vazio, faz saudação */
-      var parser=new DOMParser();
-      var doc=parser.parseFromString(html,'text/html');
-      var historicoDiv=doc.getElementById('chatMessages');
-      if(!historicoDiv){saudacaoInicial();return}
-      var items=historicoDiv.querySelectorAll('.msg');
-      if(items.length===0){saudacaoInicial();return}
-      items.forEach(function(el){
-        var role=el.classList.contains('msg-user')?'user':'assistant';
-        var bubble=el.querySelector('.msg-bubble');
-        if(bubble)addMsg(role,bubble.textContent);
-      });
+    fetch('{{ url_for("suporte_chat_historico") }}?session_id='+sessionId)
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(!data.historico||data.historico.length===0){saudacaoInicial();return}
+      data.historico.forEach(function(h){addMsg(h.role,h.content)});
     })
     .catch(function(){saudacaoInicial()});
   }
