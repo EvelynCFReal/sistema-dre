@@ -89,6 +89,16 @@
       {% endif %}
     </div>
   </div>
+  {% if s.estrelas %}
+  <div style="margin-bottom:6px">
+    {% for i in range(1,6) %}
+    <span style="font-size:18px;color:{% if i <= s.estrelas %}#f5b342{% else %}var(--border){% endif %}">★</span>
+    {% endfor %}
+    <span style="font-size:11px;color:var(--muted);margin-left:6px">
+      {% if s.tipo == 'avaliacao' %}Avaliação{% else %}Sugestão{% endif %}
+    </span>
+  </div>
+  {% endif %}
   <div class="sug-texto">{{ s.sugestao }}</div>
 </div>
 {% endfor %}
