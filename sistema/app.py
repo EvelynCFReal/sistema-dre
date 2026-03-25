@@ -1828,13 +1828,15 @@ def chamar_llm(mensagens):
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "Mozilla/5.0",
         },
     )
     try:
         with urlreq.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         return data.get("choices", [{}])[0].get("message", {}).get("content", "Desculpe, não consegui gerar uma resposta.")
-    except Exception:
+    except Exception as e:
+        app.logger.error(f"Erro Groq API: {e}")
         return "Desculpe, estou com dificuldade para processar sua mensagem. Tente novamente em alguns instantes."
 
 
