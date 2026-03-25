@@ -451,6 +451,30 @@ def migrar_db():
             UNIQUE(loja_id, ano, mes, chave)
         )""")
 
+    # ── Tabela chat_sugestoes (Sugestões do Chat de Suporte) ──
+    if "chat_sugestoes" not in tabelas:
+        c.execute("""
+        CREATE TABLE chat_sugestoes (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id   INTEGER REFERENCES usuarios(id),
+            nome_usuario TEXT DEFAULT '',
+            sugestao     TEXT NOT NULL,
+            lida         INTEGER DEFAULT 0,
+            criado_em    TIMESTAMP
+        )""")
+
+    # ── Tabela chat_historico (Histórico do Chat de Suporte) ──
+    if "chat_historico" not in tabelas:
+        c.execute("""
+        CREATE TABLE chat_historico (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            usuario_id INTEGER REFERENCES usuarios(id),
+            role       TEXT NOT NULL CHECK(role IN ('user','assistant')),
+            content    TEXT NOT NULL,
+            criado_em  TIMESTAMP
+        )""")
+
     conn.commit()
     conn.close()
 
