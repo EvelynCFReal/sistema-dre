@@ -1783,6 +1783,144 @@ def refresh_talentos(banco):
     return redirect(url_for("banco_talentos", banco=banco, area=area))
 
 
+# ══════════════════════════════════════════
+#  CHAT DE SUPORTE (Qwen via DashScope)
+# ══════════════════════════════════════════
+_chat_system_prompt = ""
+_prompt_path = os.path.join(os.path.dirname(__file__), "chat_system_prompt.txt")
+if os.path.exists(_prompt_path):
+    with open(_prompt_path, "r", encoding="utf-8") as _f:
+        _chat_system_prompt = _f.read()
+
+# Rate limiter simples: max 20 msgs/min por usuário
+_chat_rate = {}
+CHAT_RATE_LIMIT = 20
+CHAT_RATE_WINDOW = 60
+
+
+def _check_rate(uid):
+    now = time.time()
+    entries = _chat_rate.get(uid, [])
+    entries = [t for t in entries if now - t < CHAT_RATE_WINDOW]
+    if len(entries) >= CHAT_RATE_LIMIT:
+        return False
+    entries.append(now)
+    _chat_rate[uid] = entries
+    return True
+
+
+def chamar_qwen(mensagens):
+    """Chama a API DashScope (Qwen) para gerar resposta."""
+    api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+    if not api_key:
+        return "Desculpe, o serviço de chat não está configurado no momento. Por favor, entre em contato com o administrador."
+
+    payload = json.dumps({
+        "model": "qwen-plus",
+        "input": {
+            "messages": mensagens
+        },
+        "parameters": {
+            "max_tokens": 1024,
+            "temperature": 0.7,
+        }
+    }).encode("utf-8")
+
+    req = urlreq.Request(
+        "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+    )
+    try:
+        with urlreq.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return data.get("output", {}).get("text", "") or data.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", "Desculpe, não consegui gerar uma resposta.")
+    except Exception:
+        return "Desculpe, estou com dificuldade para processar sua mensagem. Tente novamente em alguns instantes."
+
+
+@app.route("/suporte-chat")
+@login_required
+def suporte_chat():
+    sid = request.args.get("session_id", "")
+    if not sid:
+        sid = secrets.token_hex(16)
+    historico = get_chat_historico(sid)
+    sugestoes_count = 0
+    if session.get("tipo") == "master":
+        sugestoes_count = len(get_sugestoes(lida=0))
+    return render_template(
+        "suporte_chat.html",
+        session_id=sid,
+        historico=historico,
+        sugestoes_count=sugestoes_count,
+    )
+
+
+@app.route("/suporte-chat/enviar", methods=["POST"])
+@login_required
+def suporte_chat_enviar():
+    uid = session["usuario_id"]
+    if not _check_rate(uid):
+        return jsonify({"resposta": "Você enviou muitas mensagens em pouco tempo. Aguarde um momento."}), 429
+
+    data = request.get_json(silent=True) or {}
+    msg = (data.get("mensagem") or "").strip()[:2000]
+    sid = (data.get("session_id") or "").strip()
+    if not msg or not sid:
+        return jsonify({"erro": "Mensagem ou sessão inválida."}), 400
+
+    # Salva mensagem do usuário
+    salvar_chat_mensagem(sid, uid, "user", msg)
+
+    # Monta histórico para o Qwen
+    historico = get_chat_historico(sid)
+    mensagens = [{"role": "system", "content": _chat_system_prompt}]
+    for h in historico:
+        mensagens.append({"role": h["role"], "content": h["content"]})
+
+    # Chama Qwen
+    resposta = chamar_qwen(mensagens)
+
+    # Salva resposta
+    salvar_chat_mensagem(sid, uid, "assistant", resposta)
+
+    return jsonify({"resposta": resposta})
+
+
+@app.route("/suporte-chat/sugestao", methods=["POST"])
+@login_required
+def suporte_chat_sugestao():
+    uid = session["usuario_id"]
+    nome = session.get("nome", "")
+    data = request.get_json(silent=True) or {}
+    sugestao = (data.get("sugestao") or "").strip()[:1000]
+    if not sugestao:
+        return jsonify({"erro": "Sugestão vazia."}), 400
+    salvar_sugestao(uid, nome, sugestao)
+    return jsonify({"ok": True})
+
+
+@app.route("/suporte-chat/sugestoes")
+@login_required
+@role_required("master")
+def suporte_chat_sugestoes():
+    sugestoes = get_sugestoes()
+    return render_template("suporte_sugestoes.html", sugestoes=sugestoes)
+
+
+@app.route("/suporte-chat/sugestoes/<int:sid>/lida", methods=["POST"])
+@login_required
+@role_required("master")
+def suporte_marcar_lida(sid):
+    marcar_sugestao_lida(sid)
+    flash("Sugestão marcada como lida.", "success")
+    return redirect(url_for("suporte_chat_sugestoes"))
+
+
 # ── Rota legada para manter compatibilidade ──
 @app.route("/configuracoes")
 @login_required
