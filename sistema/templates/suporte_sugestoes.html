@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Sugestões · Sistema de DRE{% endblock %}
+{% block page_title %}Sugestões de Melhoria{% endblock %}
+
+{% block extra_head %}
+<style>
+.sug-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px;margin-bottom:10px;transition:all .2s
+}
+.sug-card:hover{border-color:rgba(200,169,110,.3)}
+.sug-card.lida{opacity:.5}
+.sug-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px}
+.sug-user{display:flex;align-items:center;gap:8px}
+.sug-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#8b6914);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;flex-shrink:0
+}
+.sug-nome{font-weight:600;font-size:13px}
+.sug-data{font-size:10px;color:var(--muted)}
+.sug-texto{font-size:13px;line-height:1.5;color:var(--text);margin-bottom:10px}
+.sug-actions{display:flex;gap:8px}
+.badge-lida{font-size:9px;padding:3px 8px;border-radius:5px;font-weight:700;background:rgba(62,207,142,.12);color:var(--green)}
+.badge-pendente{font-size:9px;padding:3px 8px;border-radius:5px;font-weight:700;background:rgba(200,169,110,.12);color:var(--gold)}
+.stats-bar{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.stat-item{
+  padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;
+  background:var(--card);border:1px solid var(--border);display:flex;align-items:center;gap:6px
+}
+.stat-item .num{font-size:18px;font-family:'Playfair Display',serif;color:var(--gold)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+  <a href="{{ url_for('suporte_chat') }}" class="btn-outline-gold" style="font-size:11px;padding:7px 14px">
+    <i class="bi bi-arrow-left"></i> Voltar ao Chat
+  </a>
+</div>
+
+{% set pendentes = sugestoes|selectattr('lida', 'equalto', 0)|list %}
+{% set lidas = sugestoes|selectattr('lida', 'equalto', 1)|list %}
+
+<div class="stats-bar">
+  <div class="stat-item">
+    <span class="num">{{ sugestoes|length }}</span>
+    <span>total</span>
+  </div>
+  <div class="stat-item">
+    <span class="num" style="color:var(--gold)">{{ pendentes|length }}</span>
+    <span>pendentes</span>
+  </div>
+  <div class="stat-item">
+    <span class="num" style="color:var(--green)">{{ lidas|length }}</span>
+    <span>lidas</span>
+  </div>
+</div>
+
+{% if not sugestoes %}
+<div style="text-align:center;padding:60px 20px;color:var(--muted)">
+  <i class="bi bi-lightbulb" style="font-size:48px;display:block;opacity:.4;margin-bottom:14px"></i>
+  <h5 style="color:var(--text);font-family:'Playfair Display',serif">Nenhuma sugestão ainda</h5>
+  <p style="font-size:14px;margin-top:8px">As sugestões dos usuários aparecerão aqui.</p>
+</div>
+{% else %}
+
+{% for s in sugestoes %}
+<div class="sug-card {% if s.lida %}lida{% endif %}">
+  <div class="sug-header">
+    <div class="sug-user">
+      <div class="sug-avatar">{{ (s.nome_usuario or s.usuario_nome or '?')[0].upper() }}</div>
+      <div>
+        <div class="sug-nome">{{ s.nome_usuario or s.usuario_nome or 'Usuário' }}</div>
+        <div class="sug-data">{{ s.criado_em[:16] if s.criado_em else '' }}</div>
+      </div>
+    </div>
+    <div class="sug-actions">
+      {% if s.lida %}
+        <span class="badge-lida"><i class="bi bi-check2"></i> Lida</span>
+      {% else %}
+        <span class="badge-pendente"><i class="bi bi-clock"></i> Pendente</span>
+        <form method="post" action="{{ url_for('suporte_marcar_lida', sid=s.id) }}" style="display:inline">
+          <button type="submit" class="btn-outline-gold" style="font-size:10px;padding:4px 10px">
+            <i class="bi bi-check-lg"></i> Marcar como lida
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+  <div class="sug-texto">{{ s.sugestao }}</div>
+</div>
+{% endfor %}
+
+{% endif %}
+{% endblock %}
