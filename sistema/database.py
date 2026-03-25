@@ -1017,3 +1017,62 @@ def get_acesso_talentos(usuario_id, tipo_usuario):
         "monopizza": bool(r["acesso_talentos_monopizza"]),
         "grupomono": bool(r["acesso_talentos_grupomono"]),
     }
+
+
+# ──────────────────────────────────────────
+#  CHAT DE SUPORTE
+# ──────────────────────────────────────────
+def salvar_chat_mensagem(session_id, usuario_id, role, content):
+    from datetime import datetime, timezone, timedelta
+    agora = datetime.now(timezone(timedelta(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO chat_historico(session_id, usuario_id, role, content, criado_em) VALUES(?,?,?,?,?)",
+        (session_id, usuario_id, role, content, agora),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_chat_historico(session_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT role, content FROM chat_historico WHERE session_id=? ORDER BY id",
+        (session_id,),
+    ).fetchall()
+    conn.close()
+    return [{"role": r["role"], "content": r["content"]} for r in rows]
+
+
+def salvar_sugestao(usuario_id, nome_usuario, sugestao):
+    from datetime import datetime, timezone, timedelta
+    agora = datetime.now(timezone(timedelta(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO chat_sugestoes(usuario_id, nome_usuario, sugestao, criado_em) VALUES(?,?,?,?)",
+        (usuario_id, nome_usuario, sugestao, agora),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_sugestoes(lida=None):
+    conn = get_db()
+    if lida is not None:
+        rows = conn.execute(
+            "SELECT s.*, u.nome AS usuario_nome FROM chat_sugestoes s LEFT JOIN usuarios u ON u.id=s.usuario_id WHERE s.lida=? ORDER BY s.id DESC",
+            (lida,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT s.*, u.nome AS usuario_nome FROM chat_sugestoes s LEFT JOIN usuarios u ON u.id=s.usuario_id ORDER BY s.id DESC"
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def marcar_sugestao_lida(sugestao_id):
+    conn = get_db()
+    conn.execute("UPDATE chat_sugestoes SET lida=1 WHERE id=?", (sugestao_id,))
+    conn.commit()
+    conn.close()
