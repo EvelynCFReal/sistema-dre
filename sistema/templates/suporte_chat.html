@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Suporte · Sistema de DRE{% endblock %}
+{% block page_title %}Chat de Suporte{% endblock %}
+
+{% block extra_head %}
+<style>
+.chat-container{
+  display:flex;flex-direction:column;
+  height:calc(100vh - 120px);max-height:700px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden
+}
+.chat-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0
+}
+.chat-header-info{display:flex;align-items:center;gap:10px}
+.chat-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#8b6914);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:#fff;flex-shrink:0
+}
+.chat-header-text h6{margin:0;font-size:14px;font-weight:600}
+.chat-header-text small{color:var(--muted);font-size:11px}
+.chat-status{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--green)}
+.chat-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green)}
+
+.chat-messages{
+  flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;
+  scrollbar-width:thin;scrollbar-color:rgba(200,169,110,.3) transparent
+}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(200,169,110,.3);border-radius:2px}
+
+.msg{max-width:80%;display:flex;flex-direction:column;gap:2px}
+.msg-user{align-self:flex-end}
+.msg-assistant{align-self:flex-start}
+.msg-bubble{
+  padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;
+  word-wrap:break-word;white-space:pre-wrap
+}
+.msg-user .msg-bubble{
+  background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.2);
+  color:var(--text);border-bottom-right-radius:4px
+}
+.msg-assistant .msg-bubble{
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--text);border-bottom-left-radius:4px
+}
+.msg-time{font-size:9px;color:var(--muted);padding:0 4px}
+.msg-user .msg-time{text-align:right}
+
+.typing-indicator{align-self:flex-start;display:none;gap:4px;padding:10px 14px;background:var(--card2);border:1px solid var(--border);border-radius:12px;border-bottom-left-radius:4px}
+.typing-indicator.show{display:flex}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:typingBounce .6s infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+
+.chat-input-area{
+  padding:12px 16px;border-top:1px solid var(--border);
+  display:flex;gap:8px;align-items:flex-end;flex-shrink:0
+}
+.chat-input-area textarea{
+  flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:10px;padding:10px 14px;font-size:13px;resize:none;
+  font-family:'DM Sans',sans-serif;min-height:42px;max-height:120px;
+  line-height:1.4
+}
+.chat-input-area textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+.chat-input-area textarea::placeholder{color:var(--muted)}
+.btn-send{
+  width:42px;height:42px;border-radius:10px;border:none;
+  background:var(--gold);color:#0d0f14;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all .2s;flex-shrink:0
+}
+.btn-send:hover{background:var(--gold2)}
+.btn-send:disabled{opacity:.4;cursor:not-allowed}
+
+/* Sugestão modal */
+.sugestao-bar{
+  padding:10px 16px;border-top:1px solid var(--border);background:rgba(200,169,110,.05);
+  display:none;gap:8px;align-items:center;flex-shrink:0
+}
+.sugestao-bar.show{display:flex}
+.sugestao-bar input{
+  flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:8px 12px;font-size:12px
+}
+.sugestao-bar input:focus{border-color:var(--gold);outline:none}
+.sugestao-bar button{
+  padding:8px 16px;border-radius:8px;border:none;
+  background:var(--gold);color:#0d0f14;font-size:11px;font-weight:700;
+  cursor:pointer;white-space:nowrap
+}
+
+/* Badge sugestões */
+.badge-sugestoes{
+  background:var(--red);color:#fff;font-size:9px;padding:2px 6px;
+  border-radius:10px;font-weight:700;margin-left:6px
+}
+
+@media(max-width:768px){
+  .chat-container{height:calc(100vh - 100px);max-height:none;border-radius:0;border:none}
+  .msg{max-width:90%}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <div class="chat-avatar"><i class="bi bi-headset"></i></div>
+      <div class="chat-header-text">
+        <h6>Assistente de Suporte</h6>
+        <small><span class="chat-status">Online</span></small>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      {% if sugestoes_count and sugestoes_count > 0 %}
+      <a href="{{ url_for('suporte_chat_sugestoes') }}" class="btn-outline-gold" style="font-size:10px;padding:5px 10px">
+        <i class="bi bi-lightbulb"></i> Sugestões <span class="badge-sugestoes">{{ sugestoes_count }}</span>
+      </a>
+      {% endif %}
+      <a href="{{ url_for('suporte_chat') }}" class="btn-outline-gold" style="font-size:10px;padding:5px 10px" title="Nova conversa">
+        <i class="bi bi-plus-lg"></i> Nova conversa
+      </a>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="chat-messages" id="chatMessages">
+    {% for h in historico %}
+    <div class="msg msg-{{ h.role }}">
+      <div class="msg-bubble">{{ h.content }}</div>
+    </div>
+    {% endfor %}
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  </div>
+
+  <!-- Sugestão bar -->
+  <div class="sugestao-bar" id="sugestaoBar">
+    <i class="bi bi-lightbulb" style="color:var(--gold);font-size:14px"></i>
+    <input type="text" id="sugestaoInput" placeholder="Escreva sua sugestão de melhoria..." maxlength="1000">
+    <button onclick="enviarSugestao()"><i class="bi bi-send"></i> Enviar</button>
+    <button onclick="document.getElementById('sugestaoBar').classList.remove('show')" style="background:transparent;color:var(--muted);padding:8px">✕</button>
+  </div>
+
+  <!-- Input -->
+  <div class="chat-input-area">
+    <textarea id="chatInput" placeholder="Digite sua dúvida sobre o sistema..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarMensagem()}"
+      oninput="autoResize(this)"></textarea>
+    <button class="btn-send" id="btnSend" onclick="enviarMensagem()" title="Enviar">
+      <i class="bi bi-send"></i>
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var SESSION_ID = '{{ session_id }}';
+var chatMessages = document.getElementById('chatMessages');
+var chatInput = document.getElementById('chatInput');
+var btnSend = document.getElementById('btnSend');
+var typing = document.getElementById('typingIndicator');
+var enviando = false;
+
+function scrollToBottom(){
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function autoResize(el){
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function addMessage(role, text){
+  var div = document.createElement('div');
+  div.className = 'msg msg-' + role;
+  var bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+  div.appendChild(bubble);
+  chatMessages.insertBefore(div, typing);
+  scrollToBottom();
+
+  // Detectar se o assistente está pedindo sugestão
+  if(role === 'assistant'){
+    var lower = text.toLowerCase();
+    if(lower.indexOf('sugest') !== -1 && lower.indexOf('melhoria') !== -1){
+      document.getElementById('sugestaoBar').classList.add('show');
+    }
+  }
+}
+
+function enviarMensagem(){
+  if(enviando) return;
+  var msg = chatInput.value.trim();
+  if(!msg) return;
+
+  chatInput.value = '';
+  chatInput.style.height = 'auto';
+  addMessage('user', msg);
+
+  enviando = true;
+  btnSend.disabled = true;
+  typing.classList.add('show');
+  scrollToBottom();
+
+  fetch('{{ url_for("suporte_chat_enviar") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({mensagem: msg, session_id: SESSION_ID})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    typing.classList.remove('show');
+    addMessage('assistant', data.resposta || data.erro || 'Erro ao processar.');
+    enviando = false;
+    btnSend.disabled = false;
+    chatInput.focus();
+  })
+  .catch(function(){
+    typing.classList.remove('show');
+    addMessage('assistant', 'Erro de conexão. Tente novamente.');
+    enviando = false;
+    btnSend.disabled = false;
+  });
+}
+
+function enviarSugestao(){
+  var input = document.getElementById('sugestaoInput');
+  var sug = input.value.trim();
+  if(!sug) return;
+
+  fetch('{{ url_for("suporte_chat_sugestao") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({sugestao: sug})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.ok){
+      input.value = '';
+      document.getElementById('sugestaoBar').classList.remove('show');
+      addMessage('assistant', 'Obrigado pela sua sugestão! Ela foi encaminhada para avaliação da equipe. 😊');
+    }
+  });
+}
+
+// Scroll inicial + mensagem de boas-vindas se conversa vazia
+scrollToBottom();
+{% if not historico %}
+setTimeout(function(){
+  typing.classList.add('show');
+  scrollToBottom();
+  setTimeout(function(){
+    typing.classList.remove('show');
+    addMessage('assistant', 'Olá! 👋 Bem-vindo(a) ao suporte do Sistema de DRE!\n\nCom quem tenho o prazer de falar?');
+    // Salvar saudação no histórico
+    fetch('{{ url_for("suporte_chat_enviar") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mensagem: '__SAUDACAO_INICIAL__', session_id: SESSION_ID})
+    });
+  }, 1200);
+}, 500);
+{% endif %}
+
+chatInput.focus();
+</script>
+{% endblock %}
