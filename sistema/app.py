@@ -1856,6 +1856,16 @@ def suporte_chat():
     )
 
 
+@app.route("/suporte-chat/historico")
+@login_required
+def suporte_chat_historico():
+    sid = request.args.get("session_id", "")
+    if not sid:
+        return jsonify({"historico": []})
+    historico = get_chat_historico(sid)
+    return jsonify({"historico": historico})
+
+
 @app.route("/suporte-chat/enviar", methods=["POST"])
 @login_required
 def suporte_chat_enviar():
