@@ -438,5 +438,300 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
 });
 </script>
 {% block scripts %}{% endblock %}
+
+<!-- ══ CHAT FLUTUANTE ══ -->
+<style>
+#chatFab{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  width:56px;height:56px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,var(--gold),#8b6914);
+  color:#fff;font-size:22px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);transition:all .3s
+}
+#chatFab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,0,0,.5)}
+#chatFab .badge-notif{
+  position:absolute;top:-2px;right:-2px;width:18px;height:18px;
+  border-radius:50%;background:var(--red);font-size:9px;font-weight:700;
+  display:none;align-items:center;justify-content:center
+}
+#chatWidget{
+  position:fixed;bottom:90px;right:24px;z-index:9998;
+  width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 120px);
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  display:none;flex-direction:column;overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,.5)
+}
+#chatWidget.open{display:flex}
+#chatWidget .cw-header{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(200,169,110,.08),transparent)
+}
+#chatWidget .cw-header-info{display:flex;align-items:center;gap:10px}
+#chatWidget .cw-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),#8b6914);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;flex-shrink:0
+}
+#chatWidget .cw-title{font-size:13px;font-weight:600}
+#chatWidget .cw-status{font-size:9px;color:var(--green);display:flex;align-items:center;gap:3px}
+#chatWidget .cw-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green)}
+#chatWidget .cw-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;transition:color .2s}
+#chatWidget .cw-close:hover{color:var(--text)}
+#chatWidget .cw-msgs{
+  flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;
+  scrollbar-width:thin;scrollbar-color:rgba(200,169,110,.3) transparent
+}
+#chatWidget .cw-msgs::-webkit-scrollbar{width:3px}
+#chatWidget .cw-msgs::-webkit-scrollbar-thumb{background:rgba(200,169,110,.3);border-radius:2px}
+#chatWidget .cw-msg{max-width:85%;display:flex;flex-direction:column;gap:1px}
+#chatWidget .cw-msg-user{align-self:flex-end}
+#chatWidget .cw-msg-assistant{align-self:flex-start}
+#chatWidget .cw-bubble{
+  padding:9px 13px;border-radius:12px;font-size:12.5px;line-height:1.5;
+  word-wrap:break-word;white-space:pre-wrap
+}
+#chatWidget .cw-msg-user .cw-bubble{
+  background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.2);
+  color:var(--text);border-bottom-right-radius:4px
+}
+#chatWidget .cw-msg-assistant .cw-bubble{
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--text);border-bottom-left-radius:4px
+}
+#chatWidget .cw-typing{align-self:flex-start;display:none;gap:4px;padding:9px 13px;background:var(--card2);border:1px solid var(--border);border-radius:12px;border-bottom-left-radius:4px}
+#chatWidget .cw-typing.show{display:flex}
+#chatWidget .cw-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:cwBounce .6s infinite}
+#chatWidget .cw-dot:nth-child(2){animation-delay:.15s}
+#chatWidget .cw-dot:nth-child(3){animation-delay:.3s}
+@keyframes cwBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-3px)}}
+#chatWidget .cw-input-area{
+  padding:10px 12px;border-top:1px solid var(--border);
+  display:flex;gap:6px;align-items:flex-end;flex-shrink:0
+}
+#chatWidget .cw-input-area textarea{
+  flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:10px;padding:8px 12px;font-size:12px;resize:none;
+  font-family:'DM Sans',sans-serif;min-height:38px;max-height:100px;line-height:1.4
+}
+#chatWidget .cw-input-area textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+#chatWidget .cw-input-area textarea::placeholder{color:var(--muted)}
+#chatWidget .cw-send{
+  width:38px;height:38px;border-radius:10px;border:none;
+  background:var(--gold);color:#0d0f14;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .2s;flex-shrink:0
+}
+#chatWidget .cw-send:hover{background:var(--gold2)}
+#chatWidget .cw-send:disabled{opacity:.4;cursor:not-allowed}
+/* Sugestão inline */
+#chatWidget .cw-sug{
+  padding:8px 12px;border-top:1px solid var(--border);background:rgba(200,169,110,.05);
+  display:none;gap:6px;align-items:center;flex-shrink:0
+}
+#chatWidget .cw-sug.show{display:flex}
+#chatWidget .cw-sug input{
+  flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:6px 10px;font-size:11px
+}
+#chatWidget .cw-sug input:focus{border-color:var(--gold);outline:none}
+#chatWidget .cw-sug button{
+  padding:6px 12px;border-radius:6px;border:none;
+  background:var(--gold);color:#0d0f14;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap
+}
+{% if user_tipo == 'master' %}
+#chatWidget .cw-sug-link{
+  padding:6px 12px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+#chatWidget .cw-sug-link a{font-size:10px;color:var(--gold);text-decoration:none}
+#chatWidget .cw-sug-link a:hover{text-decoration:underline}
+{% endif %}
+@media(max-width:480px){
+  #chatWidget{bottom:0;right:0;width:100%;max-width:100%;height:100vh;max-height:100vh;border-radius:0}
+  #chatFab{bottom:16px;right:16px;width:50px;height:50px;font-size:20px}
+}
+</style>
+
+<button id="chatFab" onclick="toggleChat()" title="Suporte">
+  <i class="bi bi-headset" id="chatFabIcon"></i>
+  <span class="badge-notif" id="chatBadge"></span>
+</button>
+
+<div id="chatWidget">
+  <div class="cw-header">
+    <div class="cw-header-info">
+      <div class="cw-avatar"><i class="bi bi-headset"></i></div>
+      <div>
+        <div class="cw-title">Assistente de Suporte</div>
+        <div class="cw-status">Online</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="cw-close" onclick="novaSessaoChat()" title="Nova conversa"><i class="bi bi-plus-lg"></i></button>
+      <button class="cw-close" onclick="toggleChat()" title="Fechar"><i class="bi bi-x-lg"></i></button>
+    </div>
+  </div>
+  <div class="cw-msgs" id="cwMsgs">
+    <div class="cw-typing" id="cwTyping">
+      <div class="cw-dot"></div><div class="cw-dot"></div><div class="cw-dot"></div>
+    </div>
+  </div>
+  <div class="cw-sug" id="cwSug">
+    <i class="bi bi-lightbulb" style="color:var(--gold);font-size:12px"></i>
+    <input type="text" id="cwSugInput" placeholder="Sua sugestão de melhoria..." maxlength="1000">
+    <button onclick="cwEnviarSugestao()"><i class="bi bi-send"></i></button>
+    <button onclick="document.getElementById('cwSug').classList.remove('show')" style="background:transparent;color:var(--muted);padding:6px;border:none;cursor:pointer">✕</button>
+  </div>
+  {% if user_tipo == 'master' %}
+  <div class="cw-sug-link">
+    <a href="{{ url_for('suporte_chat_sugestoes') }}"><i class="bi bi-lightbulb"></i> Ver sugestões dos usuários</a>
+  </div>
+  {% endif %}
+  <div class="cw-input-area">
+    <textarea id="cwInput" placeholder="Digite sua dúvida..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();cwEnviar()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button class="cw-send" id="cwSendBtn" onclick="cwEnviar()" title="Enviar">
+      <i class="bi bi-send"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var widget=document.getElementById('chatWidget');
+  var msgs=document.getElementById('cwMsgs');
+  var input=document.getElementById('cwInput');
+  var sendBtn=document.getElementById('cwSendBtn');
+  var typing=document.getElementById('cwTyping');
+  var fab=document.getElementById('chatFab');
+  var fabIcon=document.getElementById('chatFabIcon');
+  var enviando=false;
+  var sessionId=localStorage.getItem('chatSessionId')||'';
+  if(!sessionId){sessionId=Math.random().toString(36).substr(2)+Date.now().toString(36);localStorage.setItem('chatSessionId',sessionId)}
+  var aberto=false;
+  var inicializado=false;
+
+  window.toggleChat=function(){
+    aberto=!aberto;
+    widget.classList.toggle('open',aberto);
+    fabIcon.className=aberto?'bi bi-x-lg':'bi bi-headset';
+    if(aberto&&!inicializado){
+      inicializado=true;
+      carregarHistorico();
+    }
+    if(aberto){input.focus();scrollBottom()}
+  };
+
+  window.novaSessaoChat=function(){
+    sessionId=Math.random().toString(36).substr(2)+Date.now().toString(36);
+    localStorage.setItem('chatSessionId',sessionId);
+    msgs.querySelectorAll('.cw-msg').forEach(function(e){e.remove()});
+    inicializado=false;
+    inicializado=true;
+    saudacaoInicial();
+  };
+
+  function scrollBottom(){msgs.scrollTop=msgs.scrollHeight}
+
+  function addMsg(role,text){
+    var div=document.createElement('div');
+    div.className='cw-msg cw-msg-'+role;
+    var bubble=document.createElement('div');
+    bubble.className='cw-bubble';
+    bubble.textContent=text;
+    div.appendChild(bubble);
+    msgs.insertBefore(div,typing);
+    scrollBottom();
+    if(role==='assistant'){
+      var lower=text.toLowerCase();
+      if(lower.indexOf('sugest')!==-1&&lower.indexOf('melhoria')!==-1){
+        document.getElementById('cwSug').classList.add('show');
+      }
+    }
+  }
+
+  function carregarHistorico(){
+    fetch('{{ url_for("suporte_chat") }}?session_id='+sessionId,{headers:{'Accept':'application/json'}})
+    .then(function(r){return r.text()})
+    .then(function(html){
+      /* Histórico vem da rota principal - se vazio, faz saudação */
+      var parser=new DOMParser();
+      var doc=parser.parseFromString(html,'text/html');
+      var historicoDiv=doc.getElementById('chatMessages');
+      if(!historicoDiv){saudacaoInicial();return}
+      var items=historicoDiv.querySelectorAll('.msg');
+      if(items.length===0){saudacaoInicial();return}
+      items.forEach(function(el){
+        var role=el.classList.contains('msg-user')?'user':'assistant';
+        var bubble=el.querySelector('.msg-bubble');
+        if(bubble)addMsg(role,bubble.textContent);
+      });
+    })
+    .catch(function(){saudacaoInicial()});
+  }
+
+  function saudacaoInicial(){
+    typing.classList.add('show');scrollBottom();
+    setTimeout(function(){
+      typing.classList.remove('show');
+      var saud='Olá! 👋 Bem-vindo(a) ao suporte do Sistema de DRE!\n\nCom quem tenho o prazer de falar?';
+      addMsg('assistant',saud);
+      fetch('{{ url_for("suporte_chat_enviar") }}',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({mensagem:'__SAUDACAO_INICIAL__',session_id:sessionId})
+      });
+    },1000);
+  }
+
+  window.cwEnviar=function(){
+    if(enviando)return;
+    var msg=input.value.trim();
+    if(!msg)return;
+    input.value='';input.style.height='auto';
+    addMsg('user',msg);
+    enviando=true;sendBtn.disabled=true;
+    typing.classList.add('show');scrollBottom();
+
+    fetch('{{ url_for("suporte_chat_enviar") }}',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mensagem:msg,session_id:sessionId})
+    })
+    .then(function(r){return r.json()})
+    .then(function(data){
+      typing.classList.remove('show');
+      addMsg('assistant',data.resposta||data.erro||'Erro ao processar.');
+      enviando=false;sendBtn.disabled=false;input.focus();
+    })
+    .catch(function(){
+      typing.classList.remove('show');
+      addMsg('assistant','Erro de conexão. Tente novamente.');
+      enviando=false;sendBtn.disabled=false;
+    });
+  };
+
+  window.cwEnviarSugestao=function(){
+    var inp=document.getElementById('cwSugInput');
+    var sug=inp.value.trim();
+    if(!sug)return;
+    fetch('{{ url_for("suporte_chat_sugestao") }}',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sugestao:sug})
+    })
+    .then(function(r){return r.json()})
+    .then(function(data){
+      if(data.ok){
+        inp.value='';
+        document.getElementById('cwSug').classList.remove('show');
+        addMsg('assistant','Obrigado pela sua sugestão! Ela foi encaminhada para avaliação. 😊');
+      }
+    });
+  };
+})();
+</script>
+
 </body>
 </html>
