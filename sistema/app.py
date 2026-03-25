@@ -1809,25 +1809,21 @@ def _check_rate(uid):
     return True
 
 
-def chamar_qwen(mensagens):
-    """Chama a API DashScope (Qwen) para gerar resposta."""
-    api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+def chamar_llm(mensagens):
+    """Chama a API Groq (LLM) para gerar resposta."""
+    api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
         return "Desculpe, o serviço de chat não está configurado no momento. Por favor, entre em contato com o administrador."
 
     payload = json.dumps({
-        "model": "qwen-plus",
-        "input": {
-            "messages": mensagens
-        },
-        "parameters": {
-            "max_tokens": 1024,
-            "temperature": 0.7,
-        }
+        "model": "llama-3.3-70b-versatile",
+        "messages": mensagens,
+        "max_tokens": 1024,
+        "temperature": 0.7,
     }).encode("utf-8")
 
     req = urlreq.Request(
-        "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
+        "https://api.groq.com/openai/v1/chat/completions",
         data=payload,
         headers={
             "Content-Type": "application/json",
@@ -1837,7 +1833,7 @@ def chamar_qwen(mensagens):
     try:
         with urlreq.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        return data.get("output", {}).get("text", "") or data.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", "Desculpe, não consegui gerar uma resposta.")
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "Desculpe, não consegui gerar uma resposta.")
     except Exception:
         return "Desculpe, estou com dificuldade para processar sua mensagem. Tente novamente em alguns instantes."
 
