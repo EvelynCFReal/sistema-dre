@@ -463,6 +463,13 @@ def migrar_db():
             criado_em    TIMESTAMP
         )""")
 
+    # Adiciona colunas de avaliação nas sugestões
+    cols_sug = [r[1] for r in c.execute("PRAGMA table_info(chat_sugestoes)").fetchall()]
+    if "estrelas" not in cols_sug:
+        c.execute("ALTER TABLE chat_sugestoes ADD COLUMN estrelas INTEGER DEFAULT 0")
+    if "tipo" not in cols_sug:
+        c.execute("ALTER TABLE chat_sugestoes ADD COLUMN tipo TEXT DEFAULT 'sugestao'")
+
     # ── Tabela chat_historico (Histórico do Chat de Suporte) ──
     if "chat_historico" not in tabelas:
         c.execute("""
