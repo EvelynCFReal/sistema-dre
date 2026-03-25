@@ -1873,6 +1873,12 @@ def suporte_chat_enviar():
     if not msg or not sid:
         return jsonify({"erro": "Mensagem ou sessão inválida."}), 400
 
+    # Saudação inicial — salva localmente sem chamar Qwen
+    if msg == "__SAUDACAO_INICIAL__":
+        saudacao = "Olá! 👋 Bem-vindo(a) ao suporte do Sistema de DRE!\n\nCom quem tenho o prazer de falar?"
+        salvar_chat_mensagem(sid, uid, "assistant", saudacao)
+        return jsonify({"resposta": ""})
+
     # Salva mensagem do usuário
     salvar_chat_mensagem(sid, uid, "user", msg)
 
