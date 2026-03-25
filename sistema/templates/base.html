@@ -764,24 +764,57 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
   /* ── Avaliação por estrelas após inatividade ── */
   var inactivityTimer=null;
   var ratingShown=false;
+  var chatEncerrado=false;
   var selectedStars=0;
   var msgCount=0;
 
   function resetInactivity(){
     if(inactivityTimer)clearTimeout(inactivityTimer);
-    if(ratingShown)return;
+    if(ratingShown||chatEncerrado)return;
     inactivityTimer=setTimeout(function(){
       if(msgCount>=2&&!ratingShown){
         ratingShown=true;
+        chatEncerrado=true;
+        /* Desabilita input durante avaliação */
+        input.disabled=true;
+        sendBtn.disabled=true;
+        input.placeholder='Chat encerrado. Avalie o atendimento acima.';
         addMsg('assistant','Espero ter ajudado! 😊 Por favor, avalie o atendimento:');
         document.getElementById('cwRating').classList.add('show');
       }
     },300000);
   }
 
+  function resetarChatCompleto(){
+    /* Reseta tudo e inicia nova conversa com saudação */
+    ratingShown=false;
+    chatEncerrado=false;
+    selectedStars=0;
+    msgCount=0;
+    document.getElementById('cwRating').classList.remove('show');
+    document.getElementById('cwRatingThanks').classList.remove('show');
+    document.getElementById('cwRatingFeedback').classList.remove('show');
+    document.querySelector('.cw-rating-title').style.display='';
+    document.getElementById('cwStars').style.display='';
+    document.querySelectorAll('#cwStars .cw-star').forEach(function(s){s.classList.remove('active')});
+    if(document.getElementById('cwRatingText'))document.getElementById('cwRatingText').value='';
+    if(inactivityTimer)clearTimeout(inactivityTimer);
+    /* Reabilita input */
+    input.disabled=false;
+    sendBtn.disabled=false;
+    input.placeholder='Digite sua dúvida...';
+    /* Nova sessão */
+    sessionId=Math.random().toString(36).substr(2)+Date.now().toString(36);
+    localStorage.setItem('chatSessionId',sessionId);
+    msgs.querySelectorAll('.cw-msg').forEach(function(e){e.remove()});
+    inicializado=true;
+    saudacaoInicial();
+  }
+
   /* Interceptar mensagens para contar e resetar timer */
   var _origCwEnviar=window.cwEnviar;
   window.cwEnviar=function(){
+    if(chatEncerrado)return;
     msgCount++;
     resetInactivity();
     _origCwEnviar();
@@ -793,15 +826,18 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
       s.classList.toggle('active',parseInt(s.getAttribute('data-val'))<=n);
     });
     if(n<5){
+      /* Menos de 5: mostra campo de sugestão */
       document.getElementById('cwRatingFeedback').classList.add('show');
     } else {
+      /* 5 estrelas: envia direto e encerra */
       document.getElementById('cwRatingFeedback').classList.remove('show');
       cwEnviarAvaliacao();
     }
   };
 
   window.cwEnviarAvaliacao=function(){
-    var feedback=document.getElementById('cwRatingText')?document.getElementById('cwRatingText').value.trim():'';
+    var feedbackEl=document.getElementById('cwRatingText');
+    var feedback=feedbackEl?feedbackEl.value.trim():'';
     fetch('{{ url_for("suporte_chat_avaliar") }}',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({estrelas:selectedStars,feedback:feedback})
@@ -813,32 +849,22 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
         document.getElementById('cwRatingFeedback').classList.remove('show');
         document.querySelector('.cw-rating-title').style.display='none';
         document.getElementById('cwRatingThanks').classList.add('show');
-        setTimeout(function(){
-          document.getElementById('cwRating').classList.remove('show');
-        },3000);
-        if(selectedStars<5&&feedback){
+        if(selectedStars<5){
           addMsg('assistant','Obrigado pelo feedback! Sua sugestão foi encaminhada para avaliação. 🙏');
         } else {
           addMsg('assistant','Obrigado pela sua avaliação! 🌟');
         }
+        /* Após 3 segundos, reseta e inicia novo chat */
+        setTimeout(function(){
+          resetarChatCompleto();
+        },4000);
       }
     });
   };
 
-  /* Nova sessão reseta avaliação */
-  var _origNovaSessao=window.novaSessaoChat;
+  /* Botão + também reseta completamente */
   window.novaSessaoChat=function(){
-    ratingShown=false;
-    selectedStars=0;
-    msgCount=0;
-    document.getElementById('cwRating').classList.remove('show');
-    document.getElementById('cwRatingThanks').classList.remove('show');
-    document.getElementById('cwRatingFeedback').classList.remove('show');
-    document.querySelector('.cw-rating-title').style.display='';
-    document.getElementById('cwStars').style.display='';
-    document.querySelectorAll('#cwStars .cw-star').forEach(function(s){s.classList.remove('active')});
-    if(inactivityTimer)clearTimeout(inactivityTimer);
-    _origNovaSessao();
+    resetarChatCompleto();
   };
 })();
 </script>
