@@ -610,6 +610,21 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
     <button onclick="cwEnviarSugestao()"><i class="bi bi-send"></i></button>
     <button onclick="document.getElementById('cwSug').classList.remove('show')" style="background:transparent;color:var(--muted);padding:6px;border:none;cursor:pointer">✕</button>
   </div>
+  <div class="cw-rating" id="cwRating">
+    <div class="cw-rating-title">Como foi o atendimento?</div>
+    <div class="cw-stars" id="cwStars">
+      <span class="cw-star" data-val="1" onclick="cwSelecionarEstrela(1)">★</span>
+      <span class="cw-star" data-val="2" onclick="cwSelecionarEstrela(2)">★</span>
+      <span class="cw-star" data-val="3" onclick="cwSelecionarEstrela(3)">★</span>
+      <span class="cw-star" data-val="4" onclick="cwSelecionarEstrela(4)">★</span>
+      <span class="cw-star" data-val="5" onclick="cwSelecionarEstrela(5)">★</span>
+    </div>
+    <div class="cw-rating-feedback" id="cwRatingFeedback">
+      <textarea id="cwRatingText" placeholder="Como podemos melhorar?" rows="2"></textarea>
+      <button onclick="cwEnviarAvaliacao()">Enviar avaliação</button>
+    </div>
+    <div class="cw-rating-thanks" id="cwRatingThanks">Obrigado pela sua avaliação! ⭐</div>
+  </div>
   {% if user_tipo == 'master' %}
   <div class="cw-sug-link">
     <a href="{{ url_for('suporte_chat_sugestoes') }}"><i class="bi bi-lightbulb"></i> Ver sugestões dos usuários</a>
