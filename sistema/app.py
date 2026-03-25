@@ -1885,7 +1885,7 @@ def suporte_chat_enviar():
         mensagens.append({"role": h["role"], "content": h["content"]})
 
     # Chama Qwen
-    resposta = chamar_qwen(mensagens)
+    resposta = chamar_llm(mensagens)
 
     # Salva resposta
     salvar_chat_mensagem(sid, uid, "assistant", resposta)
