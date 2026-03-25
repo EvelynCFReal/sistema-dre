@@ -542,6 +542,30 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
   padding:6px 12px;border-radius:6px;border:none;
   background:var(--gold);color:#0d0f14;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap
 }
+/* Avaliação por estrelas */
+.cw-rating{display:none;flex-direction:column;align-items:center;gap:10px;padding:16px;border-top:1px solid var(--border);background:rgba(200,169,110,.05);flex-shrink:0}
+.cw-rating.show{display:flex}
+.cw-rating-title{font-size:12px;color:var(--text);font-weight:600;text-align:center}
+.cw-stars{display:flex;gap:6px}
+.cw-star{font-size:28px;cursor:pointer;color:var(--border);transition:all .2s}
+.cw-star:hover,.cw-star.active{color:#f5b342;transform:scale(1.15)}
+.cw-star:hover~.cw-star{color:var(--border)!important;transform:scale(1)!important}
+.cw-stars:hover .cw-star{color:#f5b342}
+.cw-stars:hover .cw-star:hover~.cw-star{color:var(--border)}
+.cw-rating-feedback{display:none;width:100%;gap:6px;flex-direction:column;align-items:center}
+.cw-rating-feedback.show{display:flex}
+.cw-rating-feedback textarea{
+  width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:8px 12px;font-size:12px;resize:none;min-height:50px;
+  font-family:'DM Sans',sans-serif
+}
+.cw-rating-feedback textarea:focus{border-color:var(--gold);outline:none}
+.cw-rating-feedback button{
+  padding:6px 16px;border-radius:6px;border:none;
+  background:var(--gold);color:#0d0f14;font-size:11px;font-weight:700;cursor:pointer
+}
+.cw-rating-thanks{display:none;font-size:12px;color:var(--green);font-weight:600}
+.cw-rating-thanks.show{display:block}
 {% if user_tipo == 'master' %}
 #chatWidget .cw-sug-link{
   padding:6px 12px;border-top:1px solid var(--border);
