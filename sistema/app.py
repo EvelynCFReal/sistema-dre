@@ -1629,7 +1629,10 @@ SHEETS_CONFIG = {
         "id": "18DlMtVIvDzQPvRAx9mASWttpJL4ib4bW36m8xqEc-10",
         "gid": "1788712909",
     },
-    # "monopizza": será adicionado quando a planilha for fornecida
+    "monopizza": {
+        "id": "1pTNKN6NFGmaHJi8b9klpgbigBOnyLU9SKbc11tqbERo",
+        "gid": "0",
+    },
     # "grupomono": será adicionado quando a planilha for fornecida
 }
 
