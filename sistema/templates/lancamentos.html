@@ -369,6 +369,13 @@
 </div>
 </div>
 
+<!-- Form oculto para fechar caixa -->
+<form id="formFecharCaixa" method="post" style="display:none">
+  <input type="hidden" name="acao" value="fechar_caixa">
+  <input type="hidden" name="data" id="fecharCaixaData" value="">
+  <input type="hidden" name="turno" id="fecharCaixaTurno" value="">
+</form>
+
 <!-- Modal Meia-Noite -->
 <div id="modalMeiaNoite" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
   <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:420px;width:90%;text-align:center">
