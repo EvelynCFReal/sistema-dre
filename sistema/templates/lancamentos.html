@@ -57,6 +57,33 @@
 
     <!-- CAIXA -->
     <div id="tab-caixa" class="tab-content active">
+
+      <!-- ABERTURA DE CAIXA -->
+      <div class="abertura-form">
+        <div class="ab-title"><i class="bi bi-unlock"></i> Abertura de Caixa</div>
+        <form method="post" class="ab-row">
+          <input type="hidden" name="acao" value="abertura_caixa">
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" name="data" id="dataAbertura"
+              min="{{ ANO_INICIO }}-01-01" max="{{ ANO_FIM }}-12-31" required>
+          </div>
+          <div class="form-group">
+            <label>Turno</label>
+            <select name="turno" required>
+              <option value="almoco">Almoço (CX 1)</option>
+              <option value="jantar">Jantar (CX 2)</option>
+              <option value="pos_meia_noite">Pós-meia-noite (CX 3)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Valor (R$)</label>
+            <input type="number" name="valor_abertura" step="0.01" min="0" placeholder="0,00" required>
+          </div>
+          <button type="submit" class="btn-abertura"><i class="bi bi-check-lg"></i> Registrar</button>
+        </form>
+      </div>
+
       <form method="post" class="form-dre">
         <input type="hidden" name="acao" value="caixa">
         <div class="mb-3">
