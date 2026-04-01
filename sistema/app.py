@@ -723,6 +723,7 @@ def lancamentos():
         loja_sel=loja_id,
         recentes_cx=recentes_cx,
         recentes_desp=recentes_desp,
+        aberturas=[dict(r) for r in aberturas],
         meses_ok=meses_ok,
     )
 
