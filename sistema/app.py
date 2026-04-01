@@ -597,6 +597,19 @@ def lancamentos():
             flash(f"Ano inválido. Permitido: {ANO_INICIO}–{ANO_FIM}.", "danger")
         elif tipo == "loja" and not usuario_pode_mes(uid, loja_id, ano_lanc, mes_lanc):
             flash("Sem permissão para lançar neste mês/ano.", "danger")
+        elif acao == "fechar_caixa":
+            turno = request.form.get("turno")
+            if turno and data_lanc:
+                conn.execute(
+                    "DELETE FROM abertura_caixa WHERE loja_id=? AND data=? AND turno=?",
+                    (loja_id, data_lanc, turno),
+                )
+                conn.commit()
+                nomes_t = {"almoco": "Almoço", "jantar": "Jantar", "pos_meia_noite": "Pós-meia-noite"}
+                flash(f"Caixa {nomes_t.get(turno, turno)} fechado com sucesso!", "success")
+            else:
+                flash("Erro ao fechar caixa.", "danger")
+
         elif acao == "abertura_caixa":
             turno = request.form.get("turno")
             valor = float(request.form.get("valor_abertura", 0))
