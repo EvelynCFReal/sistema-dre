@@ -236,6 +236,48 @@
 
 <!-- HISTÓRICO -->
 <div class="col-lg-8">
+  <!-- ABERTURAS DE CAIXA -->
+  <div class="card-dre mb-3">
+    <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
+      Aberturas de Caixa — {{ ano }}
+    </div>
+    <div style="overflow-x:auto">
+    <table class="rec-table">
+      <thead>
+        <tr>
+          <th>Data</th><th>Turno</th><th class="text-end">Valor</th><th>Registrado por</th>
+          {% if user_tipo in ('master','gestor') %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in aberturas %}
+        <tr>
+          <td>{{ a.data[8:10] }}/{{ a.data[5:7] }}/{{ a.data[0:4] }}</td>
+          <td>
+            <span class="badge-turno t-{{ a.turno }}">
+              {% if a.turno=='almoco' %}Almoço{% elif a.turno=='jantar' %}Jantar{% else %}Pós{% endif %}
+            </span>
+          </td>
+          <td class="money">R$ {{ "%.2f"|format(a.valor) }}</td>
+          <td style="font-size:11px;color:var(--muted)">{{ a.usuario_nome }}</td>
+          {% if user_tipo in ('master','gestor') %}
+          <td>
+            <form method="post" action="{{ url_for('excluir_lancamento', tabela='abertura_caixa', lid=a.id) }}"
+              onsubmit="return confirm('Excluir esta abertura?')">
+              <button type="submit" class="del-btn"><i class="bi bi-trash3"></i></button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:18px">Nenhuma abertura registrada neste ano.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- LANÇAMENTOS DE CAIXA -->
   <div class="card-dre mb-3">
     <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">
       Últimos Lançamentos de Caixa — {{ ano }}
