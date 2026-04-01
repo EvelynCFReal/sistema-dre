@@ -732,7 +732,7 @@ def lancamentos():
 @login_required
 @role_required("master", "gestor")
 def excluir_lancamento(tabela, lid):
-    if tabela not in {"lancamentos_caixa", "lancamentos_despesa", "aporte_sangria"}:
+    if tabela not in {"lancamentos_caixa", "lancamentos_despesa", "aporte_sangria", "abertura_caixa"}:
         abort(400)
     loja_id = loja_selecionada()
     conn = get_db()
