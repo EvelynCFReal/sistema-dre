@@ -758,20 +758,30 @@ def excluir_lancamento(tabela, lid):
 @app.route("/lancamentos/turno-ativo")
 @login_required
 def turno_ativo():
-    """Retorna o turno ativo (última abertura) para uma data."""
+    """Retorna o turno ativo (última abertura) para uma data ou o mais recente."""
     loja_id = loja_selecionada()
     data = request.args.get("data", "")
-    if not data:
-        return jsonify({"turno": None})
-    conn = get_db()
-    ab = conn.execute(
-        "SELECT turno FROM abertura_caixa WHERE loja_id=? AND data=? ORDER BY id DESC LIMIT 1",
-        (loja_id, data),
-    ).fetchone()
-    conn.close()
     nomes = {"almoco": "Almoço (CX 1)", "jantar": "Jantar (CX 2)", "pos_meia_noite": "Pós-meia-noite (CX 3)"}
+    conn = get_db()
+    if data:
+        ab = conn.execute(
+            "SELECT turno, data, valor FROM abertura_caixa WHERE loja_id=? AND data=? ORDER BY id DESC LIMIT 1",
+            (loja_id, data),
+        ).fetchone()
+    else:
+        # Retorna o caixa mais recente (para modal de login)
+        ab = conn.execute(
+            "SELECT turno, data, valor FROM abertura_caixa WHERE loja_id=? ORDER BY data DESC, id DESC LIMIT 1",
+            (loja_id,),
+        ).fetchone()
+    conn.close()
     if ab:
-        return jsonify({"turno": ab["turno"], "turno_nome": nomes.get(ab["turno"], ab["turno"])})
+        return jsonify({
+            "turno": ab["turno"],
+            "turno_nome": nomes.get(ab["turno"], ab["turno"]),
+            "data": ab["data"],
+            "valor": ab["valor"],
+        })
     return jsonify({"turno": None})
 
 
