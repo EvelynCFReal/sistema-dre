@@ -755,6 +755,26 @@ def excluir_lancamento(tabela, lid):
     return redirect(url_for("lancamentos"))
 
 
+@app.route("/lancamentos/turno-ativo")
+@login_required
+def turno_ativo():
+    """Retorna o turno ativo (última abertura) para uma data."""
+    loja_id = loja_selecionada()
+    data = request.args.get("data", "")
+    if not data:
+        return jsonify({"turno": None})
+    conn = get_db()
+    ab = conn.execute(
+        "SELECT turno FROM abertura_caixa WHERE loja_id=? AND data=? ORDER BY id DESC LIMIT 1",
+        (loja_id, data),
+    ).fetchone()
+    conn.close()
+    nomes = {"almoco": "Almoço (CX 1)", "jantar": "Jantar (CX 2)", "pos_meia_noite": "Pós-meia-noite (CX 3)"}
+    if ab:
+        return jsonify({"turno": ab["turno"], "turno_nome": nomes.get(ab["turno"], ab["turno"])})
+    return jsonify({"turno": None})
+
+
 # ──────────────────────────────────────────
 #  USUÁRIOS E EMPRESAS
 # ──────────────────────────────────────────
