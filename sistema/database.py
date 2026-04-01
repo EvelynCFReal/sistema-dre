@@ -451,6 +451,20 @@ def migrar_db():
             UNIQUE(loja_id, ano, mes, chave)
         )""")
 
+    # ── Tabela abertura_caixa ──
+    if "abertura_caixa" not in tabelas:
+        c.execute("""
+        CREATE TABLE abertura_caixa (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            loja_id    INTEGER NOT NULL REFERENCES lojas(id),
+            data       DATE NOT NULL,
+            turno      TEXT NOT NULL CHECK(turno IN ('almoco','jantar','pos_meia_noite')),
+            valor      REAL DEFAULT 0,
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+            criado_em  TIMESTAMP,
+            UNIQUE(loja_id, data, turno)
+        )""")
+
     # ── Tabela chat_sugestoes (Sugestões do Chat de Suporte) ──
     if "chat_sugestoes" not in tabelas:
         c.execute("""
