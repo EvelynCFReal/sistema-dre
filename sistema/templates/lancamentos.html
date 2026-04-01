@@ -466,6 +466,21 @@ function checarCaixaAtivo(){
 }
 checarCaixaAtivo();
 
+// Fechar caixa
+function fecharCaixa(){
+  var turno = document.getElementById('turnoAutoCaixa').value;
+  var data = document.getElementById('dataAutoCaixa').value;
+  var turnoNome = document.getElementById('turnoAtivoText').textContent;
+  var dataNome = document.getElementById('turnoAtivoData').textContent;
+  if(!turno || !data) return;
+  if(!confirm('Tem certeza que deseja fechar o caixa?\n\n' + turnoNome + ' — ' + dataNome + '\n\nApós fechar, será necessário abrir um novo caixa para lançar.')){
+    return;
+  }
+  document.getElementById('fecharCaixaData').value = data;
+  document.getElementById('fecharCaixaTurno').value = turno;
+  document.getElementById('formFecharCaixa').submit();
+}
+
 // Detector de meia-noite
 var meiaNoiteAlertado = false;
 setInterval(function(){
