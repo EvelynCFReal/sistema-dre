@@ -388,40 +388,52 @@ document.querySelectorAll('input[type=date]').forEach(el=>{
   if(!el.value) el.value = dataDefault;
 });
 
-// Detectar turno ativo ao mudar data do lançamento de caixa
-function checarTurnoAtivo(){
-  var dataCaixa = document.getElementById('dataCaixa');
-  if(!dataCaixa) return;
-  var data = dataCaixa.value;
-  if(!data) return;
-  fetch('{{ url_for("turno_ativo") }}?data='+data)
+// Detectar caixa ativo (último aberto)
+function checarCaixaAtivo(){
+  fetch('{{ url_for("turno_ativo") }}')
   .then(r=>r.json())
   .then(function(d){
     var infoBox = document.getElementById('turnoInfoBox');
     var alertBox = document.getElementById('turnoAlertBox');
     var turnoHidden = document.getElementById('turnoAutoCaixa');
+    var dataHidden = document.getElementById('dataAutoCaixa');
     var turnoText = document.getElementById('turnoAtivoText');
+    var turnoData = document.getElementById('turnoAtivoData');
     var submitBtn = document.getElementById('formCaixa').querySelector('button[type=submit]');
     if(d.turno){
       turnoHidden.value = d.turno;
+      dataHidden.value = d.data;
       turnoText.textContent = d.turno_nome;
+      var dp = d.data.split('-');
+      turnoData.textContent = dp[2]+'/'+dp[1]+'/'+dp[0];
       infoBox.style.display = '';
       alertBox.style.display = 'none';
       if(submitBtn) submitBtn.disabled = false;
     } else {
       turnoHidden.value = '';
+      dataHidden.value = '';
       infoBox.style.display = 'none';
       alertBox.style.display = '';
       if(submitBtn) submitBtn.disabled = true;
     }
   });
 }
+checarCaixaAtivo();
 
-var dataCaixaEl = document.getElementById('dataCaixa');
-if(dataCaixaEl){
-  dataCaixaEl.addEventListener('change', checarTurnoAtivo);
-  // Checar ao carregar a página
-  checarTurnoAtivo();
-}
+// Detector de meia-noite
+var meiaNoiteAlertado = false;
+setInterval(function(){
+  var agora = new Date();
+  if(agora.getHours() === 0 && agora.getMinutes() === 0 && !meiaNoiteAlertado){
+    meiaNoiteAlertado = true;
+    var turnoAtual = document.getElementById('turnoAutoCaixa').value;
+    if(turnoAtual && turnoAtual !== 'pos_meia_noite'){
+      if(document.getElementById('modalMeiaNoite')){
+        document.getElementById('modalMeiaNoite').style.display = 'flex';
+      }
+    }
+  }
+  if(new Date().getMinutes() > 0) meiaNoiteAlertado = false;
+}, 30000);
 </script>
 {% endblock %}
