@@ -597,6 +597,25 @@ def lancamentos():
             flash(f"Ano inválido. Permitido: {ANO_INICIO}–{ANO_FIM}.", "danger")
         elif tipo == "loja" and not usuario_pode_mes(uid, loja_id, ano_lanc, mes_lanc):
             flash("Sem permissão para lançar neste mês/ano.", "danger")
+        elif acao == "abertura_caixa":
+            turno = request.form.get("turno")
+            valor = float(request.form.get("valor_abertura", 0))
+            if turno not in ("almoco", "jantar", "pos_meia_noite"):
+                flash("Turno inválido.", "danger")
+            elif valor < 0:
+                flash("Valor não pode ser negativo.", "danger")
+            else:
+                from datetime import datetime as dt_cls, timezone as tz_cls, timedelta as td_cls
+                agora = dt_cls.now(tz_cls(td_cls(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
+                conn.execute("""
+                    INSERT INTO abertura_caixa(loja_id, data, turno, valor, usuario_id, criado_em)
+                    VALUES(?,?,?,?,?,?)
+                    ON CONFLICT(loja_id, data, turno) DO UPDATE SET
+                        valor=excluded.valor, usuario_id=excluded.usuario_id, criado_em=excluded.criado_em
+                """, (loja_id, data_lanc, turno, valor, uid, agora))
+                conn.commit()
+                flash("Abertura de caixa registrada!", "success")
+
         elif acao == "caixa":
             fp_id = request.form.get("forma_pagamento_id")
             plt_id = request.form.get("plataforma_id") or None
