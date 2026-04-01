@@ -675,6 +675,14 @@ def lancamentos():
                 conn.commit()
                 flash("Registrado!", "success")
 
+    aberturas = conn.execute("""
+        SELECT ac.*, u.nome as usuario_nome
+        FROM abertura_caixa ac
+        JOIN usuarios u ON u.id = ac.usuario_id
+        WHERE ac.loja_id = ? AND strftime('%Y', ac.data) = ?
+        ORDER BY ac.data DESC, ac.id DESC LIMIT 50
+    """, (loja_id, str(ano))).fetchall()
+
     recentes_cx = conn.execute("""
         SELECT lc.*, fp.nome as fp_nome, p.nome as plt_nome, m.nome as marca_nome
         FROM lancamentos_caixa lc
