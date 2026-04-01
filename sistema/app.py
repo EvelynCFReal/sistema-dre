@@ -620,10 +620,17 @@ def lancamentos():
             fp_id = request.form.get("forma_pagamento_id")
             plt_id = request.form.get("plataforma_id") or None
             marca_id = request.form.get("marca_id") or None
-            turno = request.form.get("turno")
+            turno = request.form.get("turno") or None
             valor = float(request.form.get("valor", 0))
-            if turno not in ("almoco", "jantar", "pos_meia_noite"):
-                flash("Turno inválido.", "danger")
+            # Se turno não informado, detectar pela última abertura do dia
+            if not turno:
+                ab = conn.execute(
+                    "SELECT turno FROM abertura_caixa WHERE loja_id=? AND data=? ORDER BY id DESC LIMIT 1",
+                    (loja_id, data_lanc),
+                ).fetchone()
+                turno = ab["turno"] if ab else None
+            if not turno or turno not in ("almoco", "jantar", "pos_meia_noite"):
+                flash("Nenhum caixa aberto para esta data. Registre uma abertura primeiro.", "danger")
             elif valor <= 0:
                 flash("Valor deve ser maior que zero.", "danger")
             else:
