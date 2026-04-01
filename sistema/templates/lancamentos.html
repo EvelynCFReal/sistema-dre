@@ -363,6 +363,47 @@
   </div>
 </div>
 </div>
+
+<!-- Modal Meia-Noite -->
+<div id="modalMeiaNoite" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:420px;width:90%;text-align:center">
+    <i class="bi bi-moon-stars" style="font-size:36px;color:var(--gold);display:block;margin-bottom:12px"></i>
+    <h5 style="font-family:'Playfair Display',serif;color:var(--text);margin-bottom:8px">Meia-noite!</h5>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Passou da meia-noite. Deseja continuar no caixa atual ou abrir o turno <strong>Pós-meia-noite (CX 3)</strong>?</p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="document.getElementById('modalMeiaNoite').style.display='none'"
+        class="btn-outline-gold" style="padding:8px 20px;font-size:12px">
+        <i class="bi bi-check"></i> Continuar no caixa atual
+      </button>
+      <button onclick="abrirPosMeiaNoite()" class="btn-gold" style="padding:8px 20px;font-size:12px">
+        <i class="bi bi-moon-stars"></i> Abrir Pós-meia-noite
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Confirmação de Caixa (ao entrar na página) -->
+<div id="modalConfirmaCaixa" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:460px;width:90%;text-align:center">
+    <i class="bi bi-cash-register" style="font-size:36px;color:var(--gold);display:block;margin-bottom:12px"></i>
+    <h5 style="font-family:'Playfair Display',serif;color:var(--text);margin-bottom:8px">Caixa Ativo</h5>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:6px">Você possui um caixa aberto:</p>
+    <div style="padding:12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;margin-bottom:16px">
+      <span style="font-size:15px;font-weight:600;color:var(--green)" id="modalCaixaTurno">—</span>
+      <span style="font-size:12px;color:var(--muted);margin-left:8px" id="modalCaixaData">—</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Deseja continuar neste caixa ou abrir um novo?</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button onclick="confirmarCaixaAtual()" class="btn-gold" style="padding:8px 20px;font-size:12px">
+        <i class="bi bi-check-lg"></i> Continuar neste caixa
+      </button>
+      <button onclick="abrirNovoCaixa()" class="btn-outline-gold" style="padding:8px 20px;font-size:12px">
+        <i class="bi bi-plus-lg"></i> Abrir novo caixa
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
