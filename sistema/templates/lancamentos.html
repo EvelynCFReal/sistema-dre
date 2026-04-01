@@ -469,12 +469,65 @@ setInterval(function(){
     meiaNoiteAlertado = true;
     var turnoAtual = document.getElementById('turnoAutoCaixa').value;
     if(turnoAtual && turnoAtual !== 'pos_meia_noite'){
-      if(document.getElementById('modalMeiaNoite')){
-        document.getElementById('modalMeiaNoite').style.display = 'flex';
-      }
+      document.getElementById('modalMeiaNoite').style.display = 'flex';
     }
   }
   if(new Date().getMinutes() > 0) meiaNoiteAlertado = false;
 }, 30000);
+
+// Abrir pós-meia-noite automaticamente
+function abrirPosMeiaNoite(){
+  document.getElementById('modalMeiaNoite').style.display = 'none';
+  // Preenche o form de abertura e foca nele
+  var selTurno = document.querySelector('.abertura-form select[name=turno]');
+  if(selTurno) selTurno.value = 'pos_meia_noite';
+  var dataAb = document.getElementById('dataAbertura');
+  if(dataAb){
+    var h = new Date();
+    dataAb.value = h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
+  }
+  // Foca no valor
+  var valAb = document.querySelector('.abertura-form input[name=valor_abertura]');
+  if(valAb) valAb.focus();
+}
+
+// Modal de confirmação de caixa ao entrar na página
+function mostrarModalCaixa(){
+  fetch('{{ url_for("turno_ativo") }}')
+  .then(r=>r.json())
+  .then(function(d){
+    if(!d.turno) return; // Sem caixa aberto, não mostra modal
+    // Verificar se já confirmou nesta sessão do navegador
+    var chave = 'caixaConfirmado_'+d.data+'_'+d.turno;
+    if(sessionStorage.getItem(chave)) return;
+    var dp = d.data.split('-');
+    document.getElementById('modalCaixaTurno').textContent = d.turno_nome;
+    document.getElementById('modalCaixaData').textContent = dp[2]+'/'+dp[1]+'/'+dp[0];
+    document.getElementById('modalConfirmaCaixa').style.display = 'flex';
+    document.getElementById('modalConfirmaCaixa').dataset.chave = chave;
+    document.getElementById('modalConfirmaCaixa').dataset.turno = d.turno;
+    document.getElementById('modalConfirmaCaixa').dataset.data = d.data;
+  });
+}
+
+function confirmarCaixaAtual(){
+  var modal = document.getElementById('modalConfirmaCaixa');
+  sessionStorage.setItem(modal.dataset.chave, '1');
+  modal.style.display = 'none';
+}
+
+function abrirNovoCaixa(){
+  var modal = document.getElementById('modalConfirmaCaixa');
+  sessionStorage.setItem(modal.dataset.chave, '1');
+  modal.style.display = 'none';
+  // Limpa data e foca na abertura
+  var dataAb = document.getElementById('dataAbertura');
+  if(dataAb) dataAb.focus();
+  // Scroll para o topo
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Mostrar modal ao carregar página
+mostrarModalCaixa();
 </script>
 {% endblock %}
