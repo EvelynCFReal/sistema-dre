@@ -146,7 +146,9 @@
 
   {% if dre.totais_desp.cmv %}
   <div class="dre-row" style="background:rgba(255,255,255,.02)">
-    <span class="label-desp">(-) CMV — Custo da Mercadoria</span>
+    <span class="label-desp">(-) CMV — Custo da Mercadoria
+      {% if dre.total_bruto %}<span class="taxa-badge">{{ "%.1f"|format(dre.totais_desp.cmv/dre.total_bruto*100) }}%</span>{% endif %}
+    </span>
     <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.totais_desp.cmv).replace(",","X").replace(".",",").replace("X",".") }})</span>
   </div>
   {% endif %}
@@ -154,19 +156,25 @@
   {% for tipo_key, label in [('fixa','Despesas Fixas'),('motoboy','Despesas Motoboy'),('balcao','Despesas Balcão'),('financeira','Despesas Financeiras'),('outra','Outras Despesas')] %}
   {% if dre.totais_desp[tipo_key] %}
   <div class="dre-row">
-    <span class="label-desp">(-) {{ label }}</span>
+    <span class="label-desp">(-) {{ label }}
+      {% if dre.total_bruto %}<span class="taxa-badge">{{ "%.1f"|format(dre.totais_desp[tipo_key]/dre.total_bruto*100) }}%</span>{% endif %}
+    </span>
     <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.totais_desp[tipo_key]).replace(",","X").replace(".",",").replace("X",".") }})</span>
   </div>
   {% endif %}
   {% endfor %}
 
   <div class="dre-row">
-    <span class="label-desp">(-) Royalties</span>
+    <span class="label-desp">(-) Royalties
+      {% if dre.total_bruto and dre.royalties %}<span class="taxa-badge">{{ "%.1f"|format(dre.royalties/dre.total_bruto*100) }}%</span>{% endif %}
+    </span>
     <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.royalties).replace(",","X").replace(".",",").replace("X",".") }})</span>
   </div>
   {% if dre.mkt %}
   <div class="dre-row">
-    <span class="label-desp">(-) Verba de Marketing</span>
+    <span class="label-desp">(-) Verba de Marketing
+      {% if dre.total_bruto %}<span class="taxa-badge">{{ "%.1f"|format(dre.mkt/dre.total_bruto*100) }}%</span>{% endif %}
+    </span>
     <span class="val-money" style="color:var(--red)">(R$ {{ "{:,.2f}".format(dre.mkt).replace(",","X").replace(".",",").replace("X",".") }})</span>
   </div>
   {% endif %}
