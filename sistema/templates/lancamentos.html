@@ -87,20 +87,18 @@
       <form method="post" class="form-dre" id="formCaixa">
         <input type="hidden" name="acao" value="caixa">
         <input type="hidden" name="turno" id="turnoAutoCaixa" value="">
-        <div class="mb-3">
-          <label class="form-label">Data</label>
-          <input type="date" name="data" class="form-control" id="dataCaixa"
-            min="{{ ANO_INICIO }}-01-01" max="{{ ANO_FIM }}-12-31" required>
-        </div>
+        <input type="hidden" name="data" id="dataAutoCaixa" value="">
         <div class="mb-3" id="turnoInfoBox" style="display:none">
-          <label class="form-label">Turno Ativo</label>
-          <div id="turnoAtivoLabel" style="padding:9px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--green);font-weight:600">
-            <i class="bi bi-unlock"></i> <span id="turnoAtivoText">—</span>
+          <label class="form-label">Caixa Ativo</label>
+          <div id="turnoAtivoLabel" style="padding:9px 14px;background:var(--card2);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:10px">
+            <i class="bi bi-unlock"></i>
+            <span id="turnoAtivoText">—</span>
+            <span id="turnoAtivoData" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
           </div>
         </div>
         <div class="mb-3" id="turnoAlertBox" style="display:none">
           <div style="padding:10px 14px;background:rgba(255,102,102,.08);border:1px solid rgba(255,102,102,.2);border-radius:8px;font-size:12px;color:var(--red)">
-            <i class="bi bi-exclamation-triangle"></i> Nenhum caixa aberto para esta data. Registre uma abertura de caixa primeiro.
+            <i class="bi bi-exclamation-triangle"></i> Nenhum caixa aberto. Registre uma abertura de caixa primeiro.
           </div>
         </div>
         <div class="mb-3">
