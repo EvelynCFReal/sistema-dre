@@ -223,7 +223,9 @@
   </div>
   {% endfor %}
   <div class="dre-row total">
-    <span>Subtotal</span>
+    <span>Subtotal
+      {% if dre.total_bruto %}<span class="taxa-badge">{{ "%.1f"|format(dre.totais_desp[tipo_key]/dre.total_bruto*100) }}%</span>{% endif %}
+    </span>
     <span class="val-money">R$ {{ "{:,.2f}".format(dre.totais_desp[tipo_key]).replace(",","X").replace(".",",").replace("X",".") }}</span>
   </div>
 </div>
