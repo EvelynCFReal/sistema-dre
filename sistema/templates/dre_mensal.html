@@ -216,7 +216,9 @@
   </div>
   {% for nome, val in dre.despesas[tipo_key].items() %}
   <div class="dre-row">
-    <span class="label-desp">{{ nome }}</span>
+    <span class="label-desp">{{ nome }}
+      {% if dre.total_bruto %}<span class="taxa-badge">{{ "%.1f"|format(val/dre.total_bruto*100) }}%</span>{% endif %}
+    </span>
     <span class="val-money">R$ {{ "%.2f"|format(val) }}</span>
   </div>
   {% endfor %}
