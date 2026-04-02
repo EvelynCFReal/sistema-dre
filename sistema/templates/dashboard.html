@@ -367,6 +367,14 @@ fetch(`/api/dre/${lojaId}/${mesRef}?ano={{ ano }}`)
         tooltip:{callbacks:{label:c=>{const pct=dre.total_bruto?(c.parsed/dre.total_bruto*100).toFixed(1)+'%':''; return `R$ ${c.parsed.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pct?' · '+pct:''}`;} }}}}
     });
   }
+  // Tabela % despesas por categoria
+  if(vals.length && dre.total_bruto){
+    const pctDiv=document.getElementById('despCatPct');
+    pctDiv.innerHTML=vals.map(([k,v])=>{
+      const pct=(v/dre.total_bruto*100).toFixed(1);
+      return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">${labels[k]||k}</span><span>R$ ${v.toLocaleString('pt-BR',{minimumFractionDigits:2})} <span style="color:var(--muted);font-size:10px">(${pct}%)</span></span></div>`;
+    }).join('');
+  }
   const apps=dre.fat_app;
   const appLabels=Object.keys(apps);
   if(appLabels.length){
