@@ -362,7 +362,8 @@ fetch(`/api/dre/${lojaId}/${mesRef}?ano={{ ano }}`)
       data:{labels:vals.map(([k])=>labels[k]||k),
         datasets:[{data:vals.map(([,v])=>v),backgroundColor:cores.slice(0,vals.length),
           borderColor:isDark?'#1a1d27':'#ffffff',borderWidth:2}]},
-      options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}}}}
+      options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:10}},
+        tooltip:{callbacks:{label:c=>{const pct=dre.total_bruto?(c.parsed/dre.total_bruto*100).toFixed(1)+'%':''; return `R$ ${c.parsed.toLocaleString('pt-BR',{minimumFractionDigits:2})}${pct?' · '+pct:''}`;} }}}}
     });
   }
   const apps=dre.fat_app;
