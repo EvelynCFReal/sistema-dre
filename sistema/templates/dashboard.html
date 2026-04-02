@@ -300,6 +300,7 @@
       {% if m.faturamento > 0 %}
       <div class="mes-res {% if m.resultado>=0 %}text-success{% else %}text-danger{% endif %}">
         {{ '+' if m.resultado>=0 else '' }}R$ {{ "{:,.0f}".format(m.resultado).replace(",","X").replace(".",",").replace("X",".") }}
+        <span style="font-size:9px;color:var(--muted);margin-left:4px">Desp {{ "%.0f"|format(m.despesas/m.faturamento*100) }}%</span>
       </div>
       <div class="progress-bar-custom">
         <div class="progress-fill {% if m.resultado<0 %}neg{% endif %}"
