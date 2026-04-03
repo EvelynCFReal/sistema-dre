@@ -496,6 +496,26 @@ def migrar_db():
             criado_em  TIMESTAMP
         )""")
 
+    # ── ÍNDICES PARA PERFORMANCE ──
+    c.executescript("""
+    CREATE INDEX IF NOT EXISTS idx_lc_loja_data ON lancamentos_caixa(loja_id, data);
+    CREATE INDEX IF NOT EXISTS idx_lc_loja_marca ON lancamentos_caixa(loja_id, marca_id);
+    CREATE INDEX IF NOT EXISTS idx_lc_loja_data_fp ON lancamentos_caixa(loja_id, data, forma_pagamento_id);
+    CREATE INDEX IF NOT EXISTS idx_lc_loja_data_plat ON lancamentos_caixa(loja_id, data, plataforma_id);
+    CREATE INDEX IF NOT EXISTS idx_ld_loja_data ON lancamentos_despesa(loja_id, data);
+    CREATE INDEX IF NOT EXISTS idx_ld_loja_marca ON lancamentos_despesa(loja_id, marca_id);
+    CREATE INDEX IF NOT EXISTS idx_ld_loja_data_cat ON lancamentos_despesa(loja_id, data, categoria_id);
+    CREATE INDEX IF NOT EXISTS idx_as_loja_data ON aporte_sangria(loja_id, data);
+    CREATE INDEX IF NOT EXISTS idx_config_chave_loja ON configuracoes(chave, loja_id);
+    CREATE INDEX IF NOT EXISTS idx_configm_loja_ano_mes ON config_mensal(loja_id, ano, mes, chave);
+    CREATE INDEX IF NOT EXISTS idx_fp_loja ON formas_pagamento(loja_id, ativo);
+    CREATE INDEX IF NOT EXISTS idx_plat_loja ON plataformas(loja_id, ativo);
+    CREATE INDEX IF NOT EXISTS idx_cat_loja ON categorias_despesa(loja_id, ativo);
+    CREATE INDEX IF NOT EXISTS idx_marcas_loja ON marcas(loja_id, ativo);
+    CREATE INDEX IF NOT EXISTS idx_usuarios_login ON usuarios(login, ativo);
+    CREATE INDEX IF NOT EXISTS idx_abertura_loja_data ON abertura_caixa(loja_id, data, turno);
+    """)
+
     conn.commit()
     conn.close()
 
