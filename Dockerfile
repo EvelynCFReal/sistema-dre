@@ -7,16 +7,22 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
+# Criar usuário não-root
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser
+
 COPY sistema/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY sistema/ .
 
-RUN mkdir -p /app/static/logos /app/data
+# Pastas necessárias + permissões
+RUN mkdir -p /app/static/logos /app/data && \
+    chown -R appuser:appuser /app && \
+    chmod +x /app/entrypoint.sh
 
 EXPOSE 5000
 
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "app:app"]
+CMD ["/app/entrypoint.sh"]
