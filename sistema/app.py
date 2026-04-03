@@ -41,16 +41,30 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "static", "logos")
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+if os.environ.get("FLASK_ENV") == "production":
+    app.config["SESSION_COOKIE_SECURE"] = True
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
-ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "svg", "webp"}
+ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 FUSO_BR = timezone(timedelta(hours=-3))
+
+# ── Rate limiting para login ──
+_login_attempts = defaultdict(list)  # {ip: [timestamps]}
+_LOGIN_MAX_ATTEMPTS = 8
+_LOGIN_WINDOW = 300  # 5 minutos
 
 
 @app.after_request
-def allow_iframe(response):
-    """Permite incorporação via iframe em qualquer domínio."""
-    response.headers.pop("X-Frame-Options", None)
+def security_headers(response):
+    """Adiciona headers de segurança em todas as respostas."""
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if os.environ.get("FLASK_ENV") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 
