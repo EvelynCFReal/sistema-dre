@@ -326,6 +326,7 @@ def login():
             if u["tipo"] == "loja":
                 return redirect(url_for("lancamentos"))
             return redirect(url_for("dashboard"))
+        _login_attempts[ip].append(agora_ts)
         erro = "Login ou senha incorretos."
 
     return render_template("login.html", erro=erro)
