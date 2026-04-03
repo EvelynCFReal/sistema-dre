@@ -56,6 +56,33 @@ _LOGIN_MAX_ATTEMPTS = 8
 _LOGIN_WINDOW = 300  # 5 minutos
 
 
+# ── CSRF Protection ──
+def gerar_csrf_token():
+    if "_csrf_token" not in session:
+        session["_csrf_token"] = secrets.token_hex(32)
+    return session["_csrf_token"]
+
+app.jinja_env.globals["csrf_token"] = gerar_csrf_token
+
+# Rotas isentas de CSRF (APIs externas, webhooks)
+_CSRF_EXEMPT = {"/api/", "/suporte-chat/"}
+
+@app.before_request
+def verificar_csrf():
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return
+    # Isentar rotas de API
+    for prefix in _CSRF_EXEMPT:
+        if request.path.startswith(prefix):
+            return
+    token = request.form.get("_csrf_token") or request.headers.get("X-CSRF-Token")
+    if not token or token != session.get("_csrf_token"):
+        # Fallback: se não tem sessão ativa (login), aceitar
+        if "usuario_id" not in session:
+            return
+        abort(403)
+
+
 @app.after_request
 def security_headers(response):
     """Adiciona headers de segurança em todas as respostas."""
