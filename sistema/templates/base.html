@@ -869,5 +869,30 @@ document.querySelectorAll('#sidebar .nav-item, #sidebar .nav-mes').forEach(funct
 })();
 </script>
 
+<script>
+// CSRF token auto-injection em todos os forms
+(function(){
+  var token = "{{ csrf_token() }}";
+  document.querySelectorAll('form[method="post"], form[method="POST"]').forEach(function(f){
+    if(!f.querySelector('input[name="_csrf_token"]')){
+      var inp = document.createElement('input');
+      inp.type='hidden'; inp.name='_csrf_token'; inp.value=token;
+      f.appendChild(inp);
+    }
+  });
+  // Para forms criados dinamicamente, observar DOM
+  new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.tagName==='FORM' && (n.method||'').toUpperCase()==='POST' && !n.querySelector('input[name="_csrf_token"]')){
+          var inp = document.createElement('input');
+          inp.type='hidden'; inp.name='_csrf_token'; inp.value=token;
+          n.appendChild(inp);
+        }
+      });
+    });
+  }).observe(document.body, {childList:true, subtree:true});
+})();
+</script>
 </body>
 </html>
