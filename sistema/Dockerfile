@@ -19,13 +19,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Código da aplicação
 COPY . .
 
-# Pastas necessárias
-RUN mkdir -p /app/static/logos /app/data
+# Pastas necessárias + permissões
+RUN mkdir -p /app/static/logos /app/data && \
+    groupadd -r appuser && useradd -r -g appuser appuser && \
+    chown -R appuser:appuser /app
 
 EXPOSE 5000
 
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 
-# Gunicorn para produção
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "app:app"]
+USER appuser
+
+# Gunicorn otimizado: 4 workers, timeout 60s, reciclagem de memória
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "60", "--max-requests", "1000", "--max-requests-jitter", "100", "--access-logfile", "-", "app:app"]
