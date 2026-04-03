@@ -989,7 +989,16 @@ def comparativo_marcas(loja_id, ano, mes):
     }
 
 
+_cache_todos_anos = {}  # {loja_id: {"ts": timestamp, "data": [...]}}
+_CACHE_TODOS_ANOS_TTL = 300  # 5 minutos
+
 def resumo_todos_anos(loja_id):
+    import time as _time
+    agora = _time.time()
+    cached = _cache_todos_anos.get(loja_id)
+    if cached and (agora - cached["ts"]) < _CACHE_TODOS_ANOS_TTL:
+        return cached["data"]
+
     resultado = []
     for ano in ANOS:
         resumo = resumo_anual(loja_id, ano)
@@ -1004,6 +1013,7 @@ def resumo_todos_anos(loja_id):
             "despesas": desp,
             "margem": (res / fat * 100) if fat else 0,
         })
+    _cache_todos_anos[loja_id] = {"ts": agora, "data": resultado}
     return resultado
 
 
