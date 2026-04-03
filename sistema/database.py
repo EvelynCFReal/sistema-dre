@@ -970,8 +970,9 @@ def comparativo_marcas(loja_id, ano, mes):
             melhor_marca = r["marca_nome"]
 
     # Adiciona marcas que só existem no mês anterior
+    marcas_existentes = {r["marca"] for r in resultado}
     for nome, val in ant_dict.items():
-        if nome not in [r["marca"] for r in resultado]:
+        if nome not in marcas_existentes:
             resultado.append({
                 "marca": nome,
                 "marca_id": 0,
