@@ -18,6 +18,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
 from datetime import datetime, timezone, timedelta
+from collections import defaultdict
 
 from database import (
     get_db, init_db, migrar_db,
