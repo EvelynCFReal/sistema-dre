@@ -24,20 +24,12 @@ COPY . .
 
 # Pastas necessárias + permissões
 RUN mkdir -p /app/static/logos /app/data && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    chmod +x /app/entrypoint.sh
 
 EXPOSE 5000
 
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
-
-# Entrypoint que ajusta permissões de volumes montados e roda como appuser
-COPY <<'ENTRY' /app/entrypoint.sh
-#!/bin/sh
-# Ajusta permissões em volumes montados (roda como root inicialmente)
-chown -R appuser:appuser /app/data /app/static/logos 2>/dev/null || true
-exec su -s /bin/sh appuser -c 'exec gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 60 --max-requests 1000 --max-requests-jitter 100 --access-logfile - app:app'
-ENTRY
-RUN chmod +x /app/entrypoint.sh
 
 CMD ["/app/entrypoint.sh"]
