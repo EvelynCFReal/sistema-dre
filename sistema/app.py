@@ -274,6 +274,14 @@ def login():
 
     erro = None
     if request.method == "POST":
+        # Rate limiting por IP
+        ip = request.remote_addr or "unknown"
+        agora_ts = time.time()
+        _login_attempts[ip] = [t for t in _login_attempts[ip] if agora_ts - t < _LOGIN_WINDOW]
+        if len(_login_attempts[ip]) >= _LOGIN_MAX_ATTEMPTS:
+            erro = "Muitas tentativas de login. Aguarde alguns minutos."
+            return render_template("login.html", erro=erro)
+
         lv = request.form.get("login", "").strip()
         sv = request.form.get("senha", "")
         conn = get_db()
@@ -282,7 +290,12 @@ def login():
         ).fetchone()
         conn.close()
 
-        if u and check_password_hash(u["senha_hash"], sv):
+        # Previne timing attack: sempre verifica hash mesmo sem usuário
+        dummy_hash = "pbkdf2:sha256:600000$x$0000000000000000000000000000000000000000000000000000000000000000"
+        check_password_hash(dummy_hash, sv) if not u else None
+        senha_ok = check_password_hash(u["senha_hash"], sv) if u else False
+
+        if u and senha_ok:
             # Determina loja inicial
             loja_inicial = 1
             if u["tipo"] != "master":
