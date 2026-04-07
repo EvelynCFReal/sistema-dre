@@ -16,7 +16,7 @@
 .chat-header-info{display:flex;align-items:center;gap:10px}
 .chat-avatar{
   width:36px;height:36px;border-radius:50%;
-  background:linear-gradient(135deg,var(--gold),#8b6914);
+  background:linear-gradient(135deg,var(--gold),#2d6b47);
   display:flex;align-items:center;justify-content:center;
   font-size:16px;color:#fff;flex-shrink:0
 }
@@ -27,10 +27,10 @@
 
 .chat-messages{
   flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;
-  scrollbar-width:thin;scrollbar-color:rgba(200,169,110,.3) transparent
+  scrollbar-width:thin;scrollbar-color:rgba(61,143,96,.3) transparent
 }
 .chat-messages::-webkit-scrollbar{width:4px}
-.chat-messages::-webkit-scrollbar-thumb{background:rgba(200,169,110,.3);border-radius:2px}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(61,143,96,.3);border-radius:2px}
 
 .msg{max-width:80%;display:flex;flex-direction:column;gap:2px}
 .msg-user{align-self:flex-end}
@@ -40,7 +40,7 @@
   word-wrap:break-word;white-space:pre-wrap
 }
 .msg-user .msg-bubble{
-  background:rgba(200,169,110,.15);border:1px solid rgba(200,169,110,.2);
+  background:rgba(61,143,96,.15);border:1px solid rgba(61,143,96,.2);
   color:var(--text);border-bottom-right-radius:4px
 }
 .msg-assistant .msg-bubble{
@@ -67,7 +67,7 @@
   font-family:'DM Sans',sans-serif;min-height:42px;max-height:120px;
   line-height:1.4
 }
-.chat-input-area textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+.chat-input-area textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 2px rgba(61,143,96,.15)}
 .chat-input-area textarea::placeholder{color:var(--muted)}
 .btn-send{
   width:42px;height:42px;border-radius:10px;border:none;
@@ -80,7 +80,7 @@
 
 /* Sugestão modal */
 .sugestao-bar{
-  padding:10px 16px;border-top:1px solid var(--border);background:rgba(200,169,110,.05);
+  padding:10px 16px;border-top:1px solid var(--border);background:rgba(61,143,96,.05);
   display:none;gap:8px;align-items:center;flex-shrink:0
 }
 .sugestao-bar.show{display:flex}

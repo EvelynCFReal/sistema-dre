@@ -63,7 +63,7 @@ def init_db():
         telefone        TEXT DEFAULT '',
         email           TEXT DEFAULT '',
         logo_path       TEXT DEFAULT '',
-        cor_primaria    TEXT DEFAULT '#c8a96e',
+        cor_primaria    TEXT DEFAULT '#3d8f60',
         cor_secundaria  TEXT DEFAULT '#3ecf8e',
         cor_fundo       TEXT DEFAULT '#0d0f14',
         cor_texto       TEXT DEFAULT '#e8eaf0',
@@ -693,13 +693,13 @@ def get_tema(loja_id):
     conn.close()
     if not l:
         return {
-            "cor_primaria": "#c8a96e", "cor_secundaria": "#3ecf8e",
+            "cor_primaria": "#3d8f60", "cor_secundaria": "#3ecf8e",
             "cor_fundo": "#0d0f14", "cor_texto": "#e8eaf0",
             "tema": "escuro", "logo_path": "", "nome": "Sistema de DRE",
             "razao_social": "", "cnpj": "",
         }
     return {
-        "cor_primaria": l["cor_primaria"] or "#c8a96e",
+        "cor_primaria": l["cor_primaria"] or "#3d8f60",
         "cor_secundaria": l["cor_secundaria"] or "#3ecf8e",
         "cor_fundo": l["cor_fundo"] or "#0d0f14",
         "cor_texto": l["cor_texto"] or "#e8eaf0",

@@ -6,11 +6,11 @@
 <style>
 .user-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
   padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:all .2s}
-.user-card:hover{border-color:rgba(200,169,110,.3)}
+.user-card:hover{border-color:rgba(61,143,96,.3)}
 .user-card.bloqueado{opacity:.5}
 .user-avatar-lg{width:38px;height:38px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
-.av-master{background:linear-gradient(135deg,#c8a96e,#8b6914);color:#fff}
+.av-master{background:linear-gradient(135deg,#3d8f60,#2d6b47);color:#fff}
 .av-gestor{background:linear-gradient(135deg,#5b8dee,#3a5fb0);color:#fff}
 .av-loja{background:linear-gradient(135deg,#3ecf8e,#1a8f5c);color:#fff}
 .av-leitor{background:linear-gradient(135deg,#7a8099,#4a5070);color:#fff}
@@ -27,7 +27,7 @@
 .btn-verde{color:var(--green);border-color:var(--green)}.btn-verde:hover{background:rgba(62,207,142,.1)}
 .btn-verm{color:var(--red);border-color:var(--red)}.btn-verm:hover{background:rgba(255,102,102,.1)}
 .btn-azul{color:var(--blue);border-color:var(--blue)}.btn-azul:hover{background:rgba(91,141,238,.1)}
-.btn-gold-sm{color:var(--gold);border-color:var(--gold)}.btn-gold-sm:hover{background:rgba(200,169,110,.1)}
+.btn-gold-sm{color:var(--gold);border-color:var(--gold)}.btn-gold-sm:hover{background:rgba(61,143,96,.1)}
 
 /* Seções */
 .config-section{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
@@ -100,13 +100,13 @@
             <span class="vinculo-tag vt-{{ v.perfil }}">{{ v.loja_nome }} ({{ v.perfil }})</span>
             {% endfor %}
             {% if u.acesso_talentos_sunomono %}
-            <span class="vinculo-tag" style="background:rgba(200,169,110,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos Sun.</span>
+            <span class="vinculo-tag" style="background:rgba(61,143,96,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos Sun.</span>
             {% endif %}
             {% if u.acesso_talentos_monopizza %}
-            <span class="vinculo-tag" style="background:rgba(200,169,110,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos MP</span>
+            <span class="vinculo-tag" style="background:rgba(61,143,96,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos MP</span>
             {% endif %}
             {% if u.acesso_talentos_grupomono %}
-            <span class="vinculo-tag" style="background:rgba(200,169,110,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos GM</span>
+            <span class="vinculo-tag" style="background:rgba(61,143,96,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos GM</span>
             {% endif %}
           </div>
           {% endif %}
@@ -545,7 +545,7 @@ function abrirEditarLoja(loja){
   document.getElementById('lojaEditEnd').value = loja.endereco || '';
   document.getElementById('lojaEditTel').value = loja.telefone || '';
   document.getElementById('lojaEditEmail').value = loja.email || '';
-  document.getElementById('lojaEditCor1').value = loja.cor_primaria || '#c8a96e';
+  document.getElementById('lojaEditCor1').value = loja.cor_primaria || '#3d8f60';
   document.getElementById('lojaEditCor2').value = loja.cor_secundaria || '#3ecf8e';
   document.getElementById('lojaEditCorBg').value = loja.cor_fundo || '#0d0f14';
   document.getElementById('lojaEditCorTxt').value = loja.cor_texto || '#e8eaf0';

@@ -31,7 +31,7 @@
 <style>
 .dre-section{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
 .dre-section-header{
-  padding:12px 18px;background:rgba(200,169,110,.06);border-bottom:1px solid var(--border);
+  padding:12px 18px;background:rgba(61,143,96,.06);border-bottom:1px solid var(--border);
   font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;
   display:flex;align-items:center;gap:8px}
 .dre-row{display:flex;justify-content:space-between;align-items:center;
@@ -39,7 +39,7 @@
 .dre-row:last-child{border-bottom:none}
 .dre-row:hover{background:rgba(255,255,255,.02)}
 .dre-row.total{padding:11px 18px;background:rgba(255,255,255,.03);font-weight:600;font-size:13px}
-.dre-row.resultado{padding:14px 18px;background:rgba(200,169,110,.07);
+.dre-row.resultado{padding:14px 18px;background:rgba(61,143,96,.07);
   font-weight:700;font-size:17px;font-family:'Playfair Display',serif;color:var(--gold)}
 .dre-row.resultado.neg{background:rgba(255,102,102,.07);color:var(--red)}
 .label-desp{color:var(--muted)}
@@ -239,7 +239,7 @@
     <i class="bi bi-tag"></i> Comparativo por Marca — {{ nome_mes }} vs {{ comp_marcas.mes_anterior }}
   </div>
   {% for item in comp_marcas.comparativo %}
-  <div class="dre-row" {% if item.marca == comp_marcas.melhor_marca %}style="background:rgba(200,169,110,.06)"{% endif %}>
+  <div class="dre-row" {% if item.marca == comp_marcas.melhor_marca %}style="background:rgba(61,143,96,.06)"{% endif %}>
     <span>
       {{ item.marca }}
       {% if item.marca == comp_marcas.melhor_marca %}
@@ -307,7 +307,7 @@
 <script>
 const dre = {{ dre | tojson }};
 const tipos = {cmv:'CMV',fixa:'Fixas',motoboy:'Motoboy',balcao:'Balcão',financeira:'Financ.',outra:'Outras'};
-const cores = ['#c8a96e','#5b8dee','#3ecf8e','#f0a856','#9b7fe8','#888'];
+const cores = ['#3d8f60','#5b8dee','#3ecf8e','#f0a856','#9b7fe8','#888'];
 const isDark = !document.documentElement.classList.contains('tema-claro');
 const totais = Object.entries(dre.totais_desp).filter(([k,v])=>v>0);
 

@@ -252,7 +252,7 @@
     </thead>
     <tbody>
     {% for item in comp_marcas.comparativo %}
-      <tr style="border-bottom:1px solid rgba(255,255,255,.03){% if item.marca == comp_marcas.melhor_marca %};background:rgba(200,169,110,.06){% endif %}">
+      <tr style="border-bottom:1px solid rgba(255,255,255,.03){% if item.marca == comp_marcas.melhor_marca %};background:rgba(61,143,96,.06){% endif %}">
         <td style="padding:8px 12px;font-weight:{% if item.marca == comp_marcas.melhor_marca %}700{% else %}400{% endif %}">
           {{ item.marca }}
           {% if item.marca == comp_marcas.melhor_marca %}
@@ -321,7 +321,7 @@ const todosAnos = {{ todos_anos | tojson }};
 const lojaId = {{ loja_sel }};
 const mesRef = {{ mes_ref }};
 
-const GOLD='#c8a96e',GREEN='#3ecf8e',RED='#f66666',BLUE='#5b8dee',
+const GOLD='#3d8f60',GREEN='#3ecf8e',RED='#f66666',BLUE='#5b8dee',
       PURPLE='#9b7fe8',ORANGE='#f0a856',GRAY='#3a3f54';
 
 const isDark = !document.documentElement.classList.contains('tema-claro');
@@ -334,7 +334,7 @@ new Chart(document.getElementById('chartAnual').getContext('2d'), {
     labels: anual.map(m=>MESES_ABREV[m.mes-1]),
     datasets: [
       {type:'bar',label:'Faturamento',data:anual.map(m=>m.faturamento),
-       backgroundColor:anual.map(m=>m.faturamento>0?'rgba(200,169,110,.4)':GRAY),
+       backgroundColor:anual.map(m=>m.faturamento>0?'rgba(61,143,96,.4)':GRAY),
        borderColor:anual.map(m=>m.faturamento>0?GOLD:GRAY),borderWidth:1,borderRadius:4},
       {type:'bar',label:'Despesas',data:anual.map(m=>m.despesas),
        backgroundColor:'rgba(255,102,102,.2)',borderColor:RED,borderWidth:1,borderRadius:4},
@@ -382,7 +382,7 @@ fetch(`/api/dre/${lojaId}/${mesRef}?ano={{ ano }}`)
     new Chart(document.getElementById('chartApps').getContext('2d'),{
       type:'bar',
       data:{labels:appLabels,datasets:[
-        {label:'Almoço',data:appLabels.map(k=>apps[k].almoco),backgroundColor:'rgba(200,169,110,.6)',borderRadius:4},
+        {label:'Almoço',data:appLabels.map(k=>apps[k].almoco),backgroundColor:'rgba(61,143,96,.6)',borderRadius:4},
         {label:'Jantar',data:appLabels.map(k=>apps[k].jantar),backgroundColor:'rgba(91,141,238,.6)',borderRadius:4},
         {label:'Pós-meia-noite',data:appLabels.map(k=>apps[k].pos),backgroundColor:'rgba(155,127,232,.6)',borderRadius:4}
       ]},
@@ -409,7 +409,7 @@ if(todosAnos&&todosAnos.length){
     type:'bar',
     data:{labels:todosAnos.map(a=>a.ano),datasets:[
       {label:'Faturamento',data:todosAnos.map(a=>a.faturamento),
-       backgroundColor:todosAnos.map(a=>a.faturamento>0?'rgba(200,169,110,.5)':'rgba(128,128,128,.2)'),
+       backgroundColor:todosAnos.map(a=>a.faturamento>0?'rgba(61,143,96,.5)':'rgba(128,128,128,.2)'),
        borderColor:todosAnos.map(a=>a.faturamento>0?GOLD:GRAY),borderWidth:1,borderRadius:4},
       {label:'Resultado',data:todosAnos.map(a=>a.resultado),
        backgroundColor:todosAnos.map(a=>a.resultado>=0?'rgba(62,207,142,.4)':'rgba(255,102,102,.4)'),
