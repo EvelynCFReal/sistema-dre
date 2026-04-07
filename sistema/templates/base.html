@@ -355,14 +355,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     </div>
 
     <div class="sidebar-actions">
-      {% if user_tipo == 'master' %}
       <form method="post" action="{{ url_for('alternar_tema') }}" style="display:inline">
-        <button type="submit" title="Alternar tema">
+        <button type="submit" title="Alternar tema claro/escuro">
           <i class="bi bi-{% if tema_usuario == 'escuro' %}sun{% else %}moon-stars{% endif %}"></i>
           {{ 'Claro' if tema_usuario == 'escuro' else 'Escuro' }}
         </button>
       </form>
-      {% endif %}
       <a href="#" onclick="document.getElementById('fmSenha').style.display=document.getElementById('fmSenha').style.display==='none'?'block':'none';return false">
         <i class="bi bi-key"></i> Senha
       </a>
