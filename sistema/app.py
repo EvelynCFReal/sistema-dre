@@ -1226,7 +1226,7 @@ def editar_loja(lid):
         "endereco": request.form.get("endereco", "").strip(),
         "telefone": request.form.get("telefone", "").strip(),
         "email": request.form.get("email", "").strip(),
-        "cor_primaria": request.form.get("cor_primaria", "#c8a96e"),
+        "cor_primaria": request.form.get("cor_primaria", "#3d8f60"),
         "cor_secundaria": request.form.get("cor_secundaria", "#3ecf8e"),
         "cor_fundo": request.form.get("cor_fundo", "#0d0f14"),
         "cor_texto": request.form.get("cor_texto", "#e8eaf0"),
