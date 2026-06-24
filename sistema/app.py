@@ -980,8 +980,8 @@ def novo_usuario():
         flash("Sem permissão para criar este tipo de usuário.", "danger")
         return redirect(url_for("usuarios"))
 
-    # Master pode criar gestor, loja, leitor
-    if tipo_sess == "master" and tipo_novo not in ("gestor", "loja", "leitor"):
+    # Master pode criar master, gestor, loja, leitor
+    if tipo_sess == "master" and tipo_novo not in ("master", "gestor", "loja", "leitor"):
         flash("Tipo de usuário inválido.", "danger")
         return redirect(url_for("usuarios"))
 
