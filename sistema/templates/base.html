@@ -326,9 +326,6 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
   {% if perfil_loja in ('master', 'gestor') %}
   <div class="nav-section">Gestão</div>
-  <a href="{{ url_for('usuarios') }}" class="nav-item {% if request.endpoint == 'usuarios' %}active{% endif %}">
-    <i class="bi bi-people"></i> Usuários e Empresas
-  </a>
   <a href="{{ url_for('parametros') }}" class="nav-item {% if request.endpoint == 'parametros' %}active{% endif %}">
     <i class="bi bi-sliders"></i> Parâmetros Gerais
   </a>
