@@ -347,13 +347,19 @@
           + Adicionar loja
         </button>
       </div>
-      {% if user_tipo == 'master' %}
+      {% if user_tipo == 'master' and modulos_sistema_list %}
       <div class="mb-3">
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
-          padding:8px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
-          <input type="checkbox" name="acesso_dre" value="1" id="editAcessoDre">
-          <span>Acesso ao <strong>DRE</strong></span>
-        </label>
+        <label class="form-label">Módulos de Acesso</label>
+        <div style="display:flex;flex-direction:column;gap:5px" id="editModulosContainer">
+          {% for mod in modulos_sistema_list %}
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
+            padding:7px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
+            <input type="checkbox" name="modulo_ids" value="{{ mod.id }}" id="editModulo{{ mod.id }}">
+            <i class="{{ mod.icone }}" style="font-size:13px;color:var(--gold)"></i>
+            <span>{{ mod.nome }}</span>
+          </label>
+          {% endfor %}
+        </div>
       </div>
       {% endif %}
       {% if user_tipo == 'master' and bancos_talentos_list %}
