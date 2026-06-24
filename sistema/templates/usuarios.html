@@ -523,7 +523,7 @@ function abrirSenha(uid, nome){
   document.getElementById('modalSenha').classList.add('show');
 }
 
-function abrirEditar(uid, nome, vinculos, bancoIds, acessoDre){
+function abrirEditar(uid, nome, vinculos, bancoIds, moduloIds){
   document.getElementById('editNome').textContent = 'Editando: ' + nome;
   document.getElementById('editNomeInput').value = nome;
   document.getElementById('formEditar').action = `/usuarios/${uid}/editar`;
@@ -534,10 +534,11 @@ function abrirEditar(uid, nome, vinculos, bancoIds, acessoDre){
   } else {
     addEditLojaRow('','loja');
   }
-  // Acesso DRE (default true if undefined)
-  var cbDre = document.getElementById('editAcessoDre');
-  if(cbDre) cbDre.checked = (acessoDre !== 0);
-  // Banco de Talentos checkboxes (dinâmicos)
+  // Módulos de acesso
+  document.querySelectorAll('[id^="editModulo"]').forEach(function(cb){
+    cb.checked = Array.isArray(moduloIds) && moduloIds.includes(parseInt(cb.value));
+  });
+  // Banco de Talentos checkboxes
   document.querySelectorAll('[id^="editBanco"]').forEach(function(cb){
     cb.checked = Array.isArray(bancoIds) && bancoIds.includes(parseInt(cb.value));
   });
