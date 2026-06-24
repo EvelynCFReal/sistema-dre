@@ -1,0 +1,148 @@
+{% extends "talentos/base_talentos.html" %}
+{% block title %}Gerenciar Bancos · Banco de Talentos{% endblock %}
+
+{% block content %}
+<div class="bt-page-title"><i class="bi bi-gear"></i> Gerenciar Bancos de Talentos</div>
+<div class="bt-page-sub">Configure os bancos, slugs e URLs das planilhas</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start" class="admin-grid">
+
+<!-- LISTA -->
+<div class="bt-card">
+  <h6 style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+    <i class="bi bi-list-ul"></i> Bancos Cadastrados
+  </h6>
+  {% for b in bancos %}
+  <div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;
+       {% if not b.ativo %}opacity:.45;{% endif %}">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">{{ b.nome }}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:1px">
+          slug: <code style="background:var(--card2);padding:1px 5px;border-radius:4px">{{ b.slug }}</code>
+          {% if b.ativo %}<span style="color:var(--green);margin-left:8px"><i class="bi bi-circle-fill" style="font-size:7px"></i> ativo</span>
+          {% else %}<span style="color:var(--red);margin-left:8px"><i class="bi bi-circle-fill" style="font-size:7px"></i> inativo</span>{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button type="button" onclick='abrirEditar({{ b|tojson }})'
+                style="padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;
+                  border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer"
+                onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+                onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+          <i class="bi bi-pencil"></i>
+        </button>
+        {% if b.ativo %}
+        <form method="post" action="{{ url_for('talentos_admin_excluir', bid=b.id) }}" style="margin:0"
+              onsubmit="return confirm('Desativar o banco {{ b.nome }}?')">
+          <button type="submit"
+                  style="padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;
+                    border:1px solid rgba(255,102,102,.3);background:transparent;color:var(--red);cursor:pointer">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+        {% else %}
+        <form method="post" action="{{ url_for('talentos_admin_ativar', bid=b.id) }}" style="margin:0">
+          <button type="submit"
+                  style="padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;
+                    border:1px solid rgba(62,207,142,.3);background:transparent;color:var(--green);cursor:pointer">
+            <i class="bi bi-check-lg"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% if b.fonte_url %}
+    <div style="font-size:10px;color:var(--muted);word-break:break-all;padding:6px 8px;
+         background:var(--card2);border-radius:5px">
+      <i class="bi bi-link-45deg"></i> {{ b.fonte_url[:80] }}{% if b.fonte_url|length > 80 %}…{% endif %}
+    </div>
+    {% else %}
+    <div style="font-size:10px;color:var(--red);padding:4px 6px">
+      <i class="bi bi-exclamation-triangle"></i> Sem planilha configurada
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Nenhum banco cadastrado.</p>
+  {% endfor %}
+</div>
+
+<!-- FORMULÁRIO -->
+<div class="bt-card">
+  <h6 style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:8px" id="formTitle">
+    <i class="bi bi-plus-lg"></i> Novo Banco
+  </h6>
+  <form method="post" action="{{ url_for('talentos_admin_salvar') }}" class="form-bt" id="formBanco">
+    <input type="hidden" name="banco_id" id="fBancoId" value="">
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input type="text" name="nome" id="fNome" placeholder="ex: Sunomono" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Slug (identificador único)</label>
+      <input type="text" name="slug" id="fSlug" placeholder="ex: sunomono" required
+             pattern="[a-z0-9\-]+" title="Apenas letras minúsculas, números e hífens">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Usado na URL: /talentos/<strong id="slugPreview">slug</strong></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">URL da Planilha Google Sheets</label>
+      <input type="text" name="fonte_url" id="fUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">Cole a URL de compartilhamento da planilha</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="submit" class="btn-bt btn-bt-primary" style="flex:1" id="btnSalvar">
+        <i class="bi bi-check-lg"></i> Salvar Banco
+      </button>
+      <button type="button" class="btn-bt btn-bt-outline" onclick="limparForm()" id="btnCancelar" style="display:none">
+        Cancelar
+      </button>
+    </div>
+  </form>
+</div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirEditar(b){
+  document.getElementById('fBancoId').value = b.id;
+  document.getElementById('fNome').value = b.nome;
+  document.getElementById('fSlug').value = b.slug;
+  document.getElementById('fUrl').value = b.fonte_url || '';
+  document.getElementById('slugPreview').textContent = b.slug;
+  document.getElementById('formTitle').innerHTML = '<i class="bi bi-pencil"></i> Editando: ' + b.nome;
+  document.getElementById('btnSalvar').innerHTML = '<i class="bi bi-check-lg"></i> Atualizar';
+  document.getElementById('btnCancelar').style.display = '';
+}
+function limparForm(){
+  document.getElementById('fBancoId').value = '';
+  document.getElementById('fNome').value = '';
+  document.getElementById('fSlug').value = '';
+  document.getElementById('fUrl').value = '';
+  document.getElementById('slugPreview').textContent = 'slug';
+  document.getElementById('formTitle').innerHTML = '<i class="bi bi-plus-lg"></i> Novo Banco';
+  document.getElementById('btnSalvar').innerHTML = '<i class="bi bi-check-lg"></i> Salvar Banco';
+  document.getElementById('btnCancelar').style.display = 'none';
+}
+document.getElementById('fSlug').addEventListener('input', function(){
+  var v = this.value.toLowerCase().replace(/[^a-z0-9\-]/g, '');
+  this.value = v;
+  document.getElementById('slugPreview').textContent = v || 'slug';
+});
+document.getElementById('fNome').addEventListener('input', function(){
+  if(!document.getElementById('fBancoId').value){
+    var s = this.value.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+    document.getElementById('fSlug').value = s;
+    document.getElementById('slugPreview').textContent = s || 'slug';
+  }
+});
+@media(max-width:768px){.admin-grid{grid-template-columns:1fr !important}}
+</script>
+<style>
+@media(max-width:768px){.admin-grid{grid-template-columns:1fr !important}}
+</style>
+{% endblock %}
