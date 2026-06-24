@@ -910,7 +910,7 @@ def usuarios():
             ORDER BY u.nome
         """, lojas_gestor).fetchall()
 
-    # Enriquece com lojas vinculadas
+    # Enriquece com lojas vinculadas e permissões de bancos
     lista_enriquecida = []
     for u in lista:
         vinculos = conn.execute("""
@@ -920,15 +920,17 @@ def usuarios():
             WHERE ul.usuario_id = ?
             ORDER BY l.nome
         """, (u["id"],)).fetchall()
+        banco_ids_rows = conn.execute(
+            "SELECT banco_id FROM usuario_bancos_talentos WHERE usuario_id=?", (u["id"],)
+        ).fetchall()
         lista_enriquecida.append({
             "id": u["id"], "login": u["login"], "nome": u["nome"],
             "tipo": u["tipo"], "ativo": u["ativo"],
             "criado_em": u["criado_em"],
             "ultimo_acesso": u["ultimo_acesso"] if "ultimo_acesso" in u.keys() else None,
             "vinculos": [dict(v) for v in vinculos],
-            "acesso_talentos_sunomono": u["acesso_talentos_sunomono"] if "acesso_talentos_sunomono" in u.keys() else 0,
-            "acesso_talentos_monopizza": u["acesso_talentos_monopizza"] if "acesso_talentos_monopizza" in u.keys() else 0,
-            "acesso_talentos_grupomono": u["acesso_talentos_grupomono"] if "acesso_talentos_grupomono" in u.keys() else 0,
+            "banco_ids": [b["banco_id"] for b in banco_ids_rows],
+            "acesso_banco_talentos": bool(banco_ids_rows),
         })
 
     # Master vê todas as lojas (inclusive inativas) para poder gerenciar
