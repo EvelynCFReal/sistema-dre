@@ -307,6 +307,7 @@ def login():
         return redirect(url_for("dashboard"))
 
     erro = None
+    sistema_get = request.args.get("sistema", "dre")
     if request.method == "POST":
         # Rate limiting por IP
         ip = request.remote_addr or "unknown"
@@ -314,10 +315,11 @@ def login():
         _login_attempts[ip] = [t for t in _login_attempts[ip] if agora_ts - t < _LOGIN_WINDOW]
         if len(_login_attempts[ip]) >= _LOGIN_MAX_ATTEMPTS:
             erro = "Muitas tentativas de login. Aguarde alguns minutos."
-            return render_template("login.html", erro=erro)
+            return render_template("login.html", erro=erro, sistema=sistema_get)
 
         lv = request.form.get("login", "").strip()
         sv = request.form.get("senha", "")
+        sistema = request.form.get("sistema", "dre")
         conn = get_db()
         u = conn.execute(
             "SELECT * FROM usuarios WHERE login=? AND ativo=1", (lv,)
@@ -330,14 +332,23 @@ def login():
         senha_ok = check_password_hash(u["senha_hash"], sv) if u else False
 
         if u and senha_ok:
+            if sistema == "talentos":
+                # Verifica acesso ao Banco de Talentos
+                bancos = get_bancos_usuario(u["id"], u["tipo"])
+                if not bancos:
+                    _login_attempts[ip].append(agora_ts)
+                    erro = "Você não tem acesso ao Banco de Talentos."
+                    return render_template("login.html", erro=erro, sistema=sistema)
+
             # Determina loja inicial
             loja_inicial = 1
             if u["tipo"] != "master":
                 lojas = get_lojas_usuario(u["id"], u["tipo"])
-                if not lojas:
+                if not lojas and sistema == "dre":
                     erro = "Nenhuma empresa ativa vinculada ao seu acesso. Contate o administrador."
-                    return render_template("login.html", erro=erro)
-                loja_inicial = lojas[0]["id"]
+                    return render_template("login.html", erro=erro, sistema=sistema)
+                if lojas:
+                    loja_inicial = lojas[0]["id"]
 
             # Registra último acesso (horário de Brasília)
             conn2 = get_db()
@@ -357,13 +368,15 @@ def login():
                 tema_preferido=u["tema_preferido"] or "escuro",
             )
 
+            if sistema == "talentos":
+                return redirect(url_for("talentos_index"))
             if u["tipo"] == "loja":
                 return redirect(url_for("lancamentos"))
             return redirect(url_for("dashboard"))
         _login_attempts[ip].append(agora_ts)
         erro = "Login ou senha incorretos."
 
-    return render_template("login.html", erro=erro)
+    return render_template("login.html", erro=erro, sistema=sistema_get)
 
 
 @app.route("/logout")
