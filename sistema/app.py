@@ -300,22 +300,8 @@ def alternar_tema():
 #  AUTH
 # ──────────────────────────────────────────
 def _pos_login_redirect(uid, tipo):
-    """Determina para onde redirecionar após login com base nas permissões."""
-    if tipo == "master":
-        return redirect(url_for("dashboard"))
-    if tipo == "loja":
-        return redirect(url_for("lancamentos"))
-    # Para gestor/leitor: verifica acesso_dre vs apenas BT
-    conn = get_db()
-    u = conn.execute("SELECT acesso_dre FROM usuarios WHERE id=?", (uid,)).fetchone()
-    conn.close()
-    acesso_dre = u["acesso_dre"] if u else 1
-    if acesso_dre:
-        return redirect(url_for("dashboard"))
-    bancos = get_bancos_usuario(uid, tipo)
-    if bancos:
-        return redirect(url_for("talentos_index"))
-    return redirect(url_for("dashboard"))
+    """Após login, todos vão para a tela inicial do hub."""
+    return redirect(url_for("home"))
 
 
 @app.route("/", methods=["GET", "POST"])
