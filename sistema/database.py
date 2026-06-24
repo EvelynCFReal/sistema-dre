@@ -1293,3 +1293,58 @@ def marcar_sugestao_lida(sugestao_id):
     conn.execute("UPDATE chat_sugestoes SET lida=1 WHERE id=?", (sugestao_id,))
     conn.commit()
     conn.close()
+
+
+# ──────────────────────────────────────────
+#  MÓDULOS DO SISTEMA
+# ──────────────────────────────────────────
+def get_modulos_sistema(apenas_ativos=True):
+    conn = get_db()
+    q = "SELECT * FROM modulos_sistema WHERE ativo=1 ORDER BY ordem, nome" if apenas_ativos else "SELECT * FROM modulos_sistema ORDER BY ordem, nome"
+    rows = conn.execute(q).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_modulos_usuario_ids(usuario_id):
+    conn = get_db()
+    rows = conn.execute("SELECT modulo_id FROM usuario_modulos WHERE usuario_id=?", (usuario_id,)).fetchall()
+    conn.close()
+    return [r["modulo_id"] for r in rows]
+
+
+def set_usuario_modulos_acesso(conn, usuario_id, modulo_ids):
+    """Salva quais módulos o usuário tem acesso e sincroniza acesso_dre."""
+    conn.execute("DELETE FROM usuario_modulos WHERE usuario_id=?", (usuario_id,))
+    for mid in modulo_ids:
+        conn.execute("INSERT OR IGNORE INTO usuario_modulos(usuario_id,modulo_id) VALUES(?,?)", (usuario_id, int(mid)))
+    dre = conn.execute("SELECT id FROM modulos_sistema WHERE slug='dre'").fetchone()
+    if dre:
+        acesso = 1 if dre["id"] in [int(m) for m in modulo_ids] else 0
+        conn.execute("UPDATE usuarios SET acesso_dre=? WHERE id=?", (acesso, usuario_id))
+
+
+def salvar_modulo_sistema(nome, slug, descricao="", icone="bi-puzzle", modulo_id=None):
+    conn = get_db()
+    try:
+        if modulo_id:
+            conn.execute(
+                "UPDATE modulos_sistema SET nome=?,slug=?,descricao=?,icone=? WHERE id=? AND slug!='dre'",
+                (nome, slug, descricao, icone, modulo_id)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO modulos_sistema(nome,slug,descricao,icone) VALUES(?,?,?,?)",
+                (nome, slug, descricao, icone)
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def excluir_modulo_sistema(modulo_id):
+    conn = get_db()
+    conn.execute("DELETE FROM usuario_modulos WHERE modulo_id=?", (modulo_id,))
+    conn.execute("DELETE FROM modulos_sistema WHERE id=? AND slug!='dre'", (modulo_id,))
+    conn.commit()
+    conn.close()
