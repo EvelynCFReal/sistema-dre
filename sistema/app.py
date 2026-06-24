@@ -365,6 +365,27 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/home")
+@login_required
+def home():
+    uid = session["usuario_id"]
+    tipo = session.get("tipo", "")
+    conn = get_db()
+    u = conn.execute("SELECT acesso_dre, acesso_banco_talentos FROM usuarios WHERE id=?", (uid,)).fetchone()
+    conn.close()
+    acesso_dre_u = u["acesso_dre"] if u else 1
+    bancos = get_bancos_usuario(uid, tipo)
+    tem_bt = bool(bancos)
+    pode_usuarios = tipo in ("master", "gestor")
+    return render_template(
+        "home.html",
+        acesso_dre=acesso_dre_u,
+        tem_bt=tem_bt,
+        bancos_bt=bancos,
+        pode_usuarios=pode_usuarios,
+    )
+
+
 # ──────────────────────────────────────────
 #  DASHBOARD
 # ──────────────────────────────────────────
