@@ -950,12 +950,14 @@ def usuarios():
     else:
         lojas_disponiveis = [l for l in lojas if l["ativo"]]
 
+    bancos_talentos_list = [dict(b) for b in conn.execute("SELECT * FROM bancos_talentos WHERE ativo=1 ORDER BY nome").fetchall()] if tipo == "master" else []
     conn.close()
     return render_template(
         "usuarios.html",
         lista=lista_enriquecida,
         lojas=lojas,
         lojas_disponiveis=lojas_disponiveis,
+        bancos_talentos_list=bancos_talentos_list,
     )
 
 
