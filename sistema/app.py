@@ -1026,10 +1026,9 @@ def novo_usuario():
 
     conn = get_db()
     try:
-        acesso_dre_v = 1 if request.form.get("acesso_dre") else 0
         cur = conn.execute(
-            "INSERT INTO usuarios(login, senha_hash, nome, tipo, acesso_dre) VALUES(?,?,?,?,?)",
-            (login_v, generate_password_hash(senha_v), nome_v, tipo_novo, acesso_dre_v),
+            "INSERT INTO usuarios(login, senha_hash, nome, tipo) VALUES(?,?,?,?)",
+            (login_v, generate_password_hash(senha_v), nome_v, tipo_novo),
         )
         novo_id = cur.lastrowid
 
@@ -1038,6 +1037,11 @@ def novo_usuario():
                 "INSERT OR IGNORE INTO usuario_lojas(usuario_id, loja_id, perfil) VALUES(?,?,?)",
                 (novo_id, lid, perfil),
             )
+
+        # Módulos de acesso (só master pode definir)
+        if tipo_sess == "master":
+            modulo_ids = [int(m) for m in request.form.getlist("modulo_ids") if m]
+            set_usuario_modulos_acesso(conn, novo_id, modulo_ids)
 
         # Permissões Banco de Talentos (só master pode definir)
         if tipo_sess == "master":
