@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Sistema · Grupo Mono{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0f14;--sidebar:#13161e;--card:#1a1d27;--card2:#1f2333;
+  --border:#2a2e3d;--gold:#3d8f60;--gold2:#5ab87a;--text:#e8eaf0;
+  --muted:#7a8099;--green:#3ecf8e;--red:#f66;--blue:#5b8dee;
+  --sidebar-w:220px;
+}
+html.tema-claro{
+  --bg:#f4f1ec;--sidebar:#ffffff;--card:#ffffff;--card2:#f9f7f3;
+  --border:#e0dcd4;--gold:#2d6b47;--gold2:#1e5235;--text:#1a1a2e;
+  --muted:#6b6b7b;--green:#1a8f5c;--red:#d44;--blue:#3a6fd8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;display:flex}
+a{color:inherit;text-decoration:none}
+
+/* ── Sidebar hub ── */
+#hub-sidebar{
+  width:var(--sidebar-w);height:100vh;background:var(--sidebar);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;z-index:100;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(61,143,96,.3) transparent;
+}
+#hub-sidebar::-webkit-scrollbar{width:5px}
+#hub-sidebar::-webkit-scrollbar-thumb{background:rgba(61,143,96,.3);border-radius:3px}
+.hub-brand{padding:20px 16px 14px;border-bottom:1px solid var(--border)}
+.hub-brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#1e5235);
+  display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;margin-bottom:8px}
+.hub-brand-name{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)}
+.hub-brand-sub{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+
+.hub-nav{flex:1;padding:10px 0}
+.hub-nav-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);
+  padding:10px 14px 4px;font-weight:600}
+.hub-nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;
+  font-size:13px;font-weight:500;color:var(--muted);transition:all .18s;
+  border-left:2px solid transparent;text-decoration:none}
+.hub-nav-item:hover{background:rgba(61,143,96,.07);color:var(--text);border-left-color:var(--gold)}
+.hub-nav-item.active{background:rgba(61,143,96,.1);color:var(--gold);border-left-color:var(--gold);font-weight:600}
+.hub-nav-item i{width:18px;text-align:center;font-size:15px}
+.hub-nav-sep{height:1px;background:var(--border);margin:6px 12px}
+
+.hub-user{padding:12px 14px;border-top:1px solid var(--border)}
+.hub-user-pill{display:flex;align-items:center;gap:9px;padding:7px 9px;
+  background:var(--card);border-radius:8px;border:1px solid var(--border)}
+.hub-user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#1e5235);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.hub-user-name{font-size:12px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-user-tipo{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block}
+.hub-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;justify-content:center}
+.hub-actions a,.hub-actions button{font-size:10px;color:var(--muted);text-decoration:none;
+  background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;
+  transition:all .15s;display:inline-flex;align-items:center;gap:3px;font-family:'DM Sans',sans-serif}
+.hub-actions a:hover,.hub-actions button:hover{color:var(--gold);background:rgba(61,143,96,.08)}
+
+/* ── Main ── */
+#hub-main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.hub-topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+  padding:0 24px;gap:12px;background:var(--bg);position:sticky;top:0;z-index:50}
+.hub-topbar-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);flex:1}
+.hub-page-content{padding:24px;flex:1}
+
+/* ── Reutiliza estilos do DRE que usuarios.html precisa ── */
+.card-dre{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.form-dre .form-control,.form-dre .form-select{
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:9px 14px;font-size:13px}
+.form-dre .form-control:focus,.form-dre .form-select:focus{
+  border-color:var(--gold);box-shadow:0 0 0 2px rgba(61,143,96,.15);background:var(--card2);color:var(--text)}
+.form-dre .form-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px;font-weight:600}
+.form-dre .form-select option{background:var(--card)}
+.btn-gold{background:var(--gold);color:#0d0f14;font-weight:700;border:none;
+  border-radius:8px;padding:9px 20px;font-size:13px;transition:all .2s;cursor:pointer}
+.btn-gold:hover{background:var(--gold2);color:#0d0f14}
+.btn-outline-gold{background:transparent;color:var(--gold);border:1px solid var(--gold);
+  border-radius:8px;padding:8px 18px;font-size:13px;transition:all .2s;cursor:pointer;text-decoration:none}
+.btn-outline-gold:hover{background:rgba(61,143,96,.1);color:var(--gold2)}
+.alert{border:none;border-radius:8px;font-size:13px;padding:10px 16px}
+.alert-success{background:rgba(62,207,142,.1);color:var(--green);border-left:3px solid var(--green)}
+.alert-danger{background:rgba(255,102,102,.1);color:var(--red);border-left:3px solid var(--red)}
+.alert-info{background:rgba(91,141,238,.1);color:var(--blue);border-left:3px solid var(--blue)}
+.alert-warning{background:rgba(61,143,96,.1);color:var(--gold);border-left:3px solid var(--gold)}
+.separator{border:none;border-top:1px solid var(--border);margin:18px 0}
+
+/* Mobile */
+.hub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+.hub-hamburger{display:none;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px}
+@media(max-width:768px){
+  #hub-sidebar{transform:translateX(-100%);transition:transform .3s}
+  #hub-sidebar.open{transform:translateX(0)}
+  #hub-main{margin-left:0}
+  .hub-overlay.show{display:block}
+  .hub-hamburger{display:block}
+}
+
+{% block extra_style %}{% endblock %}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body class="{% if tema_usuario == 'claro' %}tema-claro{% endif %}">
+
+<!-- Sidebar -->
+<nav id="hub-sidebar">
+  <div class="hub-brand">
+    <div class="hub-brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+    <div class="hub-brand-name">Grupo Mono</div>
+    <div class="hub-brand-sub">Sistemas de Gestão</div>
+  </div>
+
+  <div class="hub-nav">
+    <div class="hub-nav-label">Início</div>
+    <a href="{{ url_for('home') }}" class="hub-nav-item {% if request.endpoint == 'home' %}active{% endif %}">
+      <i class="bi bi-house"></i> Painel Inicial
+    </a>
+
+    {% if acesso_banco_talentos or user_tipo == 'master' %}
+    <div class="hub-nav-sep"></div>
+    <div class="hub-nav-label">DRE</div>
+    <a href="{{ url_for('dashboard') }}" class="hub-nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-bar-chart-line"></i> Dashboard
+    </a>
+    <a href="{{ url_for('lancamentos') }}" class="hub-nav-item {% if request.endpoint == 'lancamentos' %}active{% endif %}">
+      <i class="bi bi-pencil-square"></i> Lançamentos
+    </a>
+    {% endif %}
+
+    {% if acesso_banco_talentos %}
+    <div class="hub-nav-sep"></div>
+    <div class="hub-nav-label">Banco de Talentos</div>
+    <a href="{{ url_for('talentos_index') }}" class="hub-nav-item {% if 'talentos' in request.endpoint %}active{% endif %}">
+      <i class="bi bi-person-badge"></i> Ver Candidatos
+    </a>
+    {% endif %}
+
+    {% if user_tipo in ('master', 'gestor') %}
+    <div class="hub-nav-sep"></div>
+    <div class="hub-nav-label">Gestão</div>
+    <a href="{{ url_for('usuarios') }}" class="hub-nav-item {% if request.endpoint == 'usuarios' %}active{% endif %}">
+      <i class="bi bi-people"></i> Usuários e Empresas
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="hub-user">
+    <div class="hub-user-pill">
+      <div class="hub-user-avatar">{{ user_nome[0].upper() if user_nome else '?' }}</div>
+      <div style="flex:1;min-width:0">
+        <div class="hub-user-name">{{ user_nome }}</div>
+        <span class="hub-user-tipo">{{ user_tipo }}</span>
+      </div>
+      <a href="{{ url_for('logout') }}" title="Sair" style="color:var(--muted)">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
+    <div class="hub-actions">
+      <form method="post" action="{{ url_for('alternar_tema') }}" style="display:inline">
+        <button type="submit" title="Alternar tema">
+          <i class="bi bi-{% if tema_usuario == 'escuro' %}sun{% else %}moon-stars{% endif %}"></i>
+          {{ 'Claro' if tema_usuario == 'escuro' else 'Escuro' }}
+        </button>
+      </form>
+      <a href="#" onclick="document.getElementById('fmSenhaHub').style.display=document.getElementById('fmSenhaHub').style.display==='none'?'block':'none';return false">
+        <i class="bi bi-key"></i> Senha
+      </a>
+    </div>
+    <form action="{{ url_for('minha_senha') }}" method="post" id="fmSenhaHub" style="display:none;margin-top:8px">
+      <input class="form-control form-control-sm mb-1" type="password" name="atual" placeholder="Senha atual"
+        style="background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:6px 10px">
+      <input class="form-control form-control-sm mb-1" type="password" name="nova" placeholder="Nova senha"
+        style="background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:6px 10px">
+      <button class="btn btn-sm btn-gold w-100" style="font-size:11px;padding:5px">Salvar</button>
+    </form>
+  </div>
+</nav>
+
+<div class="hub-overlay" id="hubOverlay" onclick="document.getElementById('hub-sidebar').classList.remove('open');this.classList.remove('show')"></div>
+
+<!-- Main -->
+<div id="hub-main">
+  <div class="hub-topbar">
+    <button class="hub-hamburger" onclick="document.getElementById('hub-sidebar').classList.toggle('open');document.getElementById('hubOverlay').classList.toggle('show')">
+      <i class="bi bi-list"></i>
+    </button>
+    <span class="hub-topbar-title">{% block page_title %}{% endblock %}</span>
+    {% block topbar_extra %}{% endblock %}
+  </div>
+
+  <div class="hub-page-content">
+    {% for cat in ['success','danger','info','warning'] %}
+      {% with msgs = get_flashed_messages(category_filter=[cat]) %}
+        {% if msgs %}{% for m in msgs %}
+          <div class="alert alert-{{ cat }} mb-3">{{ m }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+    {% endfor %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+<script>
+(function(){
+  var token = "{{ csrf_token() }}";
+  document.querySelectorAll('form[method="post"],form[method="POST"]').forEach(function(f){
+    if(!f.querySelector('input[name="_csrf_token"]')){
+      var inp=document.createElement('input');inp.type='hidden';inp.name='_csrf_token';inp.value=token;f.appendChild(inp);
+    }
+  });
+  new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      m.addedNodes.forEach(function(n){
+        if(n.tagName==='FORM'&&(n.method||'').toUpperCase()==='POST'&&!n.querySelector('input[name="_csrf_token"]')){
+          var inp=document.createElement('input');inp.type='hidden';inp.name='_csrf_token';inp.value=token;n.appendChild(inp);
+        }
+      });
+    });
+  }).observe(document.body,{childList:true,subtree:true});
+})();
+</script>
+</body>
+</html>
