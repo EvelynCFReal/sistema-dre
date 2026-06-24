@@ -1122,10 +1122,16 @@ def get_bancos_talentos(apenas_ativos=True):
 
 
 def get_bancos_usuario(usuario_id, tipo_usuario):
-    """Retorna lista de bancos acessíveis ao usuário (novo sistema)."""
-    if tipo_usuario == "master":
-        return get_bancos_talentos()
+    """Retorna lista de bancos acessíveis ao usuário.
+    Masters sem atribuições explícitas recebem acesso a tudo (master original).
+    Masters com atribuições explícitas ficam limitados a elas (sub-masters criados via UI)."""
     conn = get_db()
+    explicitas = conn.execute(
+        "SELECT banco_id FROM usuario_bancos_talentos WHERE usuario_id=?", (usuario_id,)
+    ).fetchall()
+    if tipo_usuario == "master" and not explicitas:
+        conn.close()
+        return get_bancos_talentos()
     rows = conn.execute("""
         SELECT bt.* FROM bancos_talentos bt
         JOIN usuario_bancos_talentos ubt ON ubt.banco_id = bt.id
