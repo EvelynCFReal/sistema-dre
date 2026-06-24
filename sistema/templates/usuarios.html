@@ -621,5 +621,36 @@ function fecharModal(id){ document.getElementById(id).classList.remove('show'); 
 document.querySelectorAll('.modal-dre').forEach(m=>{
   m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('show'); });
 });
+
+// Módulos do sistema
+function salvarModulo(){
+  var nome = document.getElementById('modNome').value.trim();
+  var slug = document.getElementById('modSlug').value.trim();
+  if(!nome||!slug){alert('Nome e slug são obrigatórios.');return;}
+  var f = document.createElement('form');
+  f.method='post'; f.action='{{ url_for("modulo_salvar") }}';
+  [['nome',nome],['slug',slug],['descricao',document.getElementById('modDesc').value],
+   ['icone',document.getElementById('modIcone').value],
+   ['modulo_id',document.getElementById('modId').value]].forEach(function(p){
+    var i=document.createElement('input');i.type='hidden';i.name=p[0];i.value=p[1];f.appendChild(i);
+  });
+  document.body.appendChild(f); f.submit();
+}
+function editarModulo(mod){
+  document.getElementById('modId').value = mod.id;
+  document.getElementById('modNome').value = mod.nome;
+  document.getElementById('modSlug').value = mod.slug;
+  document.getElementById('modDesc').value = mod.descricao||'';
+  document.getElementById('modIcone').value = mod.icone||'bi-puzzle';
+  document.getElementById('modNome').focus();
+}
+// Auto-gera slug a partir do nome
+document.getElementById('modNome').addEventListener('input', function(){
+  if(!document.getElementById('modId').value){
+    document.getElementById('modSlug').value = this.value.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  }
+});
 </script>
 {% endblock %}
