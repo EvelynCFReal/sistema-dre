@@ -1066,6 +1066,11 @@ def editar_usuario(uid):
     if nome_v:
         conn.execute("UPDATE usuarios SET nome=? WHERE id=?", (nome_v, uid))
 
+    # Atualiza acesso_dre (só master pode alterar)
+    if tipo_sess == "master":
+        acesso_dre_v = 1 if request.form.get("acesso_dre") else 0
+        conn.execute("UPDATE usuarios SET acesso_dre=? WHERE id=?", (acesso_dre_v, uid))
+
     # Atualiza vínculos (multilojas)
     loja_ids = request.form.getlist("loja_ids")
     perfis = request.form.getlist("perfis")
