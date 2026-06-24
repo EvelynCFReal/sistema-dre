@@ -277,6 +277,60 @@
 
 </div>
 
+{% if user_tipo == 'master' %}
+<!-- GERENCIAR MÓDULOS -->
+<div class="col-12">
+  <div class="config-section">
+    <h6><i class="bi bi-puzzle"></i> Módulos do Sistema
+      <span style="font-size:9px;font-weight:400;color:var(--muted);margin-left:8px;text-transform:none;letter-spacing:0">
+        Os módulos cadastrados aqui aparecem como opções de acesso em cada usuário
+      </span>
+    </h6>
+    <div class="row g-2 align-items-end mb-3" id="formModulo">
+      <div class="col-sm-3">
+        <label class="form-label">Nome</label>
+        <input type="text" id="modNome" class="form-control" placeholder="Ex: Financeiro">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label">Slug</label>
+        <input type="text" id="modSlug" class="form-control" placeholder="financeiro">
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label">Descrição</label>
+        <input type="text" id="modDesc" class="form-control" placeholder="Opcional">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label">Ícone Bootstrap</label>
+        <input type="text" id="modIcone" class="form-control" placeholder="bi-puzzle" value="bi-puzzle">
+      </div>
+      <div class="col-sm-2">
+        <button type="button" class="btn-gold w-100" onclick="salvarModulo()">Salvar</button>
+      </div>
+    </div>
+    <input type="hidden" id="modId" value="">
+    {% for mod in modulos_sistema_list %}
+    <div class="item-row">
+      <div>
+        <div class="item-nome"><i class="{{ mod.icone }}" style="color:var(--gold);margin-right:6px"></i>{{ mod.nome }}
+          <span style="font-size:9px;color:var(--muted);margin-left:6px">{{ mod.slug }}</span>
+        </div>
+        {% if mod.descricao %}<div class="item-meta">{{ mod.descricao }}</div>{% endif %}
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn-sm-dre btn-gold-sm" onclick="editarModulo({{ mod|tojson }})"><i class="bi bi-pencil"></i></button>
+        {% if mod.slug != 'dre' %}
+        <form method="post" action="{{ url_for('modulo_excluir', mid=mod.id) }}"
+          onsubmit="return confirm('Excluir módulo {{ mod.nome }}?')" style="margin:0">
+          <button type="submit" class="btn-sm-dre btn-verm"><i class="bi bi-trash3"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <!-- MODAL PERMISSÕES DE MESES -->
 <div class="modal-dre" id="modalPerm">
   <div class="modal-box">
