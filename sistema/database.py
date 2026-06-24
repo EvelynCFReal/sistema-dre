@@ -395,7 +395,7 @@ def migrar_db():
         c.execute("""
         CREATE TABLE talentos_notas (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            banco           TEXT NOT NULL CHECK(banco IN ('sunomono','monopizza','grupomono')),
+            banco           TEXT NOT NULL,
             candidato_email TEXT NOT NULL,
             ex_funcionario  INTEGER DEFAULT 0,
             contratou       INTEGER DEFAULT 0,
@@ -405,14 +405,14 @@ def migrar_db():
             UNIQUE(banco, candidato_email)
         )""")
     else:
-        # Migra tabela para aceitar 'grupomono' no CHECK constraint
+        # Remove CHECK constraint para suportar bancos dinâmicos
         tbl_sql = c.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='talentos_notas'").fetchone()
-        if tbl_sql and "grupomono" not in tbl_sql[0]:
+        if tbl_sql and "CHECK" in tbl_sql[0]:
             c.execute("ALTER TABLE talentos_notas RENAME TO _talentos_notas_old")
             c.execute("""
             CREATE TABLE talentos_notas (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                banco           TEXT NOT NULL CHECK(banco IN ('sunomono','monopizza','grupomono')),
+                banco           TEXT NOT NULL,
                 candidato_email TEXT NOT NULL,
                 ex_funcionario  INTEGER DEFAULT 0,
                 contratou       INTEGER DEFAULT 0,
@@ -425,7 +425,7 @@ def migrar_db():
                          SELECT id,banco,candidato_email,ex_funcionario,contratou,observacao,atualizado_por,atualizado_em FROM _talentos_notas_old""")
             c.execute("DROP TABLE _talentos_notas_old")
 
-    # Adiciona colunas de acesso ao Banco de Talentos nos usuários
+    # Adiciona colunas de acesso ao Banco de Talentos nos usuários (legado)
     cols_usr = [r[1] for r in c.execute("PRAGMA table_info(usuarios)").fetchall()]
     if "acesso_talentos_sunomono" not in cols_usr:
         c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_sunomono INTEGER DEFAULT 0")
@@ -433,6 +433,64 @@ def migrar_db():
         c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_monopizza INTEGER DEFAULT 0")
     if "acesso_talentos_grupomono" not in cols_usr:
         c.execute("ALTER TABLE usuarios ADD COLUMN acesso_talentos_grupomono INTEGER DEFAULT 0")
+
+    # ── Novas colunas de controle de acesso por sistema ──
+    if "acesso_dre" not in cols_usr:
+        c.execute("ALTER TABLE usuarios ADD COLUMN acesso_dre INTEGER DEFAULT 1")
+        c.execute("UPDATE usuarios SET acesso_dre=1")
+    if "acesso_banco_talentos" not in cols_usr:
+        c.execute("ALTER TABLE usuarios ADD COLUMN acesso_banco_talentos INTEGER DEFAULT 0")
+        c.execute("""UPDATE usuarios SET acesso_banco_talentos=1
+                     WHERE acesso_talentos_sunomono=1 OR acesso_talentos_monopizza=1 OR acesso_talentos_grupomono=1""")
+
+    # ── bancos_talentos (configurável) ──
+    if "bancos_talentos" not in tabelas:
+        c.execute("""
+        CREATE TABLE bancos_talentos (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome        TEXT NOT NULL,
+            slug        TEXT NOT NULL UNIQUE,
+            fonte_url   TEXT DEFAULT '',
+            ultimo_sync TIMESTAMP,
+            ativo       INTEGER DEFAULT 1,
+            criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        c.executemany(
+            "INSERT OR IGNORE INTO bancos_talentos(nome, slug, fonte_url) VALUES(?,?,?)",
+            [
+                ("Sunomono", "sunomono",
+                 "https://docs.google.com/spreadsheets/d/18DlMtVIvDzQPvRAx9mASWttpJL4ib4bW36m8xqEc-10/gviz/tq?tqx=out:csv&gid=1788712909"),
+                ("Mono Pizza", "monopizza",
+                 "https://docs.google.com/spreadsheets/d/1pTNKN6NFGmaHJi8b9klpgbigBOnyLU9SKbc11tqbERo/gviz/tq?tqx=out:csv&gid=0"),
+                ("Grupo Mono", "grupomono", ""),
+            ]
+        )
+
+    # ── usuario_bancos_talentos ──
+    if "usuario_bancos_talentos" not in tabelas:
+        c.execute("""
+        CREATE TABLE usuario_bancos_talentos (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+            banco_id    INTEGER NOT NULL REFERENCES bancos_talentos(id) ON DELETE CASCADE,
+            UNIQUE(usuario_id, banco_id)
+        )""")
+        # Migra permissões das colunas legadas
+        bancos_mapa = {}
+        for b in c.execute("SELECT id, slug FROM bancos_talentos").fetchall():
+            bancos_mapa[b["slug"]] = b["id"]
+        mig_cols = [
+            ("sunomono", "acesso_talentos_sunomono"),
+            ("monopizza", "acesso_talentos_monopizza"),
+            ("grupomono", "acesso_talentos_grupomono"),
+        ]
+        for u2 in c.execute("SELECT id, acesso_talentos_sunomono, acesso_talentos_monopizza, acesso_talentos_grupomono FROM usuarios").fetchall():
+            for slug, col in mig_cols:
+                if u2[col] and slug in bancos_mapa:
+                    c.execute(
+                        "INSERT OR IGNORE INTO usuario_bancos_talentos(usuario_id, banco_id) VALUES(?,?)",
+                        (u2["id"], bancos_mapa[slug])
+                    )
 
     # Coluna de último acesso
     if "ultimo_acesso" not in cols_usr:
