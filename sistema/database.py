@@ -554,6 +554,35 @@ def migrar_db():
             criado_em  TIMESTAMP
         )""")
 
+    # ── modulos_sistema (módulos configuráveis do sistema) ──
+    if "modulos_sistema" not in tabelas:
+        c.execute("""
+        CREATE TABLE modulos_sistema (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome      TEXT NOT NULL,
+            slug      TEXT NOT NULL UNIQUE,
+            descricao TEXT DEFAULT '',
+            icone     TEXT DEFAULT 'bi-puzzle',
+            ativo     INTEGER DEFAULT 1,
+            ordem     INTEGER DEFAULT 0
+        )""")
+        c.execute("INSERT OR IGNORE INTO modulos_sistema(nome,slug,descricao,icone,ordem) VALUES('DRE','dre','Gestão financeira e lançamentos','bi-bar-chart-line',1)")
+
+    # ── usuario_modulos (módulos liberados por usuário) ──
+    if "usuario_modulos" not in tabelas:
+        c.execute("""
+        CREATE TABLE usuario_modulos (
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+            modulo_id  INTEGER NOT NULL REFERENCES modulos_sistema(id) ON DELETE CASCADE,
+            PRIMARY KEY (usuario_id, modulo_id)
+        )""")
+        dre_row = c.execute("SELECT id FROM modulos_sistema WHERE slug='dre'").fetchone()
+        if dre_row:
+            c.execute(
+                "INSERT OR IGNORE INTO usuario_modulos(usuario_id,modulo_id) SELECT id,? FROM usuarios WHERE acesso_dre=1",
+                (dre_row[0],)
+            )
+
     # ── ÍNDICES PARA PERFORMANCE ──
     c.executescript("""
     CREATE INDEX IF NOT EXISTS idx_lc_loja_data ON lancamentos_caixa(loja_id, data);
