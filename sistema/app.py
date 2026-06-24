@@ -299,61 +299,59 @@ def alternar_tema():
 # ──────────────────────────────────────────
 #  AUTH
 # ──────────────────────────────────────────
+def _pos_login_redirect(uid, tipo):
+    """Determina para onde redirecionar após login com base nas permissões."""
+    if tipo == "master":
+        return redirect(url_for("dashboard"))
+    if tipo == "loja":
+        return redirect(url_for("lancamentos"))
+    # Para gestor/leitor: verifica acesso_dre vs apenas BT
+    conn = get_db()
+    u = conn.execute("SELECT acesso_dre FROM usuarios WHERE id=?", (uid,)).fetchone()
+    conn.close()
+    acesso_dre = u["acesso_dre"] if u else 1
+    if acesso_dre:
+        return redirect(url_for("dashboard"))
+    bancos = get_bancos_usuario(uid, tipo)
+    if bancos:
+        return redirect(url_for("talentos_index"))
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     if "usuario_id" in session:
-        if session.get("tipo") == "loja":
-            return redirect(url_for("lancamentos"))
-        return redirect(url_for("dashboard"))
+        return _pos_login_redirect(session["usuario_id"], session.get("tipo", ""))
 
     erro = None
-    sistema_get = request.args.get("sistema", "dre")
     if request.method == "POST":
-        # Rate limiting por IP
         ip = request.remote_addr or "unknown"
         agora_ts = time.time()
         _login_attempts[ip] = [t for t in _login_attempts[ip] if agora_ts - t < _LOGIN_WINDOW]
         if len(_login_attempts[ip]) >= _LOGIN_MAX_ATTEMPTS:
             erro = "Muitas tentativas de login. Aguarde alguns minutos."
-            return render_template("login.html", erro=erro, sistema=sistema_get)
+            return render_template("login.html", erro=erro)
 
         lv = request.form.get("login", "").strip()
         sv = request.form.get("senha", "")
-        sistema = request.form.get("sistema", "dre")
         conn = get_db()
-        u = conn.execute(
-            "SELECT * FROM usuarios WHERE login=? AND ativo=1", (lv,)
-        ).fetchone()
+        u = conn.execute("SELECT * FROM usuarios WHERE login=? AND ativo=1", (lv,)).fetchone()
         conn.close()
 
-        # Previne timing attack: sempre verifica hash mesmo sem usuário
         dummy_hash = "pbkdf2:sha256:600000$x$0000000000000000000000000000000000000000000000000000000000000000"
         check_password_hash(dummy_hash, sv) if not u else None
         senha_ok = check_password_hash(u["senha_hash"], sv) if u else False
 
         if u and senha_ok:
-            if sistema == "talentos":
-                # Verifica acesso ao Banco de Talentos
-                bancos = get_bancos_usuario(u["id"], u["tipo"])
-                if not bancos:
-                    _login_attempts[ip].append(agora_ts)
-                    erro = "Você não tem acesso ao Banco de Talentos."
-                    return render_template("login.html", erro=erro, sistema=sistema)
-
-            # Determina loja inicial
             loja_inicial = 1
             if u["tipo"] != "master":
                 lojas = get_lojas_usuario(u["id"], u["tipo"])
-                if not lojas and sistema == "dre":
-                    erro = "Nenhuma empresa ativa vinculada ao seu acesso. Contate o administrador."
-                    return render_template("login.html", erro=erro, sistema=sistema)
                 if lojas:
                     loja_inicial = lojas[0]["id"]
 
-            # Registra último acesso (horário de Brasília)
             conn2 = get_db()
             conn2.execute(
-                "UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?",
+                "UPDATE usuarios SET ultimo_acesso=? WHERE id=?",
                 (agora_br().strftime("%Y-%m-%d %H:%M:%S"), u["id"]),
             )
             conn2.commit()
@@ -367,16 +365,12 @@ def login():
                 ano_sel=agora_br().year,
                 tema_preferido=u["tema_preferido"] or "escuro",
             )
+            return _pos_login_redirect(u["id"], u["tipo"])
 
-            if sistema == "talentos":
-                return redirect(url_for("talentos_index"))
-            if u["tipo"] == "loja":
-                return redirect(url_for("lancamentos"))
-            return redirect(url_for("dashboard"))
         _login_attempts[ip].append(agora_ts)
         erro = "Login ou senha incorretos."
 
-    return render_template("login.html", erro=erro, sistema=sistema_get)
+    return render_template("login.html", erro=erro)
 
 
 @app.route("/logout")
