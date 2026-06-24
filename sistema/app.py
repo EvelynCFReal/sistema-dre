@@ -1896,6 +1896,35 @@ def talentos_index():
     return render_template("talentos/index.html", bancos=bancos)
 
 
+@app.route("/modulos/salvar", methods=["POST"])
+@login_required
+@role_required("master")
+def modulo_salvar():
+    nome = request.form.get("nome", "").strip()
+    slug = request.form.get("slug", "").strip()
+    descricao = request.form.get("descricao", "").strip()
+    icone = request.form.get("icone", "bi-puzzle").strip()
+    mid = request.form.get("modulo_id") or None
+    if not nome or not slug:
+        flash("Nome e slug são obrigatórios.", "danger")
+        return redirect(url_for("usuarios"))
+    try:
+        salvar_modulo_sistema(nome, slug, descricao, icone, int(mid) if mid else None)
+        flash(f"Módulo '{nome}' salvo.", "success")
+    except Exception as e:
+        flash(f"Erro: {e}", "danger")
+    return redirect(url_for("usuarios"))
+
+
+@app.route("/modulos/<int:mid>/excluir", methods=["POST"])
+@login_required
+@role_required("master")
+def modulo_excluir(mid):
+    excluir_modulo_sistema(mid)
+    flash("Módulo excluído.", "success")
+    return redirect(url_for("usuarios"))
+
+
 @app.route("/talentos/admin/")
 @login_required
 @role_required("master")
