@@ -30,6 +30,9 @@ from database import (
     get_lojas_usuario, get_perfil_loja, get_lojas_gestor,
     copiar_parametros_loja,
     get_talentos_notas, salvar_talento_nota, get_acesso_talentos,
+    get_bancos_talentos, get_bancos_usuario, get_banco_by_slug,
+    salvar_banco_talentos as db_salvar_banco_talentos,
+    excluir_banco_talentos, set_banco_sync, set_usuario_bancos,
     salvar_chat_mensagem, get_chat_historico,
     salvar_sugestao, get_sugestoes, marcar_sugestao_lida,
 )
