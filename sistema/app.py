@@ -33,6 +33,8 @@ from database import (
     get_bancos_talentos, get_bancos_usuario, get_banco_by_slug,
     salvar_banco_talentos as db_salvar_banco_talentos,
     excluir_banco_talentos, set_banco_sync, set_usuario_bancos,
+    get_modulos_sistema, get_modulos_usuario_ids, set_usuario_modulos_acesso,
+    salvar_modulo_sistema, excluir_modulo_sistema,
     salvar_chat_mensagem, get_chat_historico,
     salvar_sugestao, get_sugestoes, marcar_sugestao_lida,
 )
