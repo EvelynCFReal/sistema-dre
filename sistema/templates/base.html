@@ -292,6 +292,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
     </select>
   </form>
 
+  <a href="{{ url_for('home') }}" class="nav-item" style="opacity:.6;font-size:11px;margin-bottom:2px">
+    <i class="bi bi-arrow-left"></i> Início
+  </a>
+
   <div class="nav-section">Principal</div>
 
   {% if user_tipo != 'loja' %}
