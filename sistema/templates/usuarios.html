@@ -94,22 +94,14 @@
             {% endif %}
             {% endif %}
           </div>
-          {% if u.vinculos %}
           <div style="margin-top:3px">
             {% for v in u.vinculos %}
             <span class="vinculo-tag vt-{{ v.perfil }}">{{ v.loja_nome }} ({{ v.perfil }})</span>
             {% endfor %}
-            {% if u.acesso_talentos_sunomono %}
-            <span class="vinculo-tag" style="background:rgba(61,143,96,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos Sun.</span>
-            {% endif %}
-            {% if u.acesso_talentos_monopizza %}
-            <span class="vinculo-tag" style="background:rgba(61,143,96,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos MP</span>
-            {% endif %}
-            {% if u.acesso_talentos_grupomono %}
-            <span class="vinculo-tag" style="background:rgba(61,143,96,.12);color:var(--gold)"><i class="bi bi-person-badge"></i> Talentos GM</span>
+            {% if u.acesso_banco_talentos %}
+            <span class="vinculo-tag" style="background:rgba(91,141,238,.12);color:var(--blue)"><i class="bi bi-person-badge"></i> Talentos</span>
             {% endif %}
           </div>
-          {% endif %}
         </div>
         <div class="user-actions">
           {% if u.tipo in ('loja','leitor') %}
