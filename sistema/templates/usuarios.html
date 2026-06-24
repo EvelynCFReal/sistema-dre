@@ -111,7 +111,7 @@
           {% endif %}
 
           {% if u.tipo != 'master' %}
-          <button class="btn-sm-dre btn-gold-sm" onclick='abrirEditar({{ u.id }},{{ u.nome|tojson }},{{ u.vinculos|tojson }},{{ u.banco_ids|tojson }})'>
+          <button class="btn-sm-dre btn-gold-sm" onclick='abrirEditar({{ u.id }},{{ u.nome|tojson }},{{ u.vinculos|tojson }},{{ u.banco_ids|tojson }},{{ u.acesso_dre }})'>
             <i class="bi bi-pencil"></i> Editar
           </button>
           <button class="btn-sm-dre btn-gold-sm" onclick="abrirSenha({{ u.id }},'{{ u.nome }}')">
