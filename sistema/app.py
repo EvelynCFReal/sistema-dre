@@ -1030,13 +1030,13 @@ def novo_usuario():
 
         # Permissões Banco de Talentos (só master pode definir)
         if tipo_sess == "master":
-            at_sun = 1 if request.form.get("acesso_talentos_sunomono") else 0
-            at_mp = 1 if request.form.get("acesso_talentos_monopizza") else 0
-            at_gm = 1 if request.form.get("acesso_talentos_grupomono") else 0
-            conn.execute(
-                "UPDATE usuarios SET acesso_talentos_sunomono=?, acesso_talentos_monopizza=?, acesso_talentos_grupomono=? WHERE id=?",
-                (at_sun, at_mp, at_gm, novo_id),
-            )
+            banco_ids = [int(b) for b in request.form.getlist("banco_talentos_ids") if b]
+            conn.execute("DELETE FROM usuario_bancos_talentos WHERE usuario_id=?", (novo_id,))
+            for bid in banco_ids:
+                conn.execute(
+                    "INSERT OR IGNORE INTO usuario_bancos_talentos(usuario_id, banco_id) VALUES(?,?)",
+                    (novo_id, bid)
+                )
 
         conn.commit()
         flash(f"Usuário '{nome_v}' criado com sucesso!", "success")
