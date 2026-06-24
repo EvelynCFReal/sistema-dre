@@ -1110,23 +1110,95 @@ def salvar_talento_nota(banco, email, ex_funcionario, contratou, observacao, usu
     conn.close()
 
 
-def get_acesso_talentos(usuario_id, tipo_usuario):
-    """Retorna dict com permissões de acesso ao banco de talentos."""
-    if tipo_usuario == "master":
-        return {"sunomono": True, "monopizza": True, "grupomono": True}
+def get_bancos_talentos(apenas_ativos=True):
+    """Retorna lista de todos os bancos de talentos configurados."""
     conn = get_db()
-    r = conn.execute(
-        "SELECT acesso_talentos_sunomono, acesso_talentos_monopizza, acesso_talentos_grupomono FROM usuarios WHERE id=?",
-        (usuario_id,),
-    ).fetchone()
+    if apenas_ativos:
+        rows = conn.execute("SELECT * FROM bancos_talentos WHERE ativo=1 ORDER BY nome").fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM bancos_talentos ORDER BY nome").fetchall()
     conn.close()
-    if not r:
-        return {"sunomono": False, "monopizza": False, "grupomono": False}
-    return {
-        "sunomono": bool(r["acesso_talentos_sunomono"]),
-        "monopizza": bool(r["acesso_talentos_monopizza"]),
-        "grupomono": bool(r["acesso_talentos_grupomono"]),
-    }
+    return [dict(r) for r in rows]
+
+
+def get_bancos_usuario(usuario_id, tipo_usuario):
+    """Retorna lista de bancos acessíveis ao usuário (novo sistema)."""
+    if tipo_usuario == "master":
+        return get_bancos_talentos()
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT bt.* FROM bancos_talentos bt
+        JOIN usuario_bancos_talentos ubt ON ubt.banco_id = bt.id
+        WHERE ubt.usuario_id = ? AND bt.ativo = 1
+        ORDER BY bt.nome
+    """, (usuario_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_banco_by_slug(slug):
+    """Retorna dados de um banco pelo slug."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM bancos_talentos WHERE slug=? AND ativo=1", (slug,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def salvar_banco_talentos(nome, slug, fonte_url, banco_id=None):
+    """Cria ou atualiza um banco de talentos."""
+    conn = get_db()
+    if banco_id:
+        conn.execute(
+            "UPDATE bancos_talentos SET nome=?, slug=?, fonte_url=? WHERE id=?",
+            (nome, slug, fonte_url, int(banco_id))
+        )
+    else:
+        conn.execute(
+            "INSERT INTO bancos_talentos(nome, slug, fonte_url) VALUES(?,?,?)",
+            (nome, slug, fonte_url)
+        )
+    conn.commit()
+    conn.close()
+
+
+def excluir_banco_talentos(banco_id):
+    """Desativa um banco de talentos (soft delete)."""
+    conn = get_db()
+    conn.execute("UPDATE bancos_talentos SET ativo=0 WHERE id=?", (banco_id,))
+    conn.commit()
+    conn.close()
+
+
+def set_banco_sync(banco_id):
+    """Atualiza o timestamp de último sync."""
+    from datetime import datetime, timezone, timedelta
+    agora = datetime.now(timezone(timedelta(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db()
+    conn.execute("UPDATE bancos_talentos SET ultimo_sync=? WHERE id=?", (agora, banco_id))
+    conn.commit()
+    conn.close()
+
+
+def set_usuario_bancos(usuario_id, banco_ids):
+    """Define quais bancos um usuário pode acessar (substitui todos)."""
+    conn = get_db()
+    conn.execute("DELETE FROM usuario_bancos_talentos WHERE usuario_id=?", (usuario_id,))
+    for bid in banco_ids:
+        conn.execute(
+            "INSERT OR IGNORE INTO usuario_bancos_talentos(usuario_id, banco_id) VALUES(?,?)",
+            (usuario_id, int(bid))
+        )
+    conn.commit()
+    conn.close()
+
+
+def get_acesso_talentos(usuario_id, tipo_usuario):
+    """Retorna dict legado com permissões (slug→bool) baseado no novo sistema."""
+    bancos = get_bancos_usuario(usuario_id, tipo_usuario)
+    result = {}
+    for b in get_bancos_talentos():
+        result[b["slug"]] = any(x["slug"] == b["slug"] for x in bancos)
+    return result
 
 
 # ──────────────────────────────────────────
