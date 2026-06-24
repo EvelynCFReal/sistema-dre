@@ -1781,54 +1781,47 @@ def consultar_cnpj(cnpj):
 
 
 # ──────────────────────────────────────────
-#  BANCO DE TALENTOS
+#  BANCO DE TALENTOS – módulo separado (/talentos/)
 # ──────────────────────────────────────────
-# Cache em memória para os dados do Banco de Talentos
-_sheets_cache = {}  # {banco: {"data": [...], "ts": timestamp}}
-SHEETS_CACHE_TTL = 30  # 30 segundos – sincronia quase instantânea
-
-SHEETS_CONFIG = {
-    "sunomono": {
-        "id": "18DlMtVIvDzQPvRAx9mASWttpJL4ib4bW36m8xqEc-10",
-        "gid": "1788712909",
-    },
-    "monopizza": {
-        "id": "1pTNKN6NFGmaHJi8b9klpgbigBOnyLU9SKbc11tqbERo",
-        "gid": "0",
-    },
-    # "grupomono": será adicionado quando a planilha for fornecida
-}
+# Cache em memória para candidatos por slug
+_sheets_cache = {}  # {slug: {"data": [...], "ts": timestamp}}
+SHEETS_CACHE_TTL = 30  # segundos
 
 
-def fetch_sheet_csv(banco):
-    """Busca dados do Google Sheets via CSV export, com cache."""
+def parse_sheets_url(url):
+    """Converte qualquer URL do Google Sheets em URL de CSV direto."""
+    if not url:
+        return None
+    if "tqx=out:csv" in url:
+        return url
+    match_id = re.search(r'/spreadsheets/d/([a-zA-Z0-9_-]+)', url)
+    if not match_id:
+        return None
+    sheet_id = match_id.group(1)
+    match_gid = re.search(r'[#&?]gid=(\d+)', url)
+    gid = match_gid.group(1) if match_gid else "0"
+    return f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid}"
+
+
+def fetch_candidatos(slug, fonte_url):
+    """Busca candidatos do Google Sheets, com cache por slug."""
     now = time.time()
-    cached = _sheets_cache.get(banco)
+    cached = _sheets_cache.get(slug)
     if cached and (now - cached["ts"]) < SHEETS_CACHE_TTL:
         return cached["data"]
-
-    cfg = SHEETS_CONFIG.get(banco)
-    if not cfg:
-        return []
-
-    url = f"https://docs.google.com/spreadsheets/d/{cfg['id']}/gviz/tq?tqx=out:csv&gid={cfg['gid']}"
+    csv_url = parse_sheets_url(fonte_url)
+    if not csv_url:
+        return cached["data"] if cached else []
     try:
-        req = urlreq.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        req = urlreq.Request(csv_url, headers={"User-Agent": "Mozilla/5.0"})
         with urlreq.urlopen(req, timeout=15) as resp:
             raw = resp.read().decode("utf-8-sig")
         reader = csv.DictReader(io.StringIO(raw))
-        rows = []
-        for r in reader:
-            # Normaliza nomes das colunas (remove espaços extras)
-            cleaned = {k.strip(): v.strip() if v else "" for k, v in r.items() if k}
-            rows.append(cleaned)
-        _sheets_cache[banco] = {"data": rows, "ts": now}
+        rows = [{k.strip(): (v.strip() if v else "") for k, v in r.items() if k} for r in reader]
+        _sheets_cache[slug] = {"data": rows, "ts": now}
         return rows
     except Exception:
-        # Se falhar, retorna cache antigo se existir
-        if cached:
-            return cached["data"]
-        return []
+        return cached["data"] if cached else []
 
 
 def extrair_unidade(unidade_interesse):
@@ -1840,113 +1833,179 @@ def extrair_unidade(unidade_interesse):
     return unidade_interesse.strip()
 
 
+def _parse_candidatos(rows):
+    """Converte linhas CSV em lista de candidatos normalizada."""
+    candidatos, areas = [], set()
+    for i, r in enumerate(rows):
+        uni_raw = r.get("Unidade interesse", r.get("Unidade Interesse", r.get("Unidade_interesse", "")))
+        area = r.get("Area de interesse", r.get("Area_de_interesse", "")).strip()
+        if area:
+            areas.add(area)
+        candidatos.append({
+            "idx": i,
+            "data": r.get("Data", ""),
+            "status": r.get("Status", ""),
+            "nome": r.get("Nome", ""),
+            "email": r.get("Email", r.get("email", "")),
+            "telefone": r.get("Telefone", ""),
+            "telefone_recado": r.get("Telefone recado", r.get("Telefone Recado", "")),
+            "cep": r.get("Cep", r.get("CEP", "")),
+            "cidade": r.get("Cidade", ""),
+            "bairro": r.get("Bairro", ""),
+            "unidade_interesse": uni_raw,
+            "unidade": extrair_unidade(uni_raw),
+            "area_interesse": area,
+            "tem_experiencia": r.get("Tem experiencia", r.get("Tem_experiencia", "")),
+            "tempo_experiencia": r.get("Tempo de experiencia", r.get("Tempo_de_experiencia", "")),
+            "disponibilidade": r.get("Disponibilidade", ""),
+            "pretensao_salarial": r.get("Pretensao salarial", r.get("Pretensao_salarial", "")),
+            "resumo_experiencias": r.get("Resumo experiencias", r.get("Resumo_experiencias", "")),
+        })
+    return candidatos, sorted(areas)
+
+
+@app.route("/talentos/")
+@login_required
+def talentos_index():
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    bancos = get_bancos_usuario(uid, tipo)
+    if not bancos:
+        flash("Você não tem acesso ao Banco de Talentos.", "danger")
+        return redirect(url_for("dashboard"))
+    return render_template("talentos/index.html", bancos=bancos)
+
+
+@app.route("/talentos/admin/")
+@login_required
+@role_required("master")
+def talentos_admin():
+    bancos = get_bancos_talentos(apenas_ativos=False)
+    return render_template("talentos/admin.html", bancos=bancos)
+
+
+@app.route("/talentos/admin/salvar", methods=["POST"])
+@login_required
+@role_required("master")
+def talentos_admin_salvar():
+    banco_id = request.form.get("banco_id") or None
+    nome = request.form.get("nome", "").strip()
+    slug = request.form.get("slug", "").strip()
+    fonte_url = request.form.get("fonte_url", "").strip()
+    if not nome or not slug:
+        flash("Nome e slug são obrigatórios.", "danger")
+        return redirect(url_for("talentos_admin"))
+    if not re.match(r'^[a-z0-9\-]+$', slug):
+        flash("Slug deve conter apenas letras minúsculas, números e hífens.", "danger")
+        return redirect(url_for("talentos_admin"))
+    try:
+        db_salvar_banco_talentos(nome, slug, fonte_url, banco_id)
+        flash("Banco de talentos salvo.", "success")
+    except Exception as e:
+        flash(f"Erro ao salvar: {e}", "danger")
+    return redirect(url_for("talentos_admin"))
+
+
+@app.route("/talentos/admin/<int:bid>/excluir", methods=["POST"])
+@login_required
+@role_required("master")
+def talentos_admin_excluir(bid):
+    excluir_banco_talentos(bid)
+    flash("Banco de talentos removido.", "info")
+    return redirect(url_for("talentos_admin"))
+
+
+@app.route("/talentos/admin/<int:bid>/ativar", methods=["POST"])
+@login_required
+@role_required("master")
+def talentos_admin_ativar(bid):
+    conn = get_db()
+    conn.execute("UPDATE bancos_talentos SET ativo=1 WHERE id=?", (bid,))
+    conn.commit()
+    conn.close()
+    flash("Banco de talentos reativado.", "success")
+    return redirect(url_for("talentos_admin"))
+
+
+@app.route("/talentos/<slug>")
+@login_required
+def talentos_banco(slug):
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    banco = get_banco_by_slug(slug)
+    if not banco:
+        flash("Banco de talentos não encontrado.", "danger")
+        return redirect(url_for("talentos_index"))
+    bancos = get_bancos_usuario(uid, tipo)
+    if not any(b["slug"] == slug for b in bancos):
+        flash("Você não tem acesso a este Banco de Talentos.", "danger")
+        return redirect(url_for("talentos_index"))
+    rows = fetch_candidatos(slug, banco.get("fonte_url", ""))
+    candidatos, areas = _parse_candidatos(rows)
+    notas = get_talentos_notas(slug)
+    filtro_area = request.args.get("area", "")
+    return render_template(
+        "talentos/banco.html",
+        banco=banco,
+        candidatos=candidatos,
+        notas=notas,
+        areas=areas,
+        filtro_area=filtro_area,
+        bancos=bancos,
+    )
+
+
+@app.route("/talentos/<slug>/nota", methods=["POST"])
+@login_required
+def talentos_nota(slug):
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    banco = get_banco_by_slug(slug)
+    if not banco:
+        return redirect(url_for("talentos_index"))
+    bancos = get_bancos_usuario(uid, tipo)
+    if not any(b["slug"] == slug for b in bancos):
+        flash("Sem permissão.", "danger")
+        return redirect(url_for("talentos_index"))
+    email = request.form.get("email", "").strip()
+    if not email:
+        flash("Candidato não identificado.", "danger")
+        return redirect(url_for("talentos_banco", slug=slug))
+    salvar_talento_nota(
+        slug, email,
+        1 if request.form.get("ex_funcionario") else 0,
+        1 if request.form.get("contratou") else 0,
+        request.form.get("observacao", "").strip(),
+        uid,
+    )
+    flash("Informações do candidato atualizadas.", "success")
+    area = request.form.get("filtro_area", "")
+    return redirect(url_for("talentos_banco", slug=slug, area=area))
+
+
+@app.route("/talentos/<slug>/sync")
+@login_required
+def talentos_sync(slug):
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    bancos = get_bancos_usuario(uid, tipo)
+    if not any(b["slug"] == slug for b in bancos):
+        flash("Sem permissão.", "danger")
+        return redirect(url_for("talentos_index"))
+    _sheets_cache.pop(slug, None)
+    banco = get_banco_by_slug(slug)
+    if banco:
+        set_banco_sync(banco["id"])
+    flash("Banco de talentos sincronizado.", "success")
+    return redirect(url_for("talentos_banco", slug=slug))
+
+
+# Rotas antigas → redirecionam para novo módulo
 @app.route("/banco-talentos")
 @app.route("/banco-talentos/<banco>")
 @login_required
 def banco_talentos(banco="sunomono"):
-    uid = session["usuario_id"]
-    tipo = session["tipo"]
-
-    # Valida banco
-    if banco not in ("sunomono", "monopizza", "grupomono"):
-        flash("Banco de talentos inválido.", "danger")
-        return redirect(url_for("dashboard"))
-
-    # Verifica permissão de acesso
-    acesso = get_acesso_talentos(uid, tipo)
-    if not acesso.get(banco):
-        flash("Você não tem acesso a este Banco de Talentos.", "danger")
-        if tipo == "loja":
-            return redirect(url_for("lancamentos"))
-        return redirect(url_for("dashboard"))
-
-    # Busca dados do banco de talentos
-    candidatos = []
-    areas = set()
-
-    if banco in SHEETS_CONFIG:
-        rows = fetch_sheet_csv(banco)
-        for i, r in enumerate(rows):
-            uni_raw = r.get("Unidade interesse", r.get("Unidade Interesse", r.get("Unidade_interesse", "")))
-            unidade = extrair_unidade(uni_raw)
-            area = r.get("Area de interesse", r.get("Area_de_interesse", "")).strip()
-            if area:
-                areas.add(area)
-            candidatos.append({
-                "idx": i,
-                "data": r.get("Data", ""),
-                "status": r.get("Status", ""),
-                "nome": r.get("Nome", ""),
-                "email": r.get("Email", r.get("email", "")),
-                "telefone": r.get("Telefone", ""),
-                "telefone_recado": r.get("Telefone recado", r.get("Telefone Recado", "")),
-                "cep": r.get("Cep", r.get("CEP", "")),
-                "cidade": r.get("Cidade", ""),
-                "bairro": r.get("Bairro", ""),
-                "unidade_interesse": uni_raw,
-                "unidade": unidade,
-                "area_interesse": area,
-                "tem_experiencia": r.get("Tem experiencia", r.get("Tem_experiencia", "")),
-                "tempo_experiencia": r.get("Tempo de experiencia", r.get("Tempo_de_experiencia", "")),
-                "disponibilidade": r.get("Disponibilidade", ""),
-                "pretensao_salarial": r.get("Pretensao salarial", r.get("Pretensao_salarial", "")),
-                "resumo_experiencias": r.get("Resumo experiencias", r.get("Resumo_experiencias", "")),
-            })
-
-    # Busca notas salvas no banco
-    notas = get_talentos_notas(banco)
-
-    # Aplica filtro de área de interesse
-    filtro_area = request.args.get("area", "")
-
-    return render_template(
-        "banco_talentos.html",
-        banco=banco,
-        candidatos=candidatos,
-        notas=notas,
-        areas=sorted(areas),
-        filtro_area=filtro_area,
-        acesso=acesso,
-    )
-
-
-@app.route("/banco-talentos/<banco>/nota", methods=["POST"])
-@login_required
-def salvar_nota_talento(banco):
-    uid = session["usuario_id"]
-    tipo = session["tipo"]
-
-    acesso = get_acesso_talentos(uid, tipo)
-    if not acesso.get(banco):
-        flash("Sem permissão.", "danger")
-        return redirect(url_for("banco_talentos", banco=banco))
-
-    email = request.form.get("email", "").strip()
-    if not email:
-        flash("Candidato não identificado.", "danger")
-        return redirect(url_for("banco_talentos", banco=banco))
-
-    ex_func = 1 if request.form.get("ex_funcionario") else 0
-    contratou = 1 if request.form.get("contratou") else 0
-    obs = request.form.get("observacao", "").strip()
-
-    salvar_talento_nota(banco, email, ex_func, contratou, obs, uid)
-    flash("Informações do candidato atualizadas.", "success")
-
-    # Mantém filtro se existir
-    area = request.form.get("filtro_area", "")
-    return redirect(url_for("banco_talentos", banco=banco, area=area))
-
-
-@app.route("/banco-talentos/<banco>/refresh")
-@login_required
-def refresh_talentos(banco):
-    """Força atualização dos dados do banco de talentos (limpa cache)."""
-    if banco in _sheets_cache:
-        del _sheets_cache[banco]
-    flash("Banco de talentos atualizado.", "success")
-    area = request.args.get("area", "")
-    return redirect(url_for("banco_talentos", banco=banco, area=area))
+    return redirect(url_for("talentos_banco", slug=banco))
 
 
 # ══════════════════════════════════════════
