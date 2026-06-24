@@ -238,25 +238,17 @@
         </button>
       </div>
 
-      {% if user_tipo == 'master' %}
+      {% if user_tipo == 'master' and bancos_talentos_list %}
       <div class="mb-3">
         <label class="form-label">Banco de Talentos</label>
         <div style="display:flex;flex-direction:column;gap:6px">
+          {% for banco in bancos_talentos_list %}
           <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
             padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
-            <input type="checkbox" name="acesso_talentos_sunomono" value="1">
-            <span>Liberar acesso Banco de Talentos <strong>Sunomono</strong></span>
+            <input type="checkbox" name="banco_talentos_ids" value="{{ banco.id }}">
+            <span>Acesso ao Banco de Talentos <strong>{{ banco.nome }}</strong></span>
           </label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
-            padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
-            <input type="checkbox" name="acesso_talentos_monopizza" value="1">
-            <span>Liberar acesso Banco de Talentos <strong>Mono Pizza</strong></span>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
-            padding:6px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
-            <input type="checkbox" name="acesso_talentos_grupomono" value="1">
-            <span>Liberar acesso Banco de Talentos <strong>Grupo Mono</strong></span>
-          </label>
+          {% endfor %}
         </div>
       </div>
       {% endif %}
