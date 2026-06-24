@@ -925,6 +925,7 @@ def usuarios():
             "vinculos": [dict(v) for v in vinculos],
             "banco_ids": [b["banco_id"] for b in banco_ids_rows],
             "acesso_banco_talentos": bool(banco_ids_rows),
+            "acesso_dre": u["acesso_dre"] if "acesso_dre" in u.keys() else 1,
         })
 
     # Master vê todas as lojas (inclusive inativas) para poder gerenciar
