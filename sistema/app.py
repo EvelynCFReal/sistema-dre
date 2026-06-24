@@ -215,8 +215,10 @@ def inject_globals():
         perfil_loja = get_perfil_loja(uid, loja_id, tipo) if tipo != "master" else "master"
 
     # Acesso ao Banco de Talentos
-    acesso_talentos = {"sunomono": False, "monopizza": False, "grupomono": False}
+    acesso_talentos = {}
+    bancos_usuario = []
     if uid:
+        bancos_usuario = get_bancos_usuario(uid, tipo)
         acesso_talentos = get_acesso_talentos(uid, tipo)
 
     return dict(
@@ -236,6 +238,8 @@ def inject_globals():
         ANO_INICIO=ANO_INICIO,
         ANO_FIM=ANO_FIM,
         acesso_talentos=acesso_talentos,
+        bancos_usuario=bancos_usuario,
+        acesso_banco_talentos=len(bancos_usuario) > 0,
     )
 
 
