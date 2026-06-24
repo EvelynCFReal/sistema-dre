@@ -216,6 +216,16 @@
         </select>
       </div>
 
+      {% if user_tipo == 'master' %}
+      <div class="mb-3">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;
+          padding:8px 10px;border-radius:6px;background:var(--card2);border:1px solid var(--border)">
+          <input type="checkbox" name="acesso_dre" value="1" checked id="checkAcessoDreNovo">
+          <span>Acesso ao <strong>DRE</strong></span>
+        </label>
+      </div>
+      {% endif %}
+
       <!-- Multilojas -->
       <div class="mb-3">
         <label class="form-label">Vincular às Lojas</label>
