@@ -100,10 +100,6 @@ a{color:inherit;text-decoration:none}
        class="{% if request.endpoint == 'talentos_admin' %}active{% endif %}">
       <i class="bi bi-gear"></i> Gerenciar
     </a>
-    <a href="{{ url_for('usuarios') }}"
-       class="{% if request.endpoint == 'usuarios' %}active{% endif %}">
-      <i class="bi bi-people"></i> Usuários
-    </a>
     {% endif %}
   </nav>
   <div class="bt-user">
