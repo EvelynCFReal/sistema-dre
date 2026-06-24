@@ -1010,9 +1010,10 @@ def novo_usuario():
 
     conn = get_db()
     try:
+        acesso_dre_v = 1 if request.form.get("acesso_dre") else 0
         cur = conn.execute(
-            "INSERT INTO usuarios(login, senha_hash, nome, tipo) VALUES(?,?,?,?)",
-            (login_v, generate_password_hash(senha_v), nome_v, tipo_novo),
+            "INSERT INTO usuarios(login, senha_hash, nome, tipo, acesso_dre) VALUES(?,?,?,?,?)",
+            (login_v, generate_password_hash(senha_v), nome_v, tipo_novo, acesso_dre_v),
         )
         novo_id = cur.lastrowid
 
