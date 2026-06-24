@@ -926,6 +926,9 @@ def usuarios():
         banco_ids_rows = conn.execute(
             "SELECT banco_id FROM usuario_bancos_talentos WHERE usuario_id=?", (u["id"],)
         ).fetchall()
+        modulo_ids_u = conn.execute(
+            "SELECT modulo_id FROM usuario_modulos WHERE usuario_id=?", (u["id"],)
+        ).fetchall()
         lista_enriquecida.append({
             "id": u["id"], "login": u["login"], "nome": u["nome"],
             "tipo": u["tipo"], "ativo": u["ativo"],
@@ -935,6 +938,7 @@ def usuarios():
             "banco_ids": [b["banco_id"] for b in banco_ids_rows],
             "acesso_banco_talentos": bool(banco_ids_rows),
             "acesso_dre": u["acesso_dre"] if "acesso_dre" in u.keys() else 1,
+            "modulo_ids": [r["modulo_id"] for r in modulo_ids_u],
         })
 
     # Master vê todas as lojas (inclusive inativas) para poder gerenciar
