@@ -311,71 +311,180 @@ def alternar_tema():
 #  AUTH
 # ──────────────────────────────────────────
 def _pos_login_redirect(uid, tipo):
-    """Após login, todos vão para a tela inicial do hub."""
     return redirect(url_for("home"))
 
 
-@app.route("/", methods=["GET", "POST"])
+def _processar_login(form_data, ip):
+    """Lógica de autenticação compartilhada entre /entrar e /entrar/<slug>."""
+    agora_ts = time.time()
+    _login_attempts[ip] = [t for t in _login_attempts[ip] if agora_ts - t < _LOGIN_WINDOW]
+    if len(_login_attempts[ip]) >= _LOGIN_MAX_ATTEMPTS:
+        return None, "Muitas tentativas de login. Aguarde alguns minutos."
+
+    lv = form_data.get("login", "").strip()
+    sv = form_data.get("senha", "")
+    conn = get_db()
+    u = conn.execute("SELECT * FROM usuarios WHERE login=? AND ativo=1", (lv,)).fetchone()
+    conn.close()
+
+    dummy_hash = "pbkdf2:sha256:600000$x$0000000000000000000000000000000000000000000000000000000000000000"
+    check_password_hash(dummy_hash, sv) if not u else None
+    senha_ok = check_password_hash(u["senha_hash"], sv) if u else False
+
+    if u and senha_ok:
+        loja_inicial = 1
+        if u["tipo"] != "master":
+            lojas = get_lojas_usuario(u["id"], u["tipo"])
+            if lojas:
+                loja_inicial = lojas[0]["id"]
+        conn2 = get_db()
+        conn2.execute(
+            "UPDATE usuarios SET ultimo_acesso=? WHERE id=?",
+            (agora_br().strftime("%Y-%m-%d %H:%M:%S"), u["id"]),
+        )
+        conn2.commit()
+        conn2.close()
+        session.update(
+            usuario_id=u["id"],
+            nome=u["nome"],
+            tipo=u["tipo"],
+            nivel=u["nivel"] if u["nivel"] else u["tipo"],
+            grupo_id=u["grupo_id"] if u["grupo_id"] else 1,
+            loja_id=loja_inicial,
+            ano_sel=agora_br().year,
+            tema_preferido=u["tema_preferido"] or "escuro",
+        )
+        return u, None
+
+    _login_attempts[ip].append(agora_ts)
+    return None, "Login ou senha incorretos."
+
+
+# Landing pública
+@app.route("/")
+def landing():
+    if "usuario_id" in session:
+        return redirect(url_for("home"))
+    modulos = get_modulos_sistema(apenas_ativos=True)
+    return render_template("landing.html", modulos=modulos)
+
+
+# Login genérico (sem grupo específico)
+@app.route("/entrar", methods=["GET", "POST"])
 def login():
     if "usuario_id" in session:
-        return _pos_login_redirect(session["usuario_id"], session.get("tipo", ""))
-
+        return redirect(url_for("home"))
     erro = None
     if request.method == "POST":
-        ip = request.remote_addr or "unknown"
-        agora_ts = time.time()
-        _login_attempts[ip] = [t for t in _login_attempts[ip] if agora_ts - t < _LOGIN_WINDOW]
-        if len(_login_attempts[ip]) >= _LOGIN_MAX_ATTEMPTS:
-            erro = "Muitas tentativas de login. Aguarde alguns minutos."
-            return render_template("login.html", erro=erro)
-
-        lv = request.form.get("login", "").strip()
-        sv = request.form.get("senha", "")
-        conn = get_db()
-        u = conn.execute("SELECT * FROM usuarios WHERE login=? AND ativo=1", (lv,)).fetchone()
-        conn.close()
-
-        dummy_hash = "pbkdf2:sha256:600000$x$0000000000000000000000000000000000000000000000000000000000000000"
-        check_password_hash(dummy_hash, sv) if not u else None
-        senha_ok = check_password_hash(u["senha_hash"], sv) if u else False
-
-        if u and senha_ok:
-            loja_inicial = 1
-            if u["tipo"] != "master":
-                lojas = get_lojas_usuario(u["id"], u["tipo"])
-                if lojas:
-                    loja_inicial = lojas[0]["id"]
-
-            conn2 = get_db()
-            conn2.execute(
-                "UPDATE usuarios SET ultimo_acesso=? WHERE id=?",
-                (agora_br().strftime("%Y-%m-%d %H:%M:%S"), u["id"]),
-            )
-            conn2.commit()
-            conn2.close()
-
-            session.update(
-                usuario_id=u["id"],
-                nome=u["nome"],
-                tipo=u["tipo"],
-                nivel=u["nivel"] if u["nivel"] else u["tipo"],
-                grupo_id=u["grupo_id"] if u["grupo_id"] else 1,
-                loja_id=loja_inicial,
-                ano_sel=agora_br().year,
-                tema_preferido=u["tema_preferido"] or "escuro",
-            )
+        u, erro = _processar_login(request.form, request.remote_addr or "unknown")
+        if u:
             return _pos_login_redirect(u["id"], u["tipo"])
-
-        _login_attempts[ip].append(agora_ts)
-        erro = "Login ou senha incorretos."
-
     return render_template("login.html", erro=erro)
+
+
+# Login personalizado por grupo
+@app.route("/entrar/<slug>", methods=["GET", "POST"])
+def login_grupo(slug):
+    if "usuario_id" in session:
+        return redirect(url_for("home"))
+    grupo = get_grupo_by_slug(slug)
+    if not grupo:
+        flash("Grupo não encontrado.", "danger")
+        return redirect(url_for("landing"))
+    erro = None
+    if request.method == "POST":
+        u, erro = _processar_login(request.form, request.remote_addr or "unknown")
+        if u:
+            return _pos_login_redirect(u["id"], u["tipo"])
+    return render_template("login_grupo.html", grupo=grupo, erro=erro)
+
+
+# API pública: busca grupo por slug (usado na landing)
+@app.route("/api/grupo/<slug>")
+def api_grupo_slug(slug):
+    grupo = get_grupo_by_slug(slug)
+    if not grupo:
+        return jsonify({"encontrado": False}), 404
+    return jsonify({
+        "encontrado": True,
+        "nome": grupo["nome"],
+        "slug": grupo["slug"],
+        "logo_url": grupo.get("logo_url", ""),
+        "cor_primaria": grupo.get("cor_primaria", "#3d8f60"),
+        "nome_exibicao": grupo.get("nome_exibicao", "") or grupo["nome"],
+    })
 
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("landing"))
+
+
+# ──────────────────────────────────────────
+#  PAINEL DO GRUPO (master)
+# ──────────────────────────────────────────
+@app.route("/grupo/painel")
+@login_required
+@role_required("master", "gestor")
+def grupo_painel():
+    gid = session.get("grupo_id", 1)
+    lojas = get_lojas_grupo(gid)
+    stats = get_stats_grupo(gid)
+    tema = get_tema_grupo(gid)
+    conn = get_db()
+    grupo = conn.execute("SELECT * FROM grupos WHERE id=?", (gid,)).fetchone()
+    conn.close()
+    return render_template("grupo_painel.html",
+                           grupo=dict(grupo) if grupo else {},
+                           lojas=lojas, stats=stats, tema=tema)
+
+
+@app.route("/grupo/tema/salvar", methods=["POST"])
+@login_required
+@role_required("master")
+def grupo_tema_salvar():
+    gid = session.get("grupo_id", 1)
+    salvar_tema_grupo(
+        grupo_id=gid,
+        nome_exibicao=request.form.get("nome_exibicao", "").strip(),
+        cor_primaria=request.form.get("cor_primaria", "#3d8f60"),
+        cor_secundaria=request.form.get("cor_secundaria", "#1e5235"),
+        bg_login_url=request.form.get("bg_login_url", "").strip(),
+        logo_url=request.form.get("logo_url", "").strip(),
+    )
+    flash("Tema atualizado.", "success")
+    return redirect(url_for("grupo_painel"))
+
+
+@app.route("/grupo/lojas/nova", methods=["POST"])
+@login_required
+@role_required("master")
+def grupo_loja_nova():
+    gid = session.get("grupo_id", 1)
+    nome = request.form.get("nome", "").strip()
+    if not nome:
+        flash("Nome obrigatório.", "danger")
+        return redirect(url_for("grupo_painel"))
+    conn = get_db()
+    conn.execute("INSERT INTO lojas(nome, grupo_id) VALUES(?,?)", (nome, gid))
+    conn.commit()
+    conn.close()
+    flash(f"Empresa '{nome}' criada.", "success")
+    return redirect(url_for("grupo_painel"))
+
+
+@app.route("/grupo/lojas/<int:lid>/excluir", methods=["POST"])
+@login_required
+@role_required("master")
+def grupo_loja_excluir(lid):
+    gid = session.get("grupo_id", 1)
+    conn = get_db()
+    conn.execute("UPDATE lojas SET ativo=0 WHERE id=? AND grupo_id=?", (lid, gid))
+    conn.commit()
+    conn.close()
+    flash("Empresa removida.", "success")
+    return redirect(url_for("grupo_painel"))
 
 
 @app.route("/home")
