@@ -1273,9 +1273,9 @@ def get_bancos_talentos(apenas_ativos=True, grupo_id=None):
     filtros = []
     params = []
     if apenas_ativos:
-        filtros.append("ativo=1")
+        filtros.append("bt.ativo=1")
     if grupo_id is not None:
-        filtros.append("grupo_id=?")
+        filtros.append("bt.grupo_id=?")
         params.append(grupo_id)
     where = ("WHERE " + " AND ".join(filtros)) if filtros else ""
     rows = conn.execute(
