@@ -1227,13 +1227,22 @@ def salvar_talento_nota(banco, email, ex_funcionario, contratou, observacao, usu
     conn.close()
 
 
-def get_bancos_talentos(apenas_ativos=True):
-    """Retorna lista de todos os bancos de talentos configurados."""
+def get_bancos_talentos(apenas_ativos=True, grupo_id=None):
+    """Retorna lista de bancos de talentos, opcionalmente filtrada por grupo."""
     conn = get_db()
+    filtros = []
+    params = []
     if apenas_ativos:
-        rows = conn.execute("SELECT * FROM bancos_talentos WHERE ativo=1 ORDER BY nome").fetchall()
-    else:
-        rows = conn.execute("SELECT * FROM bancos_talentos ORDER BY nome").fetchall()
+        filtros.append("ativo=1")
+    if grupo_id is not None:
+        filtros.append("grupo_id=?")
+        params.append(grupo_id)
+    where = ("WHERE " + " AND ".join(filtros)) if filtros else ""
+    rows = conn.execute(
+        f"SELECT bt.*, g.nome as grupo_nome FROM bancos_talentos bt "
+        f"LEFT JOIN grupos g ON g.id=bt.grupo_id {where} ORDER BY bt.nome",
+        params
+    ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
