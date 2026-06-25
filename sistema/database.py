@@ -1852,17 +1852,17 @@ def get_setores_chamados(grupo_id, apenas_ativos=True):
     conn.close()
     return [dict(r) for r in rows]
 
-def salvar_setor_chamado(grupo_id, nome, cor, responsavel_id, pode_abrir, pode_receber, setor_id=None):
+def salvar_setor_chamado(grupo_id, nome, cor, responsavel_id, pode_abrir, pode_receber, setor_id=None, categorias=""):
     agora = _agora_br()
     conn = get_db()
     if setor_id:
-        conn.execute("""UPDATE chamados_setores SET nome=?,cor=?,responsavel_id=?,pode_abrir=?,pode_receber=?
+        conn.execute("""UPDATE chamados_setores SET nome=?,cor=?,responsavel_id=?,pode_abrir=?,pode_receber=?,categorias=?
                         WHERE id=? AND grupo_id=?""",
-                     (nome, cor, responsavel_id or None, pode_abrir, pode_receber, setor_id, grupo_id))
+                     (nome, cor, responsavel_id or None, pode_abrir, pode_receber, categorias or "", setor_id, grupo_id))
     else:
-        conn.execute("""INSERT INTO chamados_setores(grupo_id,nome,cor,responsavel_id,pode_abrir,pode_receber,criado_em)
-                        VALUES(?,?,?,?,?,?,?)""",
-                     (grupo_id, nome, cor, responsavel_id or None, pode_abrir, pode_receber, agora))
+        conn.execute("""INSERT INTO chamados_setores(grupo_id,nome,cor,responsavel_id,pode_abrir,pode_receber,categorias,criado_em)
+                        VALUES(?,?,?,?,?,?,?,?)""",
+                     (grupo_id, nome, cor, responsavel_id or None, pode_abrir, pode_receber, categorias or "", agora))
     conn.commit(); conn.close()
 
 def excluir_setor_chamado(setor_id, grupo_id):
