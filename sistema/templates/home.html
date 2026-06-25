@@ -131,9 +131,13 @@ a{color:inherit;text-decoration:none}
 <!-- Sidebar -->
 <aside class="hub-sidebar" id="hubSidebar">
   <div class="hub-brand">
+    {% if unyrax_logo_url %}
+    <img src="{{ unyrax_logo_url }}" alt="UNYRAX" style="width:130px;max-height:56px;object-fit:contain;margin-bottom:4px;display:block">
+    {% else %}
     <div class="hub-brand-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
     <div class="hub-brand-name">UNYRAX</div>
     <div class="hub-brand-sub">Sistemas de Gestão</div>
+    {% endif %}
   </div>
 
   <nav class="hub-nav">
