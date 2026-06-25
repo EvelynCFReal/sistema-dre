@@ -1833,6 +1833,197 @@ def editar_chamado(chamado_id, titulo, descricao, prioridade, categoria, loja_id
     conn.close()
 
 
+# ── Setores ──
+def get_setores_chamados(grupo_id, apenas_ativos=True):
+    conn = get_db()
+    where = "WHERE grupo_id=? AND ativo=1" if apenas_ativos else "WHERE grupo_id=?"
+    rows = conn.execute(f"""
+        SELECT s.*, u.nome as responsavel_nome
+        FROM chamados_setores s
+        LEFT JOIN usuarios u ON u.id=s.responsavel_id
+        {where} ORDER BY s.nome
+    """, (grupo_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def salvar_setor_chamado(grupo_id, nome, cor, responsavel_id, pode_abrir, pode_receber, setor_id=None):
+    agora = _agora_br()
+    conn = get_db()
+    if setor_id:
+        conn.execute("""UPDATE chamados_setores SET nome=?,cor=?,responsavel_id=?,pode_abrir=?,pode_receber=?
+                        WHERE id=? AND grupo_id=?""",
+                     (nome, cor, responsavel_id or None, pode_abrir, pode_receber, setor_id, grupo_id))
+    else:
+        conn.execute("""INSERT INTO chamados_setores(grupo_id,nome,cor,responsavel_id,pode_abrir,pode_receber,criado_em)
+                        VALUES(?,?,?,?,?,?,?)""",
+                     (grupo_id, nome, cor, responsavel_id or None, pode_abrir, pode_receber, agora))
+    conn.commit(); conn.close()
+
+def excluir_setor_chamado(setor_id, grupo_id):
+    conn = get_db()
+    conn.execute("UPDATE chamados_setores SET ativo=0 WHERE id=? AND grupo_id=?", (setor_id, grupo_id))
+    conn.commit(); conn.close()
+
+# ── Etiquetas ──
+def get_etiquetas_chamados(grupo_id, apenas_ativas=True):
+    conn = get_db()
+    where = "WHERE grupo_id=? AND ativo=1" if apenas_ativas else "WHERE grupo_id=?"
+    rows = conn.execute(f"SELECT * FROM chamados_etiquetas {where} ORDER BY nome", (grupo_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def salvar_etiqueta_chamado(grupo_id, nome, cor, etiqueta_id=None):
+    conn = get_db()
+    if etiqueta_id:
+        conn.execute("UPDATE chamados_etiquetas SET nome=?,cor=? WHERE id=? AND grupo_id=?",
+                     (nome, cor, etiqueta_id, grupo_id))
+    else:
+        conn.execute("INSERT INTO chamados_etiquetas(grupo_id,nome,cor) VALUES(?,?,?)", (grupo_id, nome, cor))
+    conn.commit(); conn.close()
+
+def excluir_etiqueta_chamado(etiqueta_id, grupo_id):
+    conn = get_db()
+    conn.execute("UPDATE chamados_etiquetas SET ativo=0 WHERE id=? AND grupo_id=?", (etiqueta_id, grupo_id))
+    conn.commit(); conn.close()
+
+def get_etiquetas_do_chamado(chamado_id):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT e.* FROM chamados_etiquetas e
+        JOIN chamado_etiqueta ce ON ce.etiqueta_id=e.id
+        WHERE ce.chamado_id=?
+    """, (chamado_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def set_etiquetas_chamado(chamado_id, etiqueta_ids):
+    conn = get_db()
+    conn.execute("DELETE FROM chamado_etiqueta WHERE chamado_id=?", (chamado_id,))
+    for eid in etiqueta_ids:
+        conn.execute("INSERT OR IGNORE INTO chamado_etiqueta(chamado_id,etiqueta_id) VALUES(?,?)", (chamado_id, int(eid)))
+    conn.execute("UPDATE chamados SET atualizado_em=? WHERE id=?", (_agora_br(), chamado_id))
+    conn.commit(); conn.close()
+
+# ── SLA ──
+def get_slas_chamados(grupo_id, apenas_ativos=True):
+    conn = get_db()
+    where = "WHERE grupo_id=? AND ativo=1" if apenas_ativos else "WHERE grupo_id=?"
+    rows = conn.execute(f"SELECT * FROM chamados_sla {where} ORDER BY CASE prioridade WHEN 'urgente' THEN 0 WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END", (grupo_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def salvar_sla_chamado(grupo_id, nome, prioridade, horas_resposta, horas_resolucao,
+                        dias_semana, hora_inicio, hora_fim, sla_id=None):
+    conn = get_db()
+    if sla_id:
+        conn.execute("""UPDATE chamados_sla SET nome=?,prioridade=?,horas_resposta=?,horas_resolucao=?,
+                        dias_semana=?,hora_inicio=?,hora_fim=? WHERE id=? AND grupo_id=?""",
+                     (nome, prioridade, horas_resposta, horas_resolucao,
+                      dias_semana, hora_inicio, hora_fim, sla_id, grupo_id))
+    else:
+        conn.execute("""INSERT INTO chamados_sla(grupo_id,nome,prioridade,horas_resposta,horas_resolucao,
+                        dias_semana,hora_inicio,hora_fim) VALUES(?,?,?,?,?,?,?,?)""",
+                     (grupo_id, nome, prioridade, horas_resposta, horas_resolucao,
+                      dias_semana, hora_inicio, hora_fim))
+    conn.commit(); conn.close()
+
+def excluir_sla_chamado(sla_id, grupo_id):
+    conn = get_db()
+    conn.execute("UPDATE chamados_sla SET ativo=0 WHERE id=? AND grupo_id=?", (sla_id, grupo_id))
+    conn.commit(); conn.close()
+
+def calcular_prazo_sla(grupo_id, prioridade):
+    """Calcula o prazo de resolução com base no SLA configurado para a prioridade, respeitando horário comercial."""
+    from datetime import datetime, timedelta, timezone
+    conn = get_db()
+    sla = conn.execute(
+        "SELECT * FROM chamados_sla WHERE grupo_id=? AND prioridade=? AND ativo=1 ORDER BY id LIMIT 1",
+        (grupo_id, prioridade)
+    ).fetchone()
+    conn.close()
+    if not sla:
+        horas = {"urgente":4,"alta":8,"media":24,"baixa":72}.get(prioridade, 24)
+        return (_agora_br_dt() + timedelta(hours=horas)).strftime("%Y-%m-%d %H:%M:%S")
+
+    dias = [int(d) for d in sla["dias_semana"].split(",") if d.strip()]
+    hi = int(sla["hora_inicio"].split(":")[0])
+    hf = int(sla["hora_fim"].split(":")[0])
+    horas_restantes = float(sla["horas_resolucao"])
+    agora = _agora_br_dt()
+    current = agora
+
+    while horas_restantes > 0:
+        if current.isoweekday() in dias and hi <= current.hour < hf:
+            horas_restantes -= 1
+            current += timedelta(hours=1)
+        else:
+            current += timedelta(hours=1)
+            if current.hour >= hf or current.isoweekday() not in dias:
+                # Avança para próximo dia útil no horário de início
+                current = current.replace(hour=hi, minute=0, second=0, microsecond=0)
+                dias_avancados = 0
+                while current.isoweekday() not in dias and dias_avancados < 14:
+                    current += timedelta(days=1)
+                    dias_avancados += 1
+    return current.strftime("%Y-%m-%d %H:%M:%S")
+
+def _agora_br_dt():
+    from datetime import datetime, timezone, timedelta
+    return datetime.now(timezone(timedelta(hours=-3))).replace(tzinfo=None)
+
+# ── Apoios e Acompanhantes ──
+def get_apoios_chamado(chamado_id):
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM chamado_apoios WHERE chamado_id=? ORDER BY adicionado_em", (chamado_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_acompanhantes_chamado(chamado_id):
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM chamado_acompanhantes WHERE chamado_id=? ORDER BY adicionado_em", (chamado_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def adicionar_apoio_chamado(chamado_id, usuario_id, usuario_nome, ator_id, ator_nome):
+    agora = _agora_br()
+    conn = get_db()
+    try:
+        conn.execute("INSERT OR IGNORE INTO chamado_apoios(chamado_id,usuario_id,usuario_nome,adicionado_em) VALUES(?,?,?,?)",
+                     (chamado_id, usuario_id, usuario_nome, agora))
+        conn.execute("""INSERT INTO chamados_comentarios(chamado_id,usuario_id,usuario_nome,texto,tipo,criado_em)
+                        VALUES(?,?,?,?,?,?)""",
+                     (chamado_id, ator_id, ator_nome, f"Apoio adicionado: {usuario_nome}", "atribuicao", agora))
+        conn.execute("UPDATE chamados SET atualizado_em=? WHERE id=?", (agora, chamado_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+def remover_apoio_chamado(chamado_id, usuario_id):
+    conn = get_db()
+    conn.execute("DELETE FROM chamado_apoios WHERE chamado_id=? AND usuario_id=?", (chamado_id, usuario_id))
+    conn.execute("UPDATE chamados SET atualizado_em=? WHERE id=?", (_agora_br(), chamado_id))
+    conn.commit(); conn.close()
+
+def adicionar_acompanhante_chamado(chamado_id, usuario_id, usuario_nome, ator_id, ator_nome):
+    agora = _agora_br()
+    conn = get_db()
+    try:
+        conn.execute("INSERT OR IGNORE INTO chamado_acompanhantes(chamado_id,usuario_id,usuario_nome,adicionado_em) VALUES(?,?,?,?)",
+                     (chamado_id, usuario_id, usuario_nome, agora))
+        conn.execute("""INSERT INTO chamados_comentarios(chamado_id,usuario_id,usuario_nome,texto,tipo,criado_em)
+                        VALUES(?,?,?,?,?,?)""",
+                     (chamado_id, ator_id, ator_nome, f"Acompanhante adicionado: {usuario_nome}", "atribuicao", agora))
+        conn.execute("UPDATE chamados SET atualizado_em=? WHERE id=?", (agora, chamado_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+def remover_acompanhante_chamado(chamado_id, usuario_id):
+    conn = get_db()
+    conn.execute("DELETE FROM chamado_acompanhantes WHERE chamado_id=? AND usuario_id=?", (chamado_id, usuario_id))
+    conn.execute("UPDATE chamados SET atualizado_em=? WHERE id=?", (_agora_br(), chamado_id))
+    conn.commit(); conn.close()
+
 def get_stats_chamados(grupo_id=None, loja_id=None):
     conn = get_db()
     filtros, params = [], []
