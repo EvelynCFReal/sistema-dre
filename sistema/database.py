@@ -1392,6 +1392,23 @@ def salvar_tema_grupo(grupo_id, nome_exibicao, cor_primaria, cor_secundaria, bg_
     conn.close()
 
 
+def get_lojas_grupo(grupo_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM lojas WHERE grupo_id=? AND ativo=1 ORDER BY nome", (grupo_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_stats_grupo(grupo_id):
+    conn = get_db()
+    n_lojas = conn.execute("SELECT COUNT(*) FROM lojas WHERE grupo_id=? AND ativo=1", (grupo_id,)).fetchone()[0]
+    n_users = conn.execute("SELECT COUNT(*) FROM usuarios WHERE grupo_id=? AND ativo=1", (grupo_id,)).fetchone()[0]
+    conn.close()
+    return {"lojas": n_lojas, "usuarios": n_users}
+
+
 def salvar_grupo(nome, slug, grupo_id=None):
     conn = get_db()
     try:
