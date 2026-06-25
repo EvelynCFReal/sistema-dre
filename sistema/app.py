@@ -357,6 +357,8 @@ def login():
                 usuario_id=u["id"],
                 nome=u["nome"],
                 tipo=u["tipo"],
+                nivel=u["nivel"] if u["nivel"] else u["tipo"],
+                grupo_id=u["grupo_id"] if u["grupo_id"] else 1,
                 loja_id=loja_inicial,
                 ano_sel=agora_br().year,
                 tema_preferido=u["tema_preferido"] or "escuro",
