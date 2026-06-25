@@ -764,6 +764,10 @@ def migrar_db():
     if cols_ch and "prazo_sla" not in cols_ch:
         c.execute("ALTER TABLE chamados ADD COLUMN prazo_sla TIMESTAMP")
 
+    cols_cs = [r[1] for r in c.execute("PRAGMA table_info(chamados_setores)").fetchall()]
+    if cols_cs and "categorias" not in cols_cs:
+        c.execute("ALTER TABLE chamados_setores ADD COLUMN categorias TEXT DEFAULT ''")
+
     # Seed módulo Chamados
     c.execute("""INSERT OR IGNORE INTO modulos_sistema(nome,slug,descricao,icone,ordem)
                  VALUES('Chamados','chamados','Abertura e acompanhamento de chamados de suporte','bi-headset',3)""")
