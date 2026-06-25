@@ -78,6 +78,37 @@
         </div>
       </div>
 
+      <!-- Setor -->
+      {% if setores %}
+      <div class="fld">
+        <label>Setor</label>
+        <select name="setor_id">
+          <option value="">— Nenhum setor —</option>
+          {% for s in setores %}
+          <option value="{{ s.id }}">{{ s.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- Etiquetas -->
+      {% if etiquetas %}
+      <div class="fld">
+        <label>Etiquetas</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--card2);border:1px solid var(--border);border-radius:8px">
+          {% for et in etiquetas %}
+          <label style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;
+            padding:5px 10px;border-radius:6px;border:1px solid {{ et.cor }}55;font-size:11px;
+            background:var(--card2);color:{{ et.cor }}">
+            <input type="checkbox" name="etiquetas" value="{{ et.id }}"
+              style="width:12px;height:12px;accent-color:{{ et.cor }}">
+            {{ et.nome }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Prioridade -->
       <div class="fld">
         <label>Prioridade</label>
