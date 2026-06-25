@@ -39,6 +39,7 @@ from database import (
     salvar_sugestao, get_sugestoes, marcar_sugestao_lida,
     get_grupos_lista, get_grupo_by_slug, get_tema_grupo,
     salvar_tema_grupo, salvar_grupo,
+    get_lojas_grupo, get_stats_grupo,
 )
 
 # ──────────────────────────────────────────
