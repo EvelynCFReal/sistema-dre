@@ -581,6 +581,12 @@ def migrar_db():
         )""")
         c.execute("INSERT INTO temas_grupo(grupo_id) VALUES(1)")
 
+    # Adiciona grupo_id em lojas
+    cols_lojas = [r[1] for r in c.execute("PRAGMA table_info(lojas)").fetchall()]
+    if "grupo_id" not in cols_lojas:
+        c.execute("ALTER TABLE lojas ADD COLUMN grupo_id INTEGER DEFAULT 1")
+        c.execute("UPDATE lojas SET grupo_id=1 WHERE grupo_id IS NULL")
+
     # Adiciona grupo_id e nivel em usuarios
     cols_usr_g = [r[1] for r in c.execute("PRAGMA table_info(usuarios)").fetchall()]
     if "grupo_id" not in cols_usr_g:
