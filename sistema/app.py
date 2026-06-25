@@ -2605,10 +2605,11 @@ def chamados_setor_salvar():
     resp = request.form.get("responsavel_id") or None
     pode_abrir    = 1 if request.form.get("pode_abrir") else 0
     pode_receber  = 1 if request.form.get("pode_receber") else 0
+    categorias    = request.form.get("categorias", "").strip()
     if not nome:
         flash("Nome do setor obrigatório.", "danger")
         return redirect(url_for("chamados_parametros"))
-    salvar_setor_chamado(grupo_id, nome, cor, resp, pode_abrir, pode_receber, setor_id)
+    salvar_setor_chamado(grupo_id, nome, cor, resp, pode_abrir, pode_receber, setor_id, categorias)
     flash("Setor salvo.", "success")
     return redirect(url_for("chamados_parametros"))
 
