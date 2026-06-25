@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ grupo.nome_exibicao or grupo.nome }} · Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+:root{
+  --cor-p:{{ grupo.cor_primaria or '#3d8f60' }};
+  --cor-s:{{ grupo.cor_secundaria or '#1e5235' }};
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#090f0c;color:#e8eaf0;font-family:'DM Sans',sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  {% if grupo.bg_login_url %}
+  background-image:url('{{ grupo.bg_login_url }}');
+  background-size:cover;background-position:center;
+  {% endif %}
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:rgba(5,10,7,{% if grupo.bg_login_url %}.75{% else %}.0{% endif %});
+  pointer-events:none;
+}
+.login-wrap{position:relative;z-index:1;width:100%;max-width:380px;padding:20px}
+
+.login-card{
+  background:rgba(17,26,20,.9);border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;padding:32px 28px;
+  backdrop-filter:blur(20px);
+  box-shadow:0 24px 64px rgba(0,0,0,.5);
+}
+
+.login-logo-wrap{text-align:center;margin-bottom:20px}
+{% if grupo.logo_url %}
+.login-logo-img{width:56px;height:56px;border-radius:14px;object-fit:contain;margin-bottom:10px}
+{% else %}
+.login-logo-icon{
+  width:52px;height:52px;border-radius:14px;margin:0 auto 10px;
+  background:linear-gradient(135deg,var(--cor-p),var(--cor-s));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#fff;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+}
+{% endif %}
+.login-title{font-family:'Playfair Display',serif;font-size:18px;color:#e8eaf0}
+.login-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px}
+
+.form-group{margin-bottom:14px}
+.form-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.45);display:block;margin-bottom:6px;font-weight:600}
+.form-control{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:#e8eaf0;border-radius:9px;padding:11px 14px;font-size:13px;outline:none;
+  font-family:'DM Sans',sans-serif;transition:border-color .2s,background .2s;
+}
+.form-control:focus{border-color:var(--cor-p);background:rgba(255,255,255,.09)}
+.form-control::placeholder{color:rgba(255,255,255,.2)}
+
+.btn-entrar{
+  width:100%;border:none;border-radius:9px;padding:12px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  background:linear-gradient(135deg,var(--cor-p),var(--cor-s));
+  color:#fff;transition:opacity .2s,transform .15s;
+  font-family:'DM Sans',sans-serif;margin-top:4px;
+}
+.btn-entrar:hover{opacity:.88;transform:translateY(-1px)}
+
+.login-error{
+  background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);
+  color:#ff8080;border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:14px;
+}
+
+.login-footer{text-align:center;margin-top:18px}
+.login-footer a{font-size:11px;color:rgba(255,255,255,.3);transition:color .2s}
+.login-footer a:hover{color:rgba(255,255,255,.6)}
+.login-footer span{color:rgba(255,255,255,.12);margin:0 6px}
+
+.theme-toggle{
+  position:fixed;bottom:16px;right:16px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.4);border-radius:8px;padding:7px 12px;
+  font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;
+  display:flex;align-items:center;gap:5px;transition:all .2s;
+}
+.theme-toggle:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.1)}
+
+.back-link{position:fixed;top:16px;left:16px;display:flex;align-items:center;gap:6px;
+  font-size:11px;color:rgba(255,255,255,.35);transition:color .2s;z-index:2}
+.back-link:hover{color:rgba(255,255,255,.7)}
+</style>
+</head>
+<body>
+
+<a href="{{ url_for('landing') }}" class="back-link">
+  <i class="bi bi-arrow-left"></i> Início
+</a>
+
+<div class="login-wrap">
+  <div class="login-card">
+
+    <div class="login-logo-wrap">
+      {% if grupo.logo_url %}
+      <img class="login-logo-img" src="{{ grupo.logo_url }}" alt="{{ grupo.nome }}">
+      {% else %}
+      <div class="login-logo-icon">{{ (grupo.nome_exibicao or grupo.nome)[0].upper() }}</div>
+      {% endif %}
+      <div class="login-title">{{ grupo.nome_exibicao or grupo.nome }}</div>
+      <div class="login-sub">Portal de acesso</div>
+    </div>
+
+    {% if erro %}
+    <div class="login-error"><i class="bi bi-exclamation-circle"></i> {{ erro }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login_grupo', slug=grupo.slug) }}">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label">Usuário</label>
+        <input class="form-control" type="text" name="login" autocomplete="username" autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input class="form-control" type="password" name="senha" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-entrar">Entrar <i class="bi bi-arrow-right"></i></button>
+    </form>
+
+    <div class="login-footer">
+      <a href="{{ url_for('landing') }}">Não tenho acesso</a>
+      <span>·</span>
+      <a href="{{ url_for('login') }}">Acesso direto</a>
+    </div>
+  </div>
+</div>
+
+<button class="theme-toggle" onclick="this.style.display='none'" title="Modo claro/escuro">
+  <i class="bi bi-moon-stars"></i> Modo escuro
+</button>
+
+</body>
+</html>
