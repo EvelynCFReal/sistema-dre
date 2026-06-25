@@ -1,0 +1,174 @@
+{% extends "base_hub.html" %}
+{% block title %}Chamados · UNYRAX{% endblock %}
+{% block page_title %}Chamados{% endblock %}
+
+{% block extra_style %}
+.ch-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.ch-stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;
+  flex:1;min-width:110px;display:flex;align-items:center;gap:12px}
+.ch-stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1}
+.ch-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+.ch-stat.urgente .ch-stat-num{color:var(--red)}
+.ch-stat.aberto .ch-stat-num{color:var(--blue)}
+.ch-stat.andamento .ch-stat-num{color:var(--gold)}
+.ch-stat.ok .ch-stat-num{color:#3ecf8e}
+
+.ch-filters{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ch-filters select,.ch-filters input{
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:7px 12px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.ch-filters select:focus,.ch-filters input:focus{border-color:var(--gold)}
+.ch-filters .search-wrap{flex:1;min-width:180px;position:relative}
+.ch-filters .search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px}
+.ch-filters .search-wrap input{width:100%;padding-left:32px}
+
+.ch-table{width:100%;border-collapse:collapse}
+.ch-table th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+  padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600}
+.ch-table td{padding:12px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.ch-table tr:last-child td{border-bottom:none}
+.ch-table tbody tr{transition:background .15s;cursor:pointer}
+.ch-table tbody tr:hover{background:rgba(61,122,80,.05)}
+
+.badge-ch{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;
+  font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.badge-aberto{background:rgba(91,141,238,.12);color:var(--blue)}
+.badge-em_andamento{background:rgba(61,122,80,.12);color:var(--gold)}
+.badge-aguardando{background:rgba(245,197,66,.12);color:#f5c542}
+.badge-resolvido{background:rgba(62,207,142,.12);color:#3ecf8e}
+.badge-fechado{background:rgba(122,128,153,.12);color:var(--muted)}
+.badge-urgente{background:rgba(255,102,102,.15);color:var(--red)}
+.badge-alta{background:rgba(204,90,69,.15);color:var(--coral)}
+.badge-media{background:rgba(91,141,238,.1);color:var(--blue)}
+.badge-baixa{background:rgba(122,128,153,.1);color:var(--muted)}
+
+.ch-num{font-family:monospace;font-size:11px;color:var(--muted)}
+.ch-titulo{font-weight:600;max-width:300px}
+.ch-titulo small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px}
+.ch-empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.ch-empty i{font-size:40px;display:block;margin-bottom:12px;opacity:.3}
+@media(max-width:768px){
+  .ch-table .hide-mob{display:none}
+  .ch-stats{gap:6px}
+  .ch-stat{min-width:80px;padding:10px 12px}
+}
+{% endblock %}
+
+{% block topbar_extra %}
+<a href="{{ url_for('chamados_novo') }}" class="btn-gold" style="font-size:12px;padding:7px 16px;display:inline-flex;align-items:center;gap:6px">
+  <i class="bi bi-plus-lg"></i> Novo Chamado
+</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="ch-stats">
+  <div class="ch-stat urgente">
+    <div><div class="ch-stat-num">{{ stats.urgente }}</div><div class="ch-stat-lbl">Urgentes</div></div>
+    <i class="bi bi-exclamation-octagon" style="font-size:22px;color:var(--red);opacity:.5;margin-left:auto"></i>
+  </div>
+  <div class="ch-stat aberto">
+    <div><div class="ch-stat-num">{{ stats.aberto }}</div><div class="ch-stat-lbl">Abertos</div></div>
+    <i class="bi bi-ticket" style="font-size:22px;color:var(--blue);opacity:.5;margin-left:auto"></i>
+  </div>
+  <div class="ch-stat andamento">
+    <div><div class="ch-stat-num">{{ stats.em_andamento }}</div><div class="ch-stat-lbl">Em Andamento</div></div>
+    <i class="bi bi-tools" style="font-size:22px;color:var(--gold);opacity:.5;margin-left:auto"></i>
+  </div>
+  <div class="ch-stat ok">
+    <div><div class="ch-stat-num">{{ stats.resolvido + stats.fechado }}</div><div class="ch-stat-lbl">Resolvidos</div></div>
+    <i class="bi bi-check-circle" style="font-size:22px;color:#3ecf8e;opacity:.5;margin-left:auto"></i>
+  </div>
+  <div class="ch-stat" style="border-color:var(--gold)">
+    <div><div class="ch-stat-num" style="color:var(--text)">{{ stats.total }}</div><div class="ch-stat-lbl">Total</div></div>
+    <i class="bi bi-clipboard-data" style="font-size:22px;color:var(--muted);opacity:.5;margin-left:auto"></i>
+  </div>
+</div>
+
+<!-- Filtros -->
+<form class="ch-filters" method="get">
+  <div class="search-wrap">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" value="{{ busca }}" placeholder="Buscar por título, número, solicitante...">
+  </div>
+  <select name="status" onchange="this.form.submit()">
+    <option value="">Todos os status</option>
+    {% for s in STATUS_CHAMADO %}
+    <option value="{{ s }}" {% if s == status_f %}selected{% endif %}>
+      {{ {'aberto':'Aberto','em_andamento':'Em Andamento','aguardando':'Aguardando','resolvido':'Resolvido','fechado':'Fechado'}[s] }}
+    </option>
+    {% endfor %}
+  </select>
+  <select name="prioridade" onchange="this.form.submit()">
+    <option value="">Toda prioridade</option>
+    {% for p in PRIO_CHAMADO %}
+    <option value="{{ p }}" {% if p == prio_f %}selected{% endif %}>
+      {{ p.capitalize() }}
+    </option>
+    {% endfor %}
+  </select>
+  <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap">
+    <input type="checkbox" name="meus" value="1" {% if meus %}checked{% endif %} onchange="this.form.submit()" style="width:auto">
+    Meus chamados
+  </label>
+  {% if busca or status_f or prio_f or meus %}
+  <a href="{{ url_for('chamados_lista') }}" style="font-size:11px;color:var(--muted);white-space:nowrap">
+    <i class="bi bi-x-circle"></i> Limpar
+  </a>
+  {% endif %}
+  <button type="submit" class="btn-gold" style="font-size:12px;padding:7px 14px">
+    <i class="bi bi-funnel"></i>
+  </button>
+</form>
+
+<!-- Tabela -->
+{% if chamados %}
+<div class="card-dre" style="padding:0;overflow:hidden">
+  <table class="ch-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Título</th>
+        <th class="hide-mob">Categoria</th>
+        <th>Prioridade</th>
+        <th>Status</th>
+        <th class="hide-mob">Responsável</th>
+        <th class="hide-mob">Aberto em</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in chamados %}
+      {% set label_status = {'aberto':'Aberto','em_andamento':'Em Andamento','aguardando':'Aguardando','resolvido':'Resolvido','fechado':'Fechado'} %}
+      <tr onclick="window.location='{{ url_for('chamados_detalhe', cid=c.id) }}'">
+        <td><span class="ch-num">{{ c.numero }}</span></td>
+        <td>
+          <div class="ch-titulo">
+            {{ c.titulo }}
+            <small>{{ c.loja_nome or 'Sem empresa' }} · {{ c.solicitante_nome or '—' }}</small>
+          </div>
+        </td>
+        <td class="hide-mob">
+          <span style="font-size:11px;color:var(--muted)">{{ c.categoria.capitalize() }}</span>
+        </td>
+        <td><span class="badge-ch badge-{{ c.prioridade }}">{{ c.prioridade.capitalize() }}</span></td>
+        <td><span class="badge-ch badge-{{ c.status }}">{{ label_status.get(c.status, c.status) }}</span></td>
+        <td class="hide-mob" style="font-size:12px;color:var(--muted)">{{ c.responsavel_nome or '—' }}</td>
+        <td class="hide-mob" style="font-size:11px;color:var(--muted)">{{ c.criado_em[:16] if c.criado_em else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="ch-empty">
+  <i class="bi bi-inbox"></i>
+  <p>Nenhum chamado encontrado{% if busca or status_f or prio_f %} com os filtros aplicados{% endif %}.</p>
+  <a href="{{ url_for('chamados_novo') }}" class="btn-gold" style="display:inline-flex;align-items:center;gap:6px;margin-top:12px">
+    <i class="bi bi-plus-lg"></i> Abrir primeiro chamado
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
