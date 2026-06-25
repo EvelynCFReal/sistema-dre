@@ -554,6 +554,46 @@ def migrar_db():
             criado_em  TIMESTAMP
         )""")
 
+    # ── grupos (multi-tenant: cada grupo é um cliente SaaS) ──
+    if "grupos" not in tabelas:
+        c.execute("""
+        CREATE TABLE grupos (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome      TEXT NOT NULL,
+            slug      TEXT NOT NULL UNIQUE,
+            plano_id  INTEGER DEFAULT NULL,
+            ativo     INTEGER DEFAULT 1,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        c.execute("INSERT INTO grupos(id,nome,slug) VALUES(1,'Grupo Mono','grupomono')")
+
+    # ── temas_grupo (identidade visual por grupo) ──
+    if "temas_grupo" not in tabelas:
+        c.execute("""
+        CREATE TABLE temas_grupo (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            grupo_id        INTEGER NOT NULL UNIQUE REFERENCES grupos(id) ON DELETE CASCADE,
+            nome_exibicao   TEXT DEFAULT '',
+            cor_primaria    TEXT DEFAULT '#3d8f60',
+            cor_secundaria  TEXT DEFAULT '#1e5235',
+            bg_login_url    TEXT DEFAULT '',
+            logo_url        TEXT DEFAULT ''
+        )""")
+        c.execute("INSERT INTO temas_grupo(grupo_id) VALUES(1)")
+
+    # Adiciona grupo_id e nivel em usuarios
+    cols_usr_g = [r[1] for r in c.execute("PRAGMA table_info(usuarios)").fetchall()]
+    if "grupo_id" not in cols_usr_g:
+        c.execute("ALTER TABLE usuarios ADD COLUMN grupo_id INTEGER DEFAULT 1 REFERENCES grupos(id)")
+        c.execute("UPDATE usuarios SET grupo_id=1 WHERE grupo_id IS NULL")
+    if "nivel" not in cols_usr_g:
+        c.execute("ALTER TABLE usuarios ADD COLUMN nivel TEXT DEFAULT 'leitor'")
+        c.execute("""UPDATE usuarios SET nivel = CASE tipo
+            WHEN 'master'  THEN 'master'
+            WHEN 'gestor'  THEN 'gestor'
+            WHEN 'loja'    THEN 'loja'
+            ELSE 'leitor' END""")
+
     # ── modulos_sistema (módulos configuráveis do sistema) ──
     if "modulos_sistema" not in tabelas:
         c.execute("""
