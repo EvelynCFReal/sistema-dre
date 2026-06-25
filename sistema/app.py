@@ -43,6 +43,13 @@ from database import (
     criar_chamado, get_chamados, get_chamado, get_comentarios_chamado,
     adicionar_comentario_chamado, atualizar_status_chamado,
     atualizar_responsavel_chamado, editar_chamado, get_stats_chamados,
+    get_setores_chamados, salvar_setor_chamado, excluir_setor_chamado,
+    get_etiquetas_chamados, salvar_etiqueta_chamado, excluir_etiqueta_chamado,
+    get_etiquetas_do_chamado, set_etiquetas_chamado,
+    get_slas_chamados, salvar_sla_chamado, excluir_sla_chamado, calcular_prazo_sla,
+    get_apoios_chamado, get_acompanhantes_chamado,
+    adicionar_apoio_chamado, remover_apoio_chamado,
+    adicionar_acompanhante_chamado, remover_acompanhante_chamado,
     STATUS_CHAMADO, PRIO_CHAMADO, CAT_CHAMADO,
 )
 
