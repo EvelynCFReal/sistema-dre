@@ -1336,6 +1336,72 @@ def marcar_sugestao_lida(sugestao_id):
 
 
 # ──────────────────────────────────────────
+#  GRUPOS (MULTI-TENANT)
+# ──────────────────────────────────────────
+def get_grupos_lista():
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT g.*, t.cor_primaria, t.cor_secundaria, t.logo_url, t.nome_exibicao
+        FROM grupos g LEFT JOIN temas_grupo t ON t.grupo_id=g.id
+        WHERE g.ativo=1 ORDER BY g.nome
+    """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_grupo_by_slug(slug):
+    conn = get_db()
+    row = conn.execute("""
+        SELECT g.*, t.cor_primaria, t.cor_secundaria, t.bg_login_url, t.logo_url, t.nome_exibicao
+        FROM grupos g LEFT JOIN temas_grupo t ON t.grupo_id=g.id
+        WHERE g.slug=? AND g.ativo=1
+    """, (slug,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_tema_grupo(grupo_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM temas_grupo WHERE grupo_id=?", (grupo_id,)).fetchone()
+    conn.close()
+    if not row:
+        return {"cor_primaria": "#3d8f60", "cor_secundaria": "#1e5235",
+                "bg_login_url": "", "logo_url": "", "nome_exibicao": ""}
+    return dict(row)
+
+
+def salvar_tema_grupo(grupo_id, nome_exibicao, cor_primaria, cor_secundaria, bg_login_url, logo_url):
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO temas_grupo(grupo_id,nome_exibicao,cor_primaria,cor_secundaria,bg_login_url,logo_url)
+        VALUES(?,?,?,?,?,?)
+        ON CONFLICT(grupo_id) DO UPDATE SET
+            nome_exibicao=excluded.nome_exibicao,
+            cor_primaria=excluded.cor_primaria,
+            cor_secundaria=excluded.cor_secundaria,
+            bg_login_url=excluded.bg_login_url,
+            logo_url=excluded.logo_url
+    """, (grupo_id, nome_exibicao, cor_primaria, cor_secundaria, bg_login_url, logo_url))
+    conn.commit()
+    conn.close()
+
+
+def salvar_grupo(nome, slug, grupo_id=None):
+    conn = get_db()
+    try:
+        if grupo_id:
+            conn.execute("UPDATE grupos SET nome=?,slug=? WHERE id=?", (nome, slug, grupo_id))
+        else:
+            cur = conn.execute("INSERT INTO grupos(nome,slug) VALUES(?,?)", (nome, slug))
+            grupo_id = cur.lastrowid
+            conn.execute("INSERT INTO temas_grupo(grupo_id) VALUES(?)", (grupo_id,))
+        conn.commit()
+        return grupo_id
+    finally:
+        conn.close()
+
+
+# ──────────────────────────────────────────
 #  MÓDULOS DO SISTEMA
 # ──────────────────────────────────────────
 def get_modulos_sistema(apenas_ativos=True):
