@@ -1838,7 +1838,7 @@ def editar_chamado(chamado_id, titulo, descricao, prioridade, categoria, loja_id
 # ── Setores ──
 def get_setores_chamados(grupo_id, apenas_ativos=True):
     conn = get_db()
-    where = "WHERE grupo_id=? AND ativo=1" if apenas_ativos else "WHERE grupo_id=?"
+    where = "WHERE s.grupo_id=? AND s.ativo=1" if apenas_ativos else "WHERE s.grupo_id=?"
     rows = conn.execute(f"""
         SELECT s.*, u.nome as responsavel_nome
         FROM chamados_setores s
