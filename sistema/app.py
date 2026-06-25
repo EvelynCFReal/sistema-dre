@@ -2054,8 +2054,15 @@ def modulo_excluir(mid):
 @login_required
 @role_required("master")
 def talentos_admin():
-    bancos = get_bancos_talentos(apenas_ativos=False)
-    return render_template("talentos/admin.html", bancos=bancos)
+    grupo_id_sess = session.get("grupo_id", 1)
+    # grupo_id=1 (UNYRAX master) vê todos; outros grupos filtram pelos seus
+    if grupo_id_sess == 1:
+        bancos = get_bancos_talentos(apenas_ativos=False)
+    else:
+        bancos = get_bancos_talentos(apenas_ativos=False, grupo_id=grupo_id_sess)
+    grupos = get_grupos_lista()
+    return render_template("talentos/admin.html", bancos=bancos, grupos=grupos,
+                           grupo_id_sess=grupo_id_sess)
 
 
 @app.route("/talentos/admin/salvar", methods=["POST"])
@@ -2066,6 +2073,7 @@ def talentos_admin_salvar():
     nome = request.form.get("nome", "").strip()
     slug = request.form.get("slug", "").strip()
     fonte_url = request.form.get("fonte_url", "").strip()
+    grupo_id = int(request.form.get("grupo_id") or session.get("grupo_id", 1))
     if not nome or not slug:
         flash("Nome e slug são obrigatórios.", "danger")
         return redirect(url_for("talentos_admin"))
@@ -2073,7 +2081,7 @@ def talentos_admin_salvar():
         flash("Slug deve conter apenas letras minúsculas, números e hífens.", "danger")
         return redirect(url_for("talentos_admin"))
     try:
-        db_salvar_banco_talentos(nome, slug, fonte_url, banco_id)
+        db_salvar_banco_talentos(nome, slug, fonte_url, banco_id, grupo_id)
         flash("Banco de talentos salvo.", "success")
     except Exception as e:
         flash(f"Erro ao salvar: {e}", "danger")
