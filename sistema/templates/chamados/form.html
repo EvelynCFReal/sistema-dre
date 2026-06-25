@@ -20,6 +20,7 @@
 .form-ch textarea{resize:vertical;min-height:120px}
 .form-ch select option{background:var(--card)}
 .form-ch .hint{font-size:10px;color:var(--muted);margin-top:4px}
+.form-ch input[readonly]{opacity:.7;cursor:default}
 .prio-pills{display:flex;gap:6px;flex-wrap:wrap}
 .prio-pill{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;
   border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;
@@ -62,7 +63,7 @@
           <select name="loja_id">
             <option value="">— Selecione —</option>
             {% for l in lojas %}
-            <option value="{{ l.id }}">{{ l.nome }}</option>
+            <option value="{{ l.id }}" {% if l.id == loja_id_atual %}selected{% endif %}>{{ l.nome }}</option>
             {% endfor %}
           </select>
         </div>
@@ -82,7 +83,7 @@
       {% if setores %}
       <div class="fld">
         <label>Setor</label>
-        <select name="setor_id">
+        <select name="setor_id" id="fSetor" onchange="onSetorChange(this.value)">
           <option value="">— Nenhum setor —</option>
           {% for s in setores %}
           <option value="{{ s.id }}">{{ s.nome }}</option>
@@ -128,19 +129,18 @@
         </div>
       </div>
 
-      <!-- Responsável + Prazo -->
+      <!-- Responsável (filtrado pelo setor) + Prazo -->
       <div class="row-2">
-        {% if usuarios_resp %}
-        <div class="fld">
+        <div class="fld" id="blocoResponsavel">
           <label>Responsável</label>
-          <select name="responsavel_id">
-            <option value="">— Atribuir depois —</option>
+          <select name="responsavel_id" id="fResponsavel">
+            <option value="">— Selecione um setor primeiro —</option>
             {% for u in usuarios_resp %}
-            <option value="{{ u.id }}">{{ u.nome }}</option>
+            <option value="{{ u.id }}" data-global="1">{{ u.nome }}</option>
             {% endfor %}
           </select>
+          <div class="hint" id="hintResponsavel">Selecione um setor para ver o responsável atribuído.</div>
         </div>
-        {% endif %}
         <div class="fld">
           <label>Prazo</label>
           <input type="date" name="prazo">
@@ -149,18 +149,20 @@
 
       <div class="separator"></div>
 
-      <!-- Dados do solicitante -->
+      <!-- Dados do solicitante — preenchido automaticamente -->
       <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px">
         <i class="bi bi-person"></i> Dados do Solicitante
       </div>
       <div class="row-3">
         <div class="fld">
           <label>Nome</label>
-          <input type="text" name="solicitante_nome" value="{{ sol_nome or '' }}" placeholder="Nome completo">
+          <input type="text" name="solicitante_nome" id="fSolNome"
+            value="{{ sol_nome or '' }}" placeholder="Nome completo">
         </div>
         <div class="fld">
           <label>E-mail</label>
-          <input type="email" name="solicitante_email" value="{{ sol_email or '' }}" placeholder="email@exemplo.com">
+          <input type="email" name="solicitante_email" id="fSolEmail"
+            value="{{ sol_email or '' }}" placeholder="email@exemplo.com">
         </div>
         <div class="fld">
           <label>Telefone</label>
@@ -178,4 +180,58 @@
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var SETORES_MAP = {{ setores_map|default('{}')|safe }};
+
+function onSetorChange(setorId) {
+  var sel = document.getElementById('fResponsavel');
+  var hint = document.getElementById('hintResponsavel');
+  if (!sel) return;
+
+  if (!setorId || !SETORES_MAP[setorId]) {
+    // sem setor ou setor sem responsável: mostra lista completa
+    Array.from(sel.options).forEach(function(o) {
+      o.style.display = '';
+    });
+    sel.options[0].text = '— Atribuir depois —';
+    if (hint) hint.textContent = 'Selecione um setor para ver o responsável atribuído.';
+    return;
+  }
+
+  var resp = SETORES_MAP[setorId];
+  // Remove todas as opções exceto a primeira (placeholder) e reinsere só o responsável
+  // Mantemos as opções com data-global mas escondidas; adicionamos a do responsável se não existir
+  var respId = String(resp.id);
+  var respNome = resp.nome;
+
+  // Seleciona automaticamente o responsável do setor
+  var found = false;
+  Array.from(sel.options).forEach(function(o) {
+    if (String(o.value) === respId) {
+      o.selected = true;
+      o.style.display = '';
+      found = true;
+    } else if (o.value === '') {
+      o.style.display = '';
+      o.selected = false;
+    } else {
+      o.style.display = 'none';
+      o.selected = false;
+    }
+  });
+
+  if (!found && resp.id) {
+    var newOpt = document.createElement('option');
+    newOpt.value = respId;
+    newOpt.text = respNome;
+    newOpt.selected = true;
+    sel.appendChild(newOpt);
+  }
+
+  if (hint) hint.textContent = 'Responsável do setor selecionado: ' + respNome;
+}
+</script>
 {% endblock %}
