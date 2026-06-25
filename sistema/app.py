@@ -230,6 +230,10 @@ def inject_globals():
     grupo_id = session.get("grupo_id", 1)
     tema_grupo = get_tema_grupo(grupo_id)
 
+    # Logo UNYRAX — carrega automaticamente quando o arquivo é colocado na pasta
+    _logo_path = os.path.join(app.static_folder, "logos", "unyrax_logo.png")
+    unyrax_logo_url = "/static/logos/unyrax_logo.png" if os.path.exists(_logo_path) else ""
+
     return dict(
         meses=MESES,
         anos=ANOS,
@@ -251,6 +255,7 @@ def inject_globals():
         acesso_banco_talentos=len(bancos_usuario) > 0,
         grupo_id=grupo_id,
         tema_grupo=tema_grupo,
+        unyrax_logo_url=unyrax_logo_url,
     )
 
 
