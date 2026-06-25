@@ -582,6 +582,10 @@ def migrar_db():
         c.execute("""INSERT INTO temas_grupo(grupo_id,cor_primaria,cor_secundaria)
                      VALUES(1,'#3d7a50','#1c3a28')""")
 
+    # Atualiza grupo padrão para UNYRAX se ainda tiver nome antigo
+    c.execute("UPDATE grupos SET nome='UNYRAX', slug='unyrax' WHERE id=1 AND (nome='Grupo Mono' OR slug='grupomono')")
+    c.execute("UPDATE temas_grupo SET nome_exibicao='UNYRAX' WHERE grupo_id=1 AND (nome_exibicao='' OR nome_exibicao='Grupo Mono')")
+
     # Adiciona grupo_id em lojas
     cols_lojas = [r[1] for r in c.execute("PRAGMA table_info(lojas)").fetchall()]
     if "grupo_id" not in cols_lojas:
