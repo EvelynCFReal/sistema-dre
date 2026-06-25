@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema de Gestão · Grupo Mono</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09100d;--card:#111a14;--card2:#162010;--border:rgba(255,255,255,.07);
+  --text:#e8eaf0;--muted:#7a8a80;--green:#3d8f60;--green2:#2d6b47;
+  --teal:#3ecf8e;--blue:#5b8dee;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* ── Nav ── */
+.lp-nav{display:flex;align-items:center;padding:16px 32px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(9,16,13,.92);backdrop-filter:blur(12px);z-index:50}
+.lp-logo{display:flex;align-items:center;gap:10px}
+.lp-logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--green),var(--green2));display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff}
+.lp-logo-name{font-family:'Playfair Display',serif;font-size:15px}
+.lp-nav-right{margin-left:auto;display:flex;gap:8px}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 16px;border-radius:7px;font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-ghost:hover{border-color:var(--green);color:var(--text)}
+.btn-primary{background:var(--green);color:#050e08;border:none;padding:8px 18px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-primary:hover{background:#4daf78}
+
+/* ── Hero ── */
+.lp-hero{padding:80px 32px 60px;text-align:center;max-width:720px;margin:0 auto}
+.lp-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(61,143,96,.12);border:1px solid rgba(61,143,96,.25);color:var(--teal);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:24px}
+.lp-hero h1{font-family:'Playfair Display',serif;font-size:42px;line-height:1.18;margin-bottom:16px;color:var(--text)}
+.lp-hero h1 span{color:var(--teal)}
+.lp-hero p{font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:36px}
+.lp-hero-btns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.btn-lg{padding:12px 28px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;transition:all .22s;border:none;font-family:'DM Sans',sans-serif}
+.btn-lg-primary{background:var(--green);color:#050e08}
+.btn-lg-primary:hover{background:#4daf78;transform:translateY(-1px)}
+.btn-lg-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-lg-outline:hover{border-color:var(--green);color:var(--teal)}
+
+/* ── "Já tenho acesso" panel ── */
+.acesso-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:440px;margin:40px auto 0;display:none}
+.acesso-panel.show{display:block}
+.acesso-panel h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.acesso-panel p{font-size:12px;color:var(--muted);margin-bottom:16px}
+.acesso-input{background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px;width:100%;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .2s}
+.acesso-input:focus{border-color:var(--green)}
+.acesso-preview{display:none;background:rgba(61,143,96,.07);border:1px solid rgba(61,143,96,.2);border-radius:8px;padding:10px 14px;margin-top:10px;align-items:center;gap:10px}
+.acesso-preview.show{display:flex}
+.acesso-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#050e08;flex-shrink:0;background:var(--green)}
+.acesso-preview-info{flex:1}
+.acesso-preview-nome{font-size:13px;font-weight:700}
+.acesso-preview-sub{font-size:10px;color:var(--muted)}
+.acesso-error{font-size:11px;color:#ff8080;margin-top:6px;display:none}
+.acesso-btn-ir{margin-top:14px;width:100%;background:var(--green);color:#050e08;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;display:none}
+.acesso-btn-ir.show{display:block}
+.acesso-btn-ir:hover{background:#4daf78}
+
+/* ── Módulos ── */
+.lp-section{padding:40px 32px 60px;max-width:1080px;margin:0 auto}
+.lp-section-title{text-align:center;font-family:'Playfair Display',serif;font-size:26px;margin-bottom:6px}
+.lp-section-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:36px}
+.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.lp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;transition:all .22s;position:relative;overflow:hidden}
+.lp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-accent,var(--green));transform:scaleX(0);transition:transform .22s}
+.lp-card:hover{border-color:var(--card-accent,var(--green));transform:translateY(-2px)}
+.lp-card:hover::before{transform:scaleX(1)}
+.lp-card-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;margin-bottom:16px;background:linear-gradient(135deg,var(--card-accent,var(--green)),var(--green2))}
+.lp-card h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.lp-card p{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ── CTA planos ── */
+.lp-cta{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px 32px;text-align:center;max-width:600px;margin:0 auto 60px}
+.lp-cta h2{font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px}
+.lp-cta p{font-size:13px;color:var(--muted);margin-bottom:24px}
+
+/* ── Footer ── */
+.lp-footer{border-top:1px solid var(--border);padding:20px 32px;text-align:center;font-size:11px;color:var(--muted)}
+
+@media(max-width:600px){
+  .lp-hero h1{font-size:28px}
+  .lp-nav{padding:14px 16px}
+  .lp-hero{padding:50px 16px 40px}
+  .lp-section{padding:30px 16px 40px}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="lp-nav">
+  <div class="lp-logo">
+    <div class="lp-logo-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+    <span class="lp-logo-name">Grupo Mono</span>
+  </div>
+  <div class="lp-nav-right">
+    <button class="btn-ghost" onclick="toggleAcesso()">Já tenho acesso</button>
+    <a href="#planos" class="btn-primary">Quero acesso</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="lp-hero">
+  <div class="lp-hero-badge"><i class="bi bi-lightning-charge-fill"></i> Plataforma Multi-Empresa</div>
+  <h1>Gestão integrada para o seu <span>grupo empresarial</span></h1>
+  <p>Módulos conectados, controle por empresa e equipe, identidade visual personalizada — tudo em um só lugar.</p>
+  <div class="lp-hero-btns">
+    <button class="btn-lg btn-lg-primary" onclick="toggleAcesso()"><i class="bi bi-box-arrow-in-right"></i> Já tenho acesso</button>
+    <a href="#modulos" class="btn-lg btn-lg-outline"><i class="bi bi-grid"></i> Ver módulos</a>
+  </div>
+
+  <!-- Painel "Já tenho acesso" -->
+  <div class="acesso-panel" id="acessoPanel">
+    <h3>Acessar meu grupo</h3>
+    <p>Digite o nome ou código do seu grupo empresarial.</p>
+    <input class="acesso-input" id="slugInput" type="text" placeholder="Ex: grupomono, grupoalpha..."
+           oninput="buscarGrupo(this.value)" autocomplete="off" spellcheck="false">
+    <div class="acesso-error" id="acessoError">Grupo não encontrado. Verifique o código.</div>
+    <div class="acesso-preview" id="acessoPreview">
+      <div class="acesso-avatar" id="acessoAvatar"></div>
+      <div class="acesso-preview-info">
+        <div class="acesso-preview-nome" id="acessoNome"></div>
+        <div class="acesso-preview-sub" id="acessoSub"></div>
+      </div>
+      <i class="bi bi-check-circle-fill" style="color:#3ecf8e;font-size:16px"></i>
+    </div>
+    <button class="acesso-btn-ir" id="acessoBtnIr" onclick="irParaLogin()">
+      Ir para o login <i class="bi bi-arrow-right"></i>
+    </button>
+  </div>
+</section>
+
+<!-- Módulos -->
+<section class="lp-section" id="modulos">
+  <h2 class="lp-section-title">Módulos disponíveis</h2>
+  <p class="lp-section-sub">Cada módulo contratado aparece automaticamente no seu painel.</p>
+  <div class="lp-grid">
+    {% for mod in modulos %}
+    <div class="lp-card" style="--card-accent:{{ loop.cycle('#3d8f60','#5b8dee','#a78bfa','#f59e0b','#3ecf8e') }}">
+      <div class="lp-card-icon" style="background:linear-gradient(135deg,{{ loop.cycle('#3d8f60','#5b8dee','#a78bfa','#f59e0b','#3ecf8e') }},{{ loop.cycle('#1e5235','#3a5fb0','#6d28d9','#b45309','#1a8f5c') }})">
+        <i class="bi {{ mod.icone }}"></i>
+      </div>
+      <h3>{{ mod.nome }}</h3>
+      <p>{{ mod.descricao or 'Módulo disponível na plataforma.' }}</p>
+    </div>
+    {% else %}
+    <div class="lp-card" style="--card-accent:#3d8f60">
+      <div class="lp-card-icon"><i class="bi bi-bar-chart-line"></i></div>
+      <h3>DRE · Gestão Financeira</h3>
+      <p>Dashboard, lançamentos mensais, metas e análise de resultados por loja.</p>
+    </div>
+    <div class="lp-card" style="--card-accent:#5b8dee">
+      <div class="lp-card-icon" style="background:linear-gradient(135deg,#5b8dee,#3a5fb0)"><i class="bi bi-person-badge"></i></div>
+      <h3>Banco de Talentos</h3>
+      <p>Candidatos, anotações e acompanhamento de processos seletivos.</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- CTA planos -->
+<section class="lp-section" id="planos">
+  <div class="lp-cta">
+    <h2>Quero meu acesso</h2>
+    <p>Entre em contato com nossa equipe para contratar o plano ideal para o seu grupo empresarial.</p>
+    <a href="mailto:contato@grupomono.com.br" class="btn-lg btn-lg-primary" style="display:inline-flex;align-items:center;gap:8px">
+      <i class="bi bi-envelope"></i> Falar com a equipe
+    </a>
+  </div>
+</section>
+
+<footer class="lp-footer">
+  Powered by Sunomono · Sistemas de Gestão &nbsp;·&nbsp; © 2026
+</footer>
+
+<script>
+var _slugAtual = null;
+
+function toggleAcesso(){
+  var p = document.getElementById('acessoPanel');
+  p.classList.toggle('show');
+  if(p.classList.contains('show')){
+    setTimeout(function(){ document.getElementById('slugInput').focus(); },100);
+    p.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+var _timer = null;
+function buscarGrupo(val){
+  clearTimeout(_timer);
+  val = val.trim().toLowerCase().replace(/\s+/g,'-');
+  document.getElementById('acessoPreview').classList.remove('show');
+  document.getElementById('acessoError').style.display='none';
+  document.getElementById('acessoBtnIr').classList.remove('show');
+  _slugAtual = null;
+  if(!val) return;
+  _timer = setTimeout(function(){
+    fetch('/api/grupo/'+encodeURIComponent(val))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d.encontrado){
+          _slugAtual = d.slug;
+          document.getElementById('acessoAvatar').textContent = d.nome_exibicao.charAt(0).toUpperCase();
+          document.getElementById('acessoAvatar').style.background = d.cor_primaria || '#3d8f60';
+          document.getElementById('acessoNome').textContent = d.nome_exibicao;
+          document.getElementById('acessoSub').textContent = 'Grupo encontrado · clique para acessar';
+          document.getElementById('acessoPreview').classList.add('show');
+          document.getElementById('acessoBtnIr').classList.add('show');
+        } else {
+          document.getElementById('acessoError').style.display='block';
+        }
+      })
+      .catch(function(){ document.getElementById('acessoError').style.display='block'; });
+  }, 500);
+}
+
+function irParaLogin(){
+  if(_slugAtual) window.location.href = '/entrar/'+_slugAtual;
+}
+
+document.getElementById('slugInput').addEventListener('keydown',function(e){
+  if(e.key==='Enter' && _slugAtual) irParaLogin();
+});
+</script>
+</body>
+</html>
