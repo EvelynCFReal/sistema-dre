@@ -584,7 +584,7 @@ def migrar_db():
     # Adiciona grupo_id e nivel em usuarios
     cols_usr_g = [r[1] for r in c.execute("PRAGMA table_info(usuarios)").fetchall()]
     if "grupo_id" not in cols_usr_g:
-        c.execute("ALTER TABLE usuarios ADD COLUMN grupo_id INTEGER DEFAULT 1 REFERENCES grupos(id)")
+        c.execute("ALTER TABLE usuarios ADD COLUMN grupo_id INTEGER DEFAULT 1")
         c.execute("UPDATE usuarios SET grupo_id=1 WHERE grupo_id IS NULL")
     if "nivel" not in cols_usr_g:
         c.execute("ALTER TABLE usuarios ADD COLUMN nivel TEXT DEFAULT 'leitor'")
