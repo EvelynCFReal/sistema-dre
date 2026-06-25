@@ -2195,6 +2195,249 @@ def banco_talentos(banco="sunomono"):
 
 
 # ══════════════════════════════════════════
+#  MÓDULO CHAMADOS
+# ══════════════════════════════════════════
+
+def _acesso_chamados():
+    """Verifica se o usuário tem acesso ao módulo de chamados."""
+    uid = session.get("usuario_id")
+    tipo = session.get("tipo", "")
+    if tipo in ("master", "gestor"):
+        return True
+    if not uid:
+        return False
+    conn = get_db()
+    mod = conn.execute(
+        """SELECT 1 FROM usuario_modulos um
+           JOIN modulos_sistema ms ON ms.id=um.modulo_id
+           WHERE um.usuario_id=? AND ms.slug='chamados'""",
+        (uid,)
+    ).fetchone()
+    conn.close()
+    return mod is not None
+
+
+@app.route("/chamados/")
+@login_required
+def chamados_lista():
+    if not _acesso_chamados():
+        flash("Você não tem acesso ao módulo de Chamados.", "danger")
+        return redirect(url_for("home"))
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    grupo_id = session.get("grupo_id", 1)
+    loja_id = loja_selecionada() if tipo not in ("master",) else None
+    status_f  = request.args.get("status", "")
+    prio_f    = request.args.get("prioridade", "")
+    busca     = request.args.get("q", "").strip()
+    meus      = request.args.get("meus", "")
+
+    resp_id = uid if meus else None
+    chamados = get_chamados(
+        grupo_id=grupo_id,
+        loja_id=loja_id if tipo not in ("master", "gestor") else None,
+        status=status_f or None,
+        prioridade=prio_f or None,
+        responsavel_id=resp_id,
+        q=busca or None,
+    )
+    stats = get_stats_chamados(grupo_id=grupo_id,
+                               loja_id=loja_id if tipo not in ("master", "gestor") else None)
+    usuarios_resp = []
+    if tipo in ("master", "gestor"):
+        conn = get_db()
+        usuarios_resp = [dict(r) for r in conn.execute(
+            "SELECT id, nome FROM usuarios WHERE grupo_id=? AND tipo IN ('master','gestor','loja') ORDER BY nome",
+            (grupo_id,)
+        ).fetchall()]
+        conn.close()
+    lojas = get_lojas_usuario(uid, tipo)
+    return render_template(
+        "chamados/lista.html",
+        chamados=chamados, stats=stats,
+        status_f=status_f, prio_f=prio_f, busca=busca, meus=meus,
+        STATUS_CHAMADO=STATUS_CHAMADO, PRIO_CHAMADO=PRIO_CHAMADO,
+        CAT_CHAMADO=CAT_CHAMADO, lojas=lojas,
+        usuarios_resp=usuarios_resp,
+    )
+
+
+@app.route("/chamados/novo", methods=["GET", "POST"])
+@login_required
+def chamados_novo():
+    if not _acesso_chamados():
+        flash("Sem acesso.", "danger")
+        return redirect(url_for("home"))
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    grupo_id = session.get("grupo_id", 1)
+    lojas = get_lojas_usuario(uid, tipo)
+    usuarios_resp = []
+    if tipo in ("master", "gestor"):
+        conn = get_db()
+        usuarios_resp = [dict(r) for r in conn.execute(
+            "SELECT id, nome FROM usuarios WHERE grupo_id=? AND tipo IN ('master','gestor','loja') ORDER BY nome",
+            (grupo_id,)
+        ).fetchall()]
+        conn.close()
+
+    if request.method == "POST":
+        titulo    = request.form.get("titulo", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+        prioridade = request.form.get("prioridade", "media")
+        categoria  = request.form.get("categoria", "suporte")
+        loja_id_f  = request.form.get("loja_id") or None
+        responsavel_id = request.form.get("responsavel_id") or None
+        prazo      = request.form.get("prazo") or None
+        sol_nome   = request.form.get("solicitante_nome", "").strip()
+        sol_email  = request.form.get("solicitante_email", "").strip()
+        sol_tel    = request.form.get("solicitante_tel", "").strip()
+        if not titulo:
+            flash("Título obrigatório.", "danger")
+            return render_template("chamados/form.html",
+                                   lojas=lojas, usuarios_resp=usuarios_resp,
+                                   STATUS_CHAMADO=STATUS_CHAMADO,
+                                   PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
+                                   chamado=None)
+        cid, numero = criar_chamado(
+            grupo_id=grupo_id,
+            loja_id=int(loja_id_f) if loja_id_f else None,
+            titulo=titulo, descricao=descricao,
+            prioridade=prioridade, categoria=categoria,
+            solicitante_id=uid,
+            solicitante_nome=sol_nome or session.get("nome", ""),
+            solicitante_email=sol_email,
+            solicitante_tel=sol_tel,
+            responsavel_id=int(responsavel_id) if responsavel_id else None,
+            prazo=prazo,
+        )
+        flash(f"Chamado {numero} aberto com sucesso.", "success")
+        return redirect(url_for("chamados_detalhe", cid=cid))
+
+    conn = get_db()
+    sol_nome  = session.get("nome", "")
+    sol_email = conn.execute("SELECT email FROM usuarios WHERE id=?", (uid,)).fetchone()
+    conn.close()
+    sol_email = sol_email["email"] if sol_email else ""
+    return render_template(
+        "chamados/form.html",
+        lojas=lojas, usuarios_resp=usuarios_resp,
+        STATUS_CHAMADO=STATUS_CHAMADO, PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
+        chamado=None, sol_nome=sol_nome, sol_email=sol_email,
+    )
+
+
+@app.route("/chamados/<int:cid>")
+@login_required
+def chamados_detalhe(cid):
+    if not _acesso_chamados():
+        flash("Sem acesso.", "danger")
+        return redirect(url_for("home"))
+    chamado = get_chamado(cid)
+    if not chamado:
+        flash("Chamado não encontrado.", "danger")
+        return redirect(url_for("chamados_lista"))
+    uid = session["usuario_id"]
+    tipo = session["tipo"]
+    grupo_id = session.get("grupo_id", 1)
+    if chamado["grupo_id"] != grupo_id and tipo != "master":
+        flash("Sem acesso a este chamado.", "danger")
+        return redirect(url_for("chamados_lista"))
+    comentarios = get_comentarios_chamado(cid)
+    lojas = get_lojas_usuario(uid, tipo)
+    usuarios_resp = []
+    if tipo in ("master", "gestor"):
+        conn = get_db()
+        usuarios_resp = [dict(r) for r in conn.execute(
+            "SELECT id, nome FROM usuarios WHERE grupo_id=? AND tipo IN ('master','gestor','loja') ORDER BY nome",
+            (grupo_id,)
+        ).fetchall()]
+        conn.close()
+    return render_template(
+        "chamados/detalhe.html",
+        chamado=chamado, comentarios=comentarios,
+        lojas=lojas, usuarios_resp=usuarios_resp,
+        STATUS_CHAMADO=STATUS_CHAMADO, PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
+    )
+
+
+@app.route("/chamados/<int:cid>/comentar", methods=["POST"])
+@login_required
+def chamados_comentar(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    texto = request.form.get("texto", "").strip()
+    if texto:
+        adicionar_comentario_chamado(
+            cid, session["usuario_id"], session.get("nome", ""), texto
+        )
+        flash("Comentário adicionado.", "success")
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/status", methods=["POST"])
+@login_required
+def chamados_status(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    novo = request.form.get("status", "")
+    if novo in STATUS_CHAMADO:
+        atualizar_status_chamado(cid, novo, session["usuario_id"], session.get("nome", ""))
+        flash("Status atualizado.", "success")
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/atribuir", methods=["POST"])
+@login_required
+def chamados_atribuir(cid):
+    tipo = session.get("tipo", "")
+    if tipo not in ("master", "gestor"):
+        flash("Sem permissão.", "danger")
+        return redirect(url_for("chamados_detalhe", cid=cid))
+    resp_id = request.form.get("responsavel_id") or None
+    resp_nome = ""
+    if resp_id:
+        conn = get_db()
+        u = conn.execute("SELECT nome FROM usuarios WHERE id=?", (resp_id,)).fetchone()
+        conn.close()
+        resp_nome = u["nome"] if u else ""
+    atualizar_responsavel_chamado(
+        cid, int(resp_id) if resp_id else None, resp_nome,
+        session["usuario_id"], session.get("nome", "")
+    )
+    flash("Responsável atualizado.", "success")
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/editar", methods=["POST"])
+@login_required
+def chamados_editar(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    tipo = session.get("tipo", "")
+    chamado = get_chamado(cid)
+    if not chamado:
+        return redirect(url_for("chamados_lista"))
+    if tipo not in ("master", "gestor") and chamado.get("solicitante_id") != session["usuario_id"]:
+        flash("Sem permissão para editar.", "danger")
+        return redirect(url_for("chamados_detalhe", cid=cid))
+    editar_chamado(
+        chamado_id=cid,
+        titulo=request.form.get("titulo", "").strip(),
+        descricao=request.form.get("descricao", "").strip(),
+        prioridade=request.form.get("prioridade", "media"),
+        categoria=request.form.get("categoria", "suporte"),
+        loja_id=request.form.get("loja_id") or None,
+        prazo=request.form.get("prazo") or None,
+        solicitante_nome=request.form.get("solicitante_nome", "").strip(),
+        solicitante_email=request.form.get("solicitante_email", "").strip(),
+        solicitante_tel=request.form.get("solicitante_tel", "").strip(),
+    )
+    flash("Chamado atualizado.", "success")
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+# ══════════════════════════════════════════
 #  CHAT DE SUPORTE (Qwen via DashScope)
 # ══════════════════════════════════════════
 _chat_system_prompt = ""
