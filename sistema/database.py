@@ -1747,11 +1747,13 @@ def get_chamado(chamado_id):
         SELECT c.*,
                l.nome as loja_nome,
                r.nome as responsavel_nome,
-               s.nome as solicitante_nome_u
+               s.nome as solicitante_nome_u,
+               sec.nome as setor_nome
         FROM chamados c
         LEFT JOIN lojas l ON l.id = c.loja_id
         LEFT JOIN usuarios r ON r.id = c.responsavel_id
         LEFT JOIN usuarios s ON s.id = c.solicitante_id
+        LEFT JOIN chamados_setores sec ON sec.id = c.setor_id
         WHERE c.id=?
     """, (chamado_id,)).fetchone()
     conn.close()
