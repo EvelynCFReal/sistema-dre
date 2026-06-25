@@ -2464,6 +2464,199 @@ def chamados_editar(cid):
     return redirect(url_for("chamados_detalhe", cid=cid))
 
 
+@app.route("/chamados/<int:cid>/apoio/add", methods=["POST"])
+@login_required
+def chamados_apoio_add(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    uid_add = request.form.get("usuario_id")
+    if uid_add:
+        conn = get_db()
+        u = conn.execute("SELECT nome FROM usuarios WHERE id=?", (uid_add,)).fetchone()
+        conn.close()
+        if u:
+            adicionar_apoio_chamado(cid, int(uid_add), u["nome"],
+                                    session["usuario_id"], session.get("nome",""))
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/apoio/<int:uid>/remover", methods=["POST"])
+@login_required
+def chamados_apoio_remover(cid, uid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    remover_apoio_chamado(cid, uid)
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/acompanhante/add", methods=["POST"])
+@login_required
+def chamados_acomp_add(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    uid_add = request.form.get("usuario_id")
+    if uid_add:
+        conn = get_db()
+        u = conn.execute("SELECT nome FROM usuarios WHERE id=?", (uid_add,)).fetchone()
+        conn.close()
+        if u:
+            adicionar_acompanhante_chamado(cid, int(uid_add), u["nome"],
+                                           session["usuario_id"], session.get("nome",""))
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/acompanhante/<int:uid>/remover", methods=["POST"])
+@login_required
+def chamados_acomp_remover(cid, uid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    remover_acompanhante_chamado(cid, uid)
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/transferir", methods=["POST"])
+@login_required
+def chamados_transferir(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    novo_resp_id = request.form.get("responsavel_id") or None
+    motivo = request.form.get("motivo", "").strip()
+    if not novo_resp_id:
+        flash("Selecione um responsável.", "danger")
+        return redirect(url_for("chamados_detalhe", cid=cid))
+    conn = get_db()
+    u = conn.execute("SELECT nome FROM usuarios WHERE id=?", (novo_resp_id,)).fetchone()
+    conn.close()
+    resp_nome = u["nome"] if u else "—"
+    from database import _agora_br
+    agora = _agora_br()
+    conn = get_db()
+    conn.execute("UPDATE chamados SET responsavel_id=?, atualizado_em=? WHERE id=?",
+                 (int(novo_resp_id), agora, cid))
+    texto = f"Chamado transferido para {resp_nome}"
+    if motivo:
+        texto += f" — Motivo: {motivo}"
+    conn.execute("""INSERT INTO chamados_comentarios(chamado_id,usuario_id,usuario_nome,texto,tipo,criado_em)
+                    VALUES(?,?,?,?,?,?)""",
+                 (cid, session["usuario_id"], session.get("nome",""), texto, "atribuicao", agora))
+    conn.commit(); conn.close()
+    flash(f"Chamado transferido para {resp_nome}.", "success")
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+@app.route("/chamados/<int:cid>/etiquetas", methods=["POST"])
+@login_required
+def chamados_etiquetas_salvar(cid):
+    if not _acesso_chamados():
+        return redirect(url_for("home"))
+    etiqueta_ids = request.form.getlist("etiquetas")
+    set_etiquetas_chamado(cid, etiqueta_ids)
+    return redirect(url_for("chamados_detalhe", cid=cid))
+
+
+# ── Parâmetros de Chamados (master only) ──
+@app.route("/chamados/parametros/", methods=["GET", "POST"])
+@login_required
+@role_required("master")
+def chamados_parametros():
+    grupo_id = session.get("grupo_id", 1)
+    setores   = get_setores_chamados(grupo_id, apenas_ativos=False)
+    etiquetas = get_etiquetas_chamados(grupo_id, apenas_ativas=False)
+    slas      = get_slas_chamados(grupo_id, apenas_ativos=False)
+    conn = get_db()
+    usuarios_lista = [dict(r) for r in conn.execute(
+        "SELECT id, nome FROM usuarios WHERE grupo_id=? AND ativo=1 ORDER BY nome", (grupo_id,)
+    ).fetchall()]
+    conn.close()
+    return render_template("chamados/parametros.html",
+                           setores=setores, etiquetas=etiquetas, slas=slas,
+                           usuarios_lista=usuarios_lista,
+                           PRIO_CHAMADO=PRIO_CHAMADO)
+
+
+@app.route("/chamados/parametros/setor/salvar", methods=["POST"])
+@login_required
+@role_required("master")
+def chamados_setor_salvar():
+    grupo_id = session.get("grupo_id", 1)
+    setor_id = request.form.get("setor_id") or None
+    nome = request.form.get("nome", "").strip()
+    cor  = request.form.get("cor", "#3d7a50").strip()
+    resp = request.form.get("responsavel_id") or None
+    pode_abrir    = 1 if request.form.get("pode_abrir") else 0
+    pode_receber  = 1 if request.form.get("pode_receber") else 0
+    if not nome:
+        flash("Nome do setor obrigatório.", "danger")
+        return redirect(url_for("chamados_parametros"))
+    salvar_setor_chamado(grupo_id, nome, cor, resp, pode_abrir, pode_receber, setor_id)
+    flash("Setor salvo.", "success")
+    return redirect(url_for("chamados_parametros"))
+
+
+@app.route("/chamados/parametros/setor/<int:sid>/excluir", methods=["POST"])
+@login_required
+@role_required("master")
+def chamados_setor_excluir(sid):
+    excluir_setor_chamado(sid, session.get("grupo_id", 1))
+    flash("Setor desativado.", "info")
+    return redirect(url_for("chamados_parametros"))
+
+
+@app.route("/chamados/parametros/etiqueta/salvar", methods=["POST"])
+@login_required
+@role_required("master")
+def chamados_etiqueta_salvar():
+    grupo_id = session.get("grupo_id", 1)
+    eid  = request.form.get("etiqueta_id") or None
+    nome = request.form.get("nome", "").strip()
+    cor  = request.form.get("cor", "#5b8dee").strip()
+    if not nome:
+        flash("Nome da etiqueta obrigatório.", "danger")
+        return redirect(url_for("chamados_parametros"))
+    salvar_etiqueta_chamado(grupo_id, nome, cor, eid)
+    flash("Etiqueta salva.", "success")
+    return redirect(url_for("chamados_parametros"))
+
+
+@app.route("/chamados/parametros/etiqueta/<int:eid>/excluir", methods=["POST"])
+@login_required
+@role_required("master")
+def chamados_etiqueta_excluir(eid):
+    excluir_etiqueta_chamado(eid, session.get("grupo_id", 1))
+    flash("Etiqueta desativada.", "info")
+    return redirect(url_for("chamados_parametros"))
+
+
+@app.route("/chamados/parametros/sla/salvar", methods=["POST"])
+@login_required
+@role_required("master")
+def chamados_sla_salvar():
+    grupo_id = session.get("grupo_id", 1)
+    sla_id = request.form.get("sla_id") or None
+    nome   = request.form.get("nome", "").strip()
+    prio   = request.form.get("prioridade", "media")
+    hr     = float(request.form.get("horas_resposta", 4) or 4)
+    hres   = float(request.form.get("horas_resolucao", 24) or 24)
+    dias   = ",".join(request.form.getlist("dias_semana") or ["1","2","3","4","5"])
+    hi     = request.form.get("hora_inicio", "08:00")
+    hf     = request.form.get("hora_fim", "18:00")
+    if not nome:
+        flash("Nome do SLA obrigatório.", "danger")
+        return redirect(url_for("chamados_parametros"))
+    salvar_sla_chamado(grupo_id, nome, prio, hr, hres, dias, hi, hf, sla_id)
+    flash("SLA salvo.", "success")
+    return redirect(url_for("chamados_parametros"))
+
+
+@app.route("/chamados/parametros/sla/<int:sid>/excluir", methods=["POST"])
+@login_required
+@role_required("master")
+def chamados_sla_excluir(sid):
+    excluir_sla_chamado(sid, session.get("grupo_id", 1))
+    flash("SLA desativado.", "info")
+    return redirect(url_for("chamados_parametros"))
+
+
 # ══════════════════════════════════════════
 #  CHAT DE SUPORTE (Qwen via DashScope)
 # ══════════════════════════════════════════
