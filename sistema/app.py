@@ -2303,14 +2303,19 @@ def chamados_novo():
         etiqueta_ids = request.form.getlist("etiquetas")
         if not titulo:
             flash("Título obrigatório.", "danger")
+            import json as _json
             setores   = get_setores_chamados(grupo_id)
             etiquetas = get_etiquetas_chamados(grupo_id)
+            setores_map = _json.dumps({str(s["id"]): {"id": s.get("responsavel_id"), "nome": s.get("responsavel_nome") or ""} for s in setores if s.get("responsavel_id")})
             return render_template("chamados/form.html",
                                    lojas=lojas, usuarios_resp=usuarios_resp,
                                    setores=setores, etiquetas=etiquetas,
                                    STATUS_CHAMADO=STATUS_CHAMADO,
                                    PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
-                                   chamado=None)
+                                   chamado=None, sol_nome=request.form.get("solicitante_nome",""),
+                                   sol_email=request.form.get("solicitante_email",""),
+                                   loja_id_atual=request.form.get("loja_id") or loja_selecionada(),
+                                   setores_map=setores_map)
         prazo_sla = calcular_prazo_sla(grupo_id, prioridade)
         cid, numero = criar_chamado(
             grupo_id=grupo_id,
