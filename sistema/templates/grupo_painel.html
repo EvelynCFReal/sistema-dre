@@ -1,0 +1,169 @@
+{% extends "base_hub.html" %}
+{% block title %}Painel do Grupo · {{ grupo.nome }}{% endblock %}
+{% block page_title %}Painel do Grupo{% endblock %}
+
+{% block extra_style %}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat-n{font-size:28px;font-weight:700;color:var(--green)}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:600}
+.empresa-row{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px}
+.empresa-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#1e5235);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.empresa-nome{flex:1;font-size:13px;font-weight:500}
+.empresa-del form{display:inline}
+.color-swatch{width:28px;height:28px;border-radius:6px;border:2px solid var(--border);cursor:pointer;display:inline-block;vertical-align:middle}
+.tema-preview{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:10px;display:flex;align-items:center;gap:12px}
+.tema-preview-logo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+{% endblock %}
+
+{% block content %}
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-n">{{ stats.lojas }}</div>
+    <div class="stat-l">Empresas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-n">{{ stats.usuarios }}</div>
+    <div class="stat-l">Usuários</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+  <!-- Empresas -->
+  <div class="card-dre">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="section-title" style="margin:0">Empresas do Grupo</div>
+    </div>
+
+    {% for l in lojas %}
+    <div class="empresa-row">
+      <div class="empresa-avatar">{{ l.nome[0].upper() }}</div>
+      <span class="empresa-nome">{{ l.nome }}</span>
+      {% if user_tipo == 'master' %}
+      <span class="empresa-del">
+        <form method="POST" action="{{ url_for('grupo_loja_excluir', lid=l.id) }}"
+              onsubmit="return confirm('Remover {{ l.nome }}?')">
+          <button type="submit" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:color .15s" title="Remover">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </form>
+      </span>
+      {% endif %}
+    </div>
+    {% else %}
+    <p style="font-size:12px;color:var(--muted)">Nenhuma empresa cadastrada.</p>
+    {% endfor %}
+
+    {% if user_tipo == 'master' %}
+    <div style="margin-top:14px">
+      <form method="POST" action="{{ url_for('grupo_loja_nova') }}" style="display:flex;gap:8px">
+        <input class="form-dre form-control" type="text" name="nome" placeholder="Nome da empresa" style="flex:1" required>
+        <button type="submit" class="btn-gold" style="white-space:nowrap"><i class="bi bi-plus-lg"></i> Adicionar</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Tema Visual -->
+  {% if user_tipo == 'master' %}
+  <div class="card-dre">
+    <div class="section-title">Identidade Visual do Grupo</div>
+
+    <!-- Preview live -->
+    <div class="tema-preview" id="temaPreview">
+      <div class="tema-preview-logo" id="temaLogoPreview"
+           style="background:linear-gradient(135deg,{{ tema.cor_primaria }},{{ tema.cor_secundaria }})">
+        {{ (tema.nome_exibicao or grupo.nome or 'G')[0].upper() }}
+      </div>
+      <div>
+        <div id="temaNomePreview" style="font-size:14px;font-weight:700">{{ tema.nome_exibicao or grupo.nome }}</div>
+        <div style="font-size:10px;color:var(--muted)">Preview do tema</div>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('grupo_tema_salvar') }}" class="form-dre" style="margin-top:16px">
+
+      <div class="mb-3">
+        <label class="form-label">Nome de exibição</label>
+        <input class="form-control" type="text" name="nome_exibicao"
+               value="{{ tema.nome_exibicao or grupo.nome }}"
+               oninput="document.getElementById('temaNomePreview').textContent=this.value||'{{ grupo.nome }}'">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label class="form-label">Cor principal</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="color" name="cor_primaria" value="{{ tema.cor_primaria }}"
+                   class="color-swatch" oninput="atualizarCores(this.value,'cor_s')">
+            <input class="form-control" type="text" id="cor_p_txt" value="{{ tema.cor_primaria }}" style="font-size:11px;padding:6px 8px" maxlength="7">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Cor secundária</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="color" name="cor_secundaria" value="{{ tema.cor_secundaria }}"
+                   class="color-swatch" id="cor_s" oninput="atualizarCores2(this.value)">
+            <input class="form-control" type="text" id="cor_s_txt" value="{{ tema.cor_secundaria }}" style="font-size:11px;padding:6px 8px" maxlength="7">
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">URL da logo <span style="opacity:.5">(opcional)</span></label>
+        <input class="form-control" type="url" name="logo_url" value="{{ tema.logo_url }}" placeholder="https://...">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Imagem de fundo do login <span style="opacity:.5">(opcional)</span></label>
+        <input class="form-control" type="url" name="bg_login_url" value="{{ tema.bg_login_url }}" placeholder="https://...">
+      </div>
+
+      <button type="submit" class="btn-gold w-100">
+        <i class="bi bi-palette"></i> Salvar Tema
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Link para ver login do grupo -->
+{% if user_tipo == 'master' %}
+<div class="card-dre" style="margin-top:20px">
+  <div class="section-title">Link de acesso do grupo</div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <code style="background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+      http://{{ request.host }}/entrar/{{ grupo.slug }}
+    </code>
+    <a href="{{ url_for('login_grupo', slug=grupo.slug) }}" target="_blank"
+       class="btn-outline-gold" style="white-space:nowrap">
+      <i class="bi bi-box-arrow-up-right"></i> Visualizar login
+    </a>
+  </div>
+  <p style="font-size:11px;color:var(--muted);margin-top:8px">
+    Compartilhe este link com os usuários do grupo. O login será exibido com as cores e logo configurados acima.
+  </p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function atualizarCores(v){
+  document.getElementById('cor_p_txt').value = v;
+  atualizarPreview();
+}
+function atualizarCores2(v){
+  document.getElementById('cor_s_txt').value = v;
+  atualizarPreview();
+}
+function atualizarPreview(){
+  var p = document.querySelector('input[name="cor_primaria"]').value;
+  var s = document.querySelector('input[name="cor_secundaria"]').value;
+  document.getElementById('temaLogoPreview').style.background = 'linear-gradient(135deg,'+p+','+s+')';
+}
+</script>
+{% endblock %}
