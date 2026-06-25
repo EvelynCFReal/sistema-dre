@@ -702,12 +702,14 @@ def migrar_db():
             status              TEXT DEFAULT 'aberto',
             prioridade          TEXT DEFAULT 'media',
             categoria           TEXT DEFAULT 'suporte',
+            setor_id            INTEGER,
             solicitante_id      INTEGER,
             solicitante_nome    TEXT DEFAULT '',
             solicitante_email   TEXT DEFAULT '',
             solicitante_tel     TEXT DEFAULT '',
             responsavel_id      INTEGER,
             prazo               DATE,
+            prazo_sla           TIMESTAMP,
             criado_em           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             atualizado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             fechado_em          TIMESTAMP
@@ -724,6 +726,43 @@ def migrar_db():
             tipo            TEXT DEFAULT 'comentario',
             criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
+
+    if "chamado_etiqueta" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamado_etiqueta (
+            chamado_id  INTEGER NOT NULL REFERENCES chamados(id) ON DELETE CASCADE,
+            etiqueta_id INTEGER NOT NULL REFERENCES chamados_etiquetas(id) ON DELETE CASCADE,
+            PRIMARY KEY (chamado_id, etiqueta_id)
+        )""")
+
+    if "chamado_apoios" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamado_apoios (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            chamado_id      INTEGER NOT NULL REFERENCES chamados(id) ON DELETE CASCADE,
+            usuario_id      INTEGER NOT NULL REFERENCES usuarios(id),
+            usuario_nome    TEXT DEFAULT '',
+            adicionado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(chamado_id, usuario_id)
+        )""")
+
+    if "chamado_acompanhantes" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamado_acompanhantes (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            chamado_id      INTEGER NOT NULL REFERENCES chamados(id) ON DELETE CASCADE,
+            usuario_id      INTEGER NOT NULL REFERENCES usuarios(id),
+            usuario_nome    TEXT DEFAULT '',
+            adicionado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(chamado_id, usuario_id)
+        )""")
+
+    # Migration: setor_id e prazo_sla em chamados existentes
+    cols_ch = [r[1] for r in c.execute("PRAGMA table_info(chamados)").fetchall()]
+    if cols_ch and "setor_id" not in cols_ch:
+        c.execute("ALTER TABLE chamados ADD COLUMN setor_id INTEGER")
+    if cols_ch and "prazo_sla" not in cols_ch:
+        c.execute("ALTER TABLE chamados ADD COLUMN prazo_sla TIMESTAMP")
 
     # Seed módulo Chamados
     c.execute("""INSERT OR IGNORE INTO modulos_sistema(nome,slug,descricao,icone,ordem)
