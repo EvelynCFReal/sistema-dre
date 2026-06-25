@@ -1,0 +1,306 @@
+{% extends "base_hub.html" %}
+{% block title %}{{ chamado.numero }} · Chamados · UNYRAX{% endblock %}
+{% block page_title %}{{ chamado.numero }}{% endblock %}
+
+{% block extra_style %}
+.ch-header{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin-bottom:18px}
+.ch-header-top{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.ch-titulo-blk{flex:1;min-width:0}
+.ch-titulo-blk h2{font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px;word-break:break-word}
+.ch-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11px;color:var(--muted)}
+.ch-meta span{display:inline-flex;align-items:center;gap:4px}
+.badge-ch{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;
+  font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.badge-aberto{background:rgba(91,141,238,.12);color:var(--blue)}
+.badge-em_andamento{background:rgba(61,122,80,.12);color:var(--gold)}
+.badge-aguardando{background:rgba(245,197,66,.12);color:#f5c542}
+.badge-resolvido{background:rgba(62,207,142,.12);color:#3ecf8e}
+.badge-fechado{background:rgba(122,128,153,.12);color:var(--muted)}
+.badge-urgente{background:rgba(255,102,102,.15);color:var(--red)}
+.badge-alta{background:rgba(204,90,69,.15);color:var(--coral)}
+.badge-media{background:rgba(91,141,238,.1);color:var(--blue)}
+.badge-baixa{background:rgba(122,128,153,.1);color:var(--muted)}
+
+.ch-grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+@media(max-width:900px){.ch-grid{grid-template-columns:1fr}}
+
+.ch-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+.ch-panel h6{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;font-weight:700}
+.ch-desc{font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.ch-desc:empty::before{content:'Sem descrição.';color:var(--muted);font-style:italic}
+
+/* Timeline */
+.timeline{list-style:none;padding:0;margin:0;position:relative}
+.timeline::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{display:flex;gap:14px;margin-bottom:16px;position:relative}
+.tl-dot{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:12px;z-index:1;background:var(--card2);border:1px solid var(--border)}
+.tl-dot.comentario{background:rgba(61,122,80,.12);color:var(--gold);border-color:rgba(61,122,80,.25)}
+.tl-dot.status{background:rgba(91,141,238,.12);color:var(--blue);border-color:rgba(91,141,238,.25)}
+.tl-dot.atribuicao{background:rgba(204,90,69,.1);color:var(--coral);border-color:rgba(204,90,69,.2)}
+.tl-body{flex:1;min-width:0}
+.tl-autor{font-size:11px;font-weight:600;color:var(--text)}
+.tl-hora{font-size:10px;color:var(--muted);margin-left:8px}
+.tl-txt{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5;word-break:break-word}
+.tl-txt.comentario{color:var(--text);background:var(--card2);border-radius:8px;padding:10px 12px;
+  border:1px solid var(--border);font-size:13px}
+
+/* Formulários laterais */
+.side-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px;display:block}
+.side-select,.side-input{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:7px;padding:8px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.side-select:focus,.side-input:focus{border-color:var(--gold)}
+.side-info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+  border-bottom:1px solid var(--border);font-size:12px}
+.side-info-row:last-child{border-bottom:none}
+.side-info-row .lbl{color:var(--muted)}
+.side-info-row .val{font-weight:600;text-align:right}
+.btn-ch-sm{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;
+  font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.btn-ch-primary{background:var(--gold);color:#fff}
+.btn-ch-primary:hover{background:var(--gold2)}
+.btn-ch-danger{background:transparent;border:1px solid rgba(255,102,102,.4);color:var(--red)}
+.btn-ch-danger:hover{background:rgba(255,102,102,.08)}
+.btn-ch-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ch-outline:hover{border-color:var(--gold);color:var(--gold)}
+
+.comment-box{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:10px 12px;font-size:13px;font-family:'DM Sans',sans-serif;
+  resize:vertical;min-height:80px;outline:none;transition:border-color .2s}
+.comment-box:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(61,122,80,.1)}
+{% endblock %}
+
+{% block content %}
+{% set label_status = {'aberto':'Aberto','em_andamento':'Em Andamento','aguardando':'Aguardando','resolvido':'Resolvido','fechado':'Fechado'} %}
+{% set icon_tipo = {'comentario':'chat-left-text','status':'arrow-repeat','atribuicao':'person-check'} %}
+
+<!-- Header do chamado -->
+<div class="ch-header">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <a href="{{ url_for('chamados_lista') }}" style="font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <span class="badge-ch badge-{{ chamado.status }}">{{ label_status.get(chamado.status, chamado.status) }}</span>
+      <span class="badge-ch badge-{{ chamado.prioridade }}">{{ chamado.prioridade.capitalize() }}</span>
+    </div>
+  </div>
+  <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:8px">{{ chamado.titulo }}</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--muted)">
+    <span><i class="bi bi-hash"></i> {{ chamado.numero }}</span>
+    <span><i class="bi bi-tag"></i> {{ chamado.categoria.capitalize() }}</span>
+    {% if chamado.loja_nome %}<span><i class="bi bi-building"></i> {{ chamado.loja_nome }}</span>{% endif %}
+    <span><i class="bi bi-person"></i> {{ chamado.solicitante_nome or '—' }}</span>
+    <span><i class="bi bi-clock"></i> {{ chamado.criado_em[:16] if chamado.criado_em else '—' }}</span>
+    {% if chamado.prazo %}<span style="color:var(--coral)"><i class="bi bi-calendar-event"></i> Prazo: {{ chamado.prazo }}</span>{% endif %}
+  </div>
+</div>
+
+<div class="ch-grid">
+
+  <!-- Coluna principal -->
+  <div>
+    <!-- Descrição -->
+    <div class="ch-panel">
+      <h6><i class="bi bi-file-text"></i> Descrição</h6>
+      <div class="ch-desc">{{ chamado.descricao or '' }}</div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="ch-panel">
+      <h6><i class="bi bi-clock-history"></i> Histórico e Comentários</h6>
+      {% if comentarios %}
+      <ul class="timeline">
+        {% for cm in comentarios %}
+        <li class="tl-item">
+          <div class="tl-dot {{ cm.tipo }}">
+            <i class="bi bi-{{ icon_tipo.get(cm.tipo, 'chat-left') }}"></i>
+          </div>
+          <div class="tl-body">
+            <span class="tl-autor">{{ cm.usuario_nome or 'Sistema' }}</span>
+            <span class="tl-hora">{{ cm.criado_em[:16] if cm.criado_em else '' }}</span>
+            <div class="tl-txt {{ cm.tipo if cm.tipo == 'comentario' else '' }}">{{ cm.texto }}</div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0">Nenhuma atualização ainda.</p>
+      {% endif %}
+
+      <!-- Novo comentário -->
+      {% if chamado.status not in ('fechado',) %}
+      <form method="post" action="{{ url_for('chamados_comentar', cid=chamado.id) }}" style="margin-top:16px">
+        <textarea class="comment-box" name="texto" placeholder="Adicione um comentário ou atualização..." required></textarea>
+        <button type="submit" class="btn-ch-sm btn-ch-primary" style="margin-top:8px">
+          <i class="bi bi-send"></i> Comentar
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Coluna lateral -->
+  <div>
+
+    <!-- Alterar Status -->
+    {% if chamado.status != 'fechado' %}
+    <div class="ch-panel">
+      <h6><i class="bi bi-arrow-repeat"></i> Alterar Status</h6>
+      <form method="post" action="{{ url_for('chamados_status', cid=chamado.id) }}">
+        <div style="margin-bottom:10px">
+          <label class="side-label">Novo Status</label>
+          <select name="status" class="side-select">
+            {% for s in STATUS_CHAMADO %}
+            <option value="{{ s }}" {% if s == chamado.status %}selected{% endif %}>
+              {{ label_status.get(s, s) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-ch-sm btn-ch-primary" style="width:100%">
+          <i class="bi bi-check-lg"></i> Atualizar Status
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Atribuir Responsável -->
+    {% if user_tipo in ('master', 'gestor') %}
+    <div class="ch-panel">
+      <h6><i class="bi bi-person-gear"></i> Responsável</h6>
+      <form method="post" action="{{ url_for('chamados_atribuir', cid=chamado.id) }}">
+        <div style="margin-bottom:10px">
+          <label class="side-label">Atribuir a</label>
+          <select name="responsavel_id" class="side-select">
+            <option value="">— Sem responsável —</option>
+            {% for u in usuarios_resp %}
+            <option value="{{ u.id }}" {% if u.id == chamado.responsavel_id %}selected{% endif %}>
+              {{ u.nome }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-ch-sm btn-ch-primary" style="width:100%">
+          <i class="bi bi-person-check"></i> Atribuir
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Informações -->
+    <div class="ch-panel">
+      <h6><i class="bi bi-info-circle"></i> Informações</h6>
+      <div class="side-info-row">
+        <span class="lbl">Solicitante</span>
+        <span class="val">{{ chamado.solicitante_nome or '—' }}</span>
+      </div>
+      {% if chamado.solicitante_email %}
+      <div class="side-info-row">
+        <span class="lbl">E-mail</span>
+        <span class="val" style="font-size:11px"><a href="mailto:{{ chamado.solicitante_email }}" style="color:var(--gold)">{{ chamado.solicitante_email }}</a></span>
+      </div>
+      {% endif %}
+      {% if chamado.solicitante_tel %}
+      <div class="side-info-row">
+        <span class="lbl">Telefone</span>
+        <span class="val">{{ chamado.solicitante_tel }}</span>
+      </div>
+      {% endif %}
+      <div class="side-info-row">
+        <span class="lbl">Empresa</span>
+        <span class="val">{{ chamado.loja_nome or '—' }}</span>
+      </div>
+      <div class="side-info-row">
+        <span class="lbl">Categoria</span>
+        <span class="val">{{ chamado.categoria.capitalize() }}</span>
+      </div>
+      <div class="side-info-row">
+        <span class="lbl">Responsável</span>
+        <span class="val">{{ chamado.responsavel_nome or '—' }}</span>
+      </div>
+      {% if chamado.prazo %}
+      <div class="side-info-row">
+        <span class="lbl">Prazo</span>
+        <span class="val" style="color:var(--coral)">{{ chamado.prazo }}</span>
+      </div>
+      {% endif %}
+      <div class="side-info-row">
+        <span class="lbl">Aberto em</span>
+        <span class="val" style="font-size:11px">{{ chamado.criado_em[:16] if chamado.criado_em else '—' }}</span>
+      </div>
+      {% if chamado.fechado_em %}
+      <div class="side-info-row">
+        <span class="lbl">Fechado em</span>
+        <span class="val" style="font-size:11px">{{ chamado.fechado_em[:16] }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Editar (modal inline) -->
+    {% if chamado.status != 'fechado' and (user_tipo in ('master','gestor') or chamado.solicitante_id == user_id) %}
+    <div class="ch-panel">
+      <h6 style="cursor:pointer" onclick="document.getElementById('frmEditar').style.display=document.getElementById('frmEditar').style.display==='none'?'block':'none'">
+        <i class="bi bi-pencil"></i> Editar Chamado <i class="bi bi-chevron-down" style="margin-left:auto;font-size:10px"></i>
+      </h6>
+      <form id="frmEditar" method="post" action="{{ url_for('chamados_editar', cid=chamado.id) }}" style="display:none">
+        <div style="margin-bottom:10px">
+          <label class="side-label">Título</label>
+          <input type="text" name="titulo" class="side-input" value="{{ chamado.titulo }}" required>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Empresa</label>
+          <select name="loja_id" class="side-select">
+            <option value="">— Nenhuma —</option>
+            {% for l in lojas %}
+            <option value="{{ l.id }}" {% if l.id == chamado.loja_id %}selected{% endif %}>{{ l.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Prioridade</label>
+          <select name="prioridade" class="side-select">
+            {% for p in PRIO_CHAMADO %}
+            <option value="{{ p }}" {% if p == chamado.prioridade %}selected{% endif %}>{{ p.capitalize() }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Categoria</label>
+          <select name="categoria" class="side-select">
+            {% for cat in CAT_CHAMADO %}
+            <option value="{{ cat }}" {% if cat == chamado.categoria %}selected{% endif %}>{{ cat.capitalize() }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Prazo</label>
+          <input type="date" name="prazo" class="side-input" value="{{ chamado.prazo or '' }}">
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Solicitante</label>
+          <input type="text" name="solicitante_nome" class="side-input" value="{{ chamado.solicitante_nome or '' }}">
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">E-mail</label>
+          <input type="email" name="solicitante_email" class="side-input" value="{{ chamado.solicitante_email or '' }}">
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="side-label">Telefone</label>
+          <input type="text" name="solicitante_tel" class="side-input" value="{{ chamado.solicitante_tel or '' }}">
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Descrição</label>
+          <textarea name="descricao" class="comment-box" style="min-height:60px">{{ chamado.descricao or '' }}</textarea>
+        </div>
+        <button type="submit" class="btn-ch-sm btn-ch-primary" style="width:100%">
+          <i class="bi bi-check-lg"></i> Salvar Alterações
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
