@@ -216,6 +216,12 @@
         <span class="lbl">Categoria</span>
         <span class="val">{{ chamado.categoria.capitalize() }}</span>
       </div>
+      {% if chamado.setor_nome %}
+      <div class="side-info-row">
+        <span class="lbl">Setor</span>
+        <span class="val">{{ chamado.setor_nome }}</span>
+      </div>
+      {% endif %}
       <div class="side-info-row">
         <span class="lbl">Responsável</span>
         <span class="val">{{ chamado.responsavel_nome or '—' }}</span>
@@ -224,6 +230,12 @@
       <div class="side-info-row">
         <span class="lbl">Prazo</span>
         <span class="val" style="color:var(--coral)">{{ chamado.prazo }}</span>
+      </div>
+      {% endif %}
+      {% if chamado.prazo_sla %}
+      <div class="side-info-row">
+        <span class="lbl">SLA</span>
+        <span class="val" style="font-size:11px;color:var(--coral)">{{ chamado.prazo_sla[:16] }}</span>
       </div>
       {% endif %}
       <div class="side-info-row">
@@ -237,6 +249,144 @@
       </div>
       {% endif %}
     </div>
+
+    <!-- Etiquetas -->
+    {% if etiquetas %}
+    <div class="ch-panel">
+      <h6><i class="bi bi-tags"></i> Etiquetas</h6>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+        {% for et in etiquetas_ch %}
+        <span style="background:{{ et.cor }}22;color:{{ et.cor }};border:1px solid {{ et.cor }}55;
+          padding:3px 9px;border-radius:5px;font-size:10px;font-weight:700">{{ et.nome }}</span>
+        {% else %}
+        <span style="color:var(--muted);font-size:11px">Nenhuma etiqueta</span>
+        {% endfor %}
+      </div>
+      {% if chamado.status != 'fechado' and user_tipo in ('master','gestor') %}
+      <form method="post" action="{{ url_for('chamados_etiquetas_salvar', cid=chamado.id) }}">
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+          {% for et in etiquetas %}
+          <label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+            padding:4px 9px;border-radius:5px;border:1px solid {{ et.cor }}55;font-size:11px;
+            background:{% if et.id in (etiquetas_ch|map(attribute='id')|list) %}{{ et.cor }}22{% else %}var(--card2){% endif %};
+            color:{{ et.cor }}">
+            <input type="checkbox" name="etiquetas" value="{{ et.id }}"
+              {% if et.id in (etiquetas_ch|map(attribute='id')|list) %}checked{% endif %}
+              style="width:12px;height:12px;accent-color:{{ et.cor }}">
+            {{ et.nome }}
+          </label>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-ch-sm btn-ch-outline" style="font-size:11px;padding:4px 10px">
+          <i class="bi bi-check2"></i> Salvar etiquetas
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Apoios -->
+    <div class="ch-panel">
+      <h6><i class="bi bi-people"></i> Apoios <span style="background:rgba(91,141,238,.12);color:var(--blue);padding:1px 7px;border-radius:4px;font-size:9px;margin-left:4px">{{ apoios|length }}</span></h6>
+      {% for ap in apoios %}
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));
+          display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">
+          {{ ap.usuario_nome[0].upper() if ap.usuario_nome else '?' }}
+        </div>
+        <span style="flex:1;font-size:12px">{{ ap.usuario_nome }}</span>
+        {% if chamado.status != 'fechado' and user_tipo in ('master','gestor') %}
+        <form method="post" action="{{ url_for('chamados_apoio_remover', cid=chamado.id, uid=ap.usuario_id) }}" style="display:inline">
+          <button type="submit" class="btn-ch-sm" style="padding:2px 7px;font-size:10px;background:none;border:none;color:var(--muted);cursor:pointer" title="Remover">
+            <i class="bi bi-x"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% if chamado.status != 'fechado' and user_tipo in ('master','gestor') %}
+      <form method="post" action="{{ url_for('chamados_apoio_add', cid=chamado.id) }}" style="margin-top:10px;display:flex;gap:6px">
+        <select name="usuario_id" class="side-select" style="flex:1" required>
+          <option value="">Adicionar apoio…</option>
+          {% set apoio_ids = apoios|map(attribute='usuario_id')|list %}
+          {% for u in todos_usuarios %}
+          {% if u.id not in apoio_ids %}
+          <option value="{{ u.id }}">{{ u.nome }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-ch-sm btn-ch-primary" style="padding:6px 10px;flex-shrink:0">
+          <i class="bi bi-plus"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Acompanhantes -->
+    <div class="ch-panel">
+      <h6><i class="bi bi-eye"></i> Acompanhantes <span style="background:rgba(122,128,153,.12);color:var(--muted);padding:1px 7px;border-radius:4px;font-size:9px;margin-left:4px">{{ acompanhantes|length }}</span></h6>
+      {% for ac in acompanhantes %}
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--card2);border:1px solid var(--border);
+          display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0">
+          {{ ac.usuario_nome[0].upper() if ac.usuario_nome else '?' }}
+        </div>
+        <span style="flex:1;font-size:12px">{{ ac.usuario_nome }}</span>
+        {% if chamado.status != 'fechado' and user_tipo in ('master','gestor') %}
+        <form method="post" action="{{ url_for('chamados_acomp_remover', cid=chamado.id, uid=ac.usuario_id) }}" style="display:inline">
+          <button type="submit" class="btn-ch-sm" style="padding:2px 7px;font-size:10px;background:none;border:none;color:var(--muted);cursor:pointer" title="Remover">
+            <i class="bi bi-x"></i>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% if chamado.status != 'fechado' and user_tipo in ('master','gestor') %}
+      <form method="post" action="{{ url_for('chamados_acomp_add', cid=chamado.id) }}" style="margin-top:10px;display:flex;gap:6px">
+        <select name="usuario_id" class="side-select" style="flex:1" required>
+          <option value="">Adicionar acompanhante…</option>
+          {% set acomp_ids = acompanhantes|map(attribute='usuario_id')|list %}
+          {% for u in todos_usuarios %}
+          {% if u.id not in acomp_ids %}
+          <option value="{{ u.id }}">{{ u.nome }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-ch-sm btn-ch-outline" style="padding:6px 10px;flex-shrink:0">
+          <i class="bi bi-plus"></i>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Transferir Responsável -->
+    {% if chamado.status != 'fechado' and (user_tipo == 'master' or chamado.responsavel_id == user_id) %}
+    <div class="ch-panel">
+      <h6 style="cursor:pointer" onclick="document.getElementById('frmTransferir').style.display=document.getElementById('frmTransferir').style.display==='none'?'block':'none'">
+        <i class="bi bi-arrow-left-right"></i> Transferir Responsável <i class="bi bi-chevron-down" style="margin-left:auto;font-size:10px"></i>
+      </h6>
+      <form id="frmTransferir" method="post" action="{{ url_for('chamados_transferir', cid=chamado.id) }}" style="display:none">
+        <div style="margin-bottom:10px">
+          <label class="side-label">Novo Responsável</label>
+          <select name="responsavel_id" class="side-select" required>
+            <option value="">— Selecione —</option>
+            {% for u in todos_usuarios %}
+            {% if u.id != chamado.responsavel_id %}
+            <option value="{{ u.id }}">{{ u.nome }}</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="side-label">Motivo (opcional)</label>
+          <input type="text" name="motivo" class="side-input" placeholder="Ex: Não pertence ao meu setor">
+        </div>
+        <button type="submit" class="btn-ch-sm btn-ch-outline" style="width:100%">
+          <i class="bi bi-arrow-left-right"></i> Transferir
+        </button>
+      </form>
+    </div>
+    {% endif %}
 
     <!-- Editar (modal inline) -->
     {% if chamado.status != 'fechado' and (user_tipo in ('master','gestor') or chamado.solicitante_id == user_id) %}
