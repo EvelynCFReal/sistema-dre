@@ -641,6 +641,55 @@ def migrar_db():
             )
 
     # ── Módulo Chamados ──
+
+    if "chamados_setores" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamados_setores (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            grupo_id        INTEGER DEFAULT 1,
+            nome            TEXT NOT NULL,
+            cor             TEXT DEFAULT '#3d7a50',
+            responsavel_id  INTEGER,
+            pode_abrir      INTEGER DEFAULT 1,
+            pode_receber    INTEGER DEFAULT 1,
+            ativo           INTEGER DEFAULT 1,
+            criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+
+    if "chamados_etiquetas" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamados_etiquetas (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            grupo_id    INTEGER DEFAULT 1,
+            nome        TEXT NOT NULL,
+            cor         TEXT DEFAULT '#5b8dee',
+            ativo       INTEGER DEFAULT 1,
+            criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+
+    if "chamados_sla" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamados_sla (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            grupo_id            INTEGER DEFAULT 1,
+            nome                TEXT NOT NULL,
+            prioridade          TEXT DEFAULT 'media',
+            horas_resposta      REAL DEFAULT 4,
+            horas_resolucao     REAL DEFAULT 24,
+            dias_semana         TEXT DEFAULT '1,2,3,4,5',
+            hora_inicio         TEXT DEFAULT '08:00',
+            hora_fim            TEXT DEFAULT '18:00',
+            ativo               INTEGER DEFAULT 1,
+            criado_em           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        c.executemany(
+            "INSERT INTO chamados_sla(grupo_id,nome,prioridade,horas_resposta,horas_resolucao) VALUES(1,?,?,?,?)",
+            [("Urgente — 1h/4h","urgente",1,4),
+             ("Alta — 2h/8h","alta",2,8),
+             ("Média — 4h/24h","media",4,24),
+             ("Baixa — 8h/72h","baixa",8,72)]
+        )
+
     if "chamados" not in tabelas:
         c.execute("""
         CREATE TABLE chamados (
