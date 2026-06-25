@@ -2293,19 +2293,25 @@ def chamados_novo():
         descricao = request.form.get("descricao", "").strip()
         prioridade = request.form.get("prioridade", "media")
         categoria  = request.form.get("categoria", "suporte")
+        setor_id   = request.form.get("setor_id") or None
         loja_id_f  = request.form.get("loja_id") or None
         responsavel_id = request.form.get("responsavel_id") or None
         prazo      = request.form.get("prazo") or None
         sol_nome   = request.form.get("solicitante_nome", "").strip()
         sol_email  = request.form.get("solicitante_email", "").strip()
         sol_tel    = request.form.get("solicitante_tel", "").strip()
+        etiqueta_ids = request.form.getlist("etiquetas")
         if not titulo:
             flash("Título obrigatório.", "danger")
+            setores   = get_setores_chamados(grupo_id)
+            etiquetas = get_etiquetas_chamados(grupo_id)
             return render_template("chamados/form.html",
                                    lojas=lojas, usuarios_resp=usuarios_resp,
+                                   setores=setores, etiquetas=etiquetas,
                                    STATUS_CHAMADO=STATUS_CHAMADO,
                                    PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
                                    chamado=None)
+        prazo_sla = calcular_prazo_sla(grupo_id, prioridade)
         cid, numero = criar_chamado(
             grupo_id=grupo_id,
             loja_id=int(loja_id_f) if loja_id_f else None,
@@ -2318,6 +2324,14 @@ def chamados_novo():
             responsavel_id=int(responsavel_id) if responsavel_id else None,
             prazo=prazo,
         )
+        # salva setor, prazo_sla e etiquetas
+        if setor_id or prazo_sla or etiqueta_ids:
+            conn = get_db()
+            conn.execute("UPDATE chamados SET setor_id=?, prazo_sla=? WHERE id=?",
+                         (int(setor_id) if setor_id else None, prazo_sla, cid))
+            conn.commit(); conn.close()
+        if etiqueta_ids:
+            set_etiquetas_chamado(cid, etiqueta_ids)
         flash(f"Chamado {numero} aberto com sucesso.", "success")
         return redirect(url_for("chamados_detalhe", cid=cid))
 
