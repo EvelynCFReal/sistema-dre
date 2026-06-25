@@ -1276,18 +1276,18 @@ def get_banco_by_slug(slug):
     return dict(row) if row else None
 
 
-def salvar_banco_talentos(nome, slug, fonte_url, banco_id=None):
+def salvar_banco_talentos(nome, slug, fonte_url, banco_id=None, grupo_id=1):
     """Cria ou atualiza um banco de talentos."""
     conn = get_db()
     if banco_id:
         conn.execute(
-            "UPDATE bancos_talentos SET nome=?, slug=?, fonte_url=? WHERE id=?",
-            (nome, slug, fonte_url, int(banco_id))
+            "UPDATE bancos_talentos SET nome=?, slug=?, fonte_url=?, grupo_id=? WHERE id=?",
+            (nome, slug, fonte_url, int(grupo_id), int(banco_id))
         )
     else:
         conn.execute(
-            "INSERT INTO bancos_talentos(nome, slug, fonte_url) VALUES(?,?,?)",
-            (nome, slug, fonte_url)
+            "INSERT INTO bancos_talentos(nome, slug, fonte_url, grupo_id) VALUES(?,?,?,?)",
+            (nome, slug, fonte_url, int(grupo_id))
         )
     conn.commit()
     conn.close()
