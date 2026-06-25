@@ -141,7 +141,7 @@ def login_required(f):
     @wraps(f)
     def deco(*a, **kw):
         if "usuario_id" not in session:
-            return redirect(url_for("login"))
+            return redirect(url_for("login"))  # /entrar
         return f(*a, **kw)
     return deco
 
