@@ -629,6 +629,37 @@ def migrar_db():
                 (dre_row[0],)
             )
 
+    # ── planos (SaaS comercial) ──
+    if "planos" not in tabelas:
+        c.execute("""
+        CREATE TABLE planos (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome         TEXT NOT NULL,
+            descricao    TEXT DEFAULT '',
+            preco_mensal REAL DEFAULT 0,
+            ativo        INTEGER DEFAULT 1
+        )""")
+        c.execute("INSERT INTO planos(nome,descricao,preco_mensal) VALUES('Essencial','Módulos básicos',0)")
+        c.execute("INSERT INTO planos(nome,descricao,preco_mensal) VALUES('Profissional','Todos os módulos',0)")
+
+    if "planos_modulos" not in tabelas:
+        c.execute("""
+        CREATE TABLE planos_modulos (
+            plano_id  INTEGER NOT NULL REFERENCES planos(id) ON DELETE CASCADE,
+            modulo_id INTEGER NOT NULL REFERENCES modulos_sistema(id) ON DELETE CASCADE,
+            PRIMARY KEY (plano_id, modulo_id)
+        )""")
+
+    if "subscriptions" not in tabelas:
+        c.execute("""
+        CREATE TABLE subscriptions (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            grupo_id  INTEGER NOT NULL REFERENCES grupos(id) ON DELETE CASCADE,
+            plano_id  INTEGER NOT NULL REFERENCES planos(id),
+            valido_ate DATE,
+            status    TEXT DEFAULT 'ativo'
+        )""")
+
     # ── ÍNDICES PARA PERFORMANCE ──
     c.executescript("""
     CREATE INDEX IF NOT EXISTS idx_lc_loja_data ON lancamentos_caixa(loja_id, data);
