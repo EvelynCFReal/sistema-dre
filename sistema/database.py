@@ -640,6 +640,46 @@ def migrar_db():
                 (dre_row[0],)
             )
 
+    # ── Módulo Chamados ──
+    if "chamados" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamados (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            numero              TEXT NOT NULL UNIQUE,
+            grupo_id            INTEGER DEFAULT 1,
+            loja_id             INTEGER,
+            titulo              TEXT NOT NULL,
+            descricao           TEXT DEFAULT '',
+            status              TEXT DEFAULT 'aberto',
+            prioridade          TEXT DEFAULT 'media',
+            categoria           TEXT DEFAULT 'suporte',
+            solicitante_id      INTEGER,
+            solicitante_nome    TEXT DEFAULT '',
+            solicitante_email   TEXT DEFAULT '',
+            solicitante_tel     TEXT DEFAULT '',
+            responsavel_id      INTEGER,
+            prazo               DATE,
+            criado_em           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            fechado_em          TIMESTAMP
+        )""")
+
+    if "chamados_comentarios" not in tabelas:
+        c.execute("""
+        CREATE TABLE chamados_comentarios (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            chamado_id      INTEGER NOT NULL REFERENCES chamados(id) ON DELETE CASCADE,
+            usuario_id      INTEGER NOT NULL REFERENCES usuarios(id),
+            usuario_nome    TEXT DEFAULT '',
+            texto           TEXT NOT NULL,
+            tipo            TEXT DEFAULT 'comentario',
+            criado_em       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+
+    # Seed módulo Chamados
+    c.execute("""INSERT OR IGNORE INTO modulos_sistema(nome,slug,descricao,icone,ordem)
+                 VALUES('Chamados','chamados','Abertura e acompanhamento de chamados de suporte','bi-headset',3)""")
+
     # ── planos (SaaS comercial) ──
     if "planos" not in tabelas:
         c.execute("""
