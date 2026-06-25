@@ -362,13 +362,14 @@ function showTab(name, btn) {
 }
 
 // Setores
-function editSetor(id, nome, cor, respId, podeAbrir, podeReceber) {
+function editSetor(id, nome, cor, respId, podeAbrir, podeReceber, cats) {
   document.getElementById('fSetor_id').value = id;
   document.getElementById('fSetor_nome').value = nome;
   document.getElementById('fSetor_cor').value = cor;
   document.getElementById('fSetor_resp').value = respId || '';
   document.getElementById('fSetor_abrir').checked = !!podeAbrir;
   document.getElementById('fSetor_receber').checked = !!podeReceber;
+  document.getElementById('fSetor_cats').value = cats || '';
   document.getElementById('setor-form-title').textContent = 'Editar Setor';
   document.getElementById('fSetor_nome').focus();
 }
@@ -379,6 +380,7 @@ function resetSetor() {
   document.getElementById('fSetor_resp').value = '';
   document.getElementById('fSetor_abrir').checked = false;
   document.getElementById('fSetor_receber').checked = false;
+  document.getElementById('fSetor_cats').value = '';
   document.getElementById('setor-form-title').textContent = 'Novo Setor';
 }
 
