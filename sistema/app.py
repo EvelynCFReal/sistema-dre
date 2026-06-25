@@ -37,6 +37,8 @@ from database import (
     salvar_modulo_sistema, excluir_modulo_sistema,
     salvar_chat_mensagem, get_chat_historico,
     salvar_sugestao, get_sugestoes, marcar_sugestao_lida,
+    get_grupos_lista, get_grupo_by_slug, get_tema_grupo,
+    salvar_tema_grupo, salvar_grupo,
 )
 
 # ──────────────────────────────────────────
