@@ -1568,3 +1568,203 @@ def excluir_modulo_sistema(modulo_id):
     conn.execute("DELETE FROM modulos_sistema WHERE id=? AND slug!='dre'", (modulo_id,))
     conn.commit()
     conn.close()
+
+
+# ──────────────────────────────────────────
+#  MÓDULO CHAMADOS
+# ──────────────────────────────────────────
+
+STATUS_CHAMADO  = ["aberto", "em_andamento", "aguardando", "resolvido", "fechado"]
+PRIO_CHAMADO    = ["baixa", "media", "alta", "urgente"]
+CAT_CHAMADO     = ["suporte", "hardware", "software", "rede", "treinamento", "financeiro", "rh", "outros"]
+
+
+def _gerar_numero_chamado(conn):
+    from datetime import datetime, timezone, timedelta
+    ano = datetime.now(timezone(timedelta(hours=-3))).year
+    row = conn.execute(
+        "SELECT MAX(CAST(SUBSTR(numero, -4) AS INTEGER)) FROM chamados WHERE numero LIKE ?",
+        (f"CH-{ano}-%",)
+    ).fetchone()
+    seq = (row[0] or 0) + 1
+    return f"CH-{ano}-{seq:04d}"
+
+
+def _agora_br():
+    from datetime import datetime, timezone, timedelta
+    return datetime.now(timezone(timedelta(hours=-3))).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def criar_chamado(grupo_id, loja_id, titulo, descricao, prioridade, categoria,
+                  solicitante_id, solicitante_nome, solicitante_email, solicitante_tel,
+                  responsavel_id=None, prazo=None):
+    conn = get_db()
+    numero = _gerar_numero_chamado(conn)
+    agora = _agora_br()
+    conn.execute("""
+        INSERT INTO chamados
+            (numero, grupo_id, loja_id, titulo, descricao, prioridade, categoria,
+             solicitante_id, solicitante_nome, solicitante_email, solicitante_tel,
+             responsavel_id, prazo, criado_em, atualizado_em)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (numero, grupo_id, loja_id, titulo, descricao, prioridade, categoria,
+          solicitante_id, solicitante_nome, solicitante_email, solicitante_tel,
+          responsavel_id or None, prazo or None, agora, agora))
+    cid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.commit()
+    conn.close()
+    return cid, numero
+
+
+def get_chamados(grupo_id=None, loja_id=None, status=None, prioridade=None,
+                 responsavel_id=None, solicitante_id=None, q=None):
+    conn = get_db()
+    filtros, params = [], []
+    if grupo_id is not None:
+        filtros.append("c.grupo_id=?"); params.append(grupo_id)
+    if loja_id:
+        filtros.append("c.loja_id=?"); params.append(loja_id)
+    if status:
+        filtros.append("c.status=?"); params.append(status)
+    if prioridade:
+        filtros.append("c.prioridade=?"); params.append(prioridade)
+    if responsavel_id:
+        filtros.append("c.responsavel_id=?"); params.append(responsavel_id)
+    if solicitante_id:
+        filtros.append("c.solicitante_id=?"); params.append(solicitante_id)
+    if q:
+        filtros.append("(c.titulo LIKE ? OR c.numero LIKE ? OR c.solicitante_nome LIKE ?)")
+        params += [f"%{q}%", f"%{q}%", f"%{q}%"]
+    where = ("WHERE " + " AND ".join(filtros)) if filtros else ""
+    rows = conn.execute(f"""
+        SELECT c.*,
+               l.nome as loja_nome,
+               r.nome as responsavel_nome
+        FROM chamados c
+        LEFT JOIN lojas l ON l.id = c.loja_id
+        LEFT JOIN usuarios r ON r.id = c.responsavel_id
+        {where}
+        ORDER BY
+            CASE c.status WHEN 'fechado' THEN 1 WHEN 'resolvido' THEN 2 ELSE 0 END,
+            CASE c.prioridade WHEN 'urgente' THEN 0 WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END,
+            c.criado_em DESC
+    """, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_chamado(chamado_id):
+    conn = get_db()
+    row = conn.execute("""
+        SELECT c.*,
+               l.nome as loja_nome,
+               r.nome as responsavel_nome,
+               s.nome as solicitante_nome_u
+        FROM chamados c
+        LEFT JOIN lojas l ON l.id = c.loja_id
+        LEFT JOIN usuarios r ON r.id = c.responsavel_id
+        LEFT JOIN usuarios s ON s.id = c.solicitante_id
+        WHERE c.id=?
+    """, (chamado_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def get_comentarios_chamado(chamado_id):
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT * FROM chamados_comentarios
+        WHERE chamado_id=? ORDER BY criado_em ASC
+    """, (chamado_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def adicionar_comentario_chamado(chamado_id, usuario_id, usuario_nome, texto, tipo="comentario"):
+    agora = _agora_br()
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO chamados_comentarios(chamado_id, usuario_id, usuario_nome, texto, tipo, criado_em)
+        VALUES(?,?,?,?,?,?)
+    """, (chamado_id, usuario_id, usuario_nome, texto, tipo, agora))
+    conn.execute("UPDATE chamados SET atualizado_em=? WHERE id=?", (agora, chamado_id))
+    conn.commit()
+    conn.close()
+
+
+def atualizar_status_chamado(chamado_id, novo_status, usuario_id, usuario_nome):
+    agora = _agora_br()
+    conn = get_db()
+    old = conn.execute("SELECT status FROM chamados WHERE id=?", (chamado_id,)).fetchone()
+    fechado_em = agora if novo_status in ("fechado", "resolvido") else None
+    conn.execute(
+        "UPDATE chamados SET status=?, atualizado_em=?, fechado_em=? WHERE id=?",
+        (novo_status, agora, fechado_em, chamado_id)
+    )
+    if old:
+        label = {"aberto":"Aberto","em_andamento":"Em Andamento","aguardando":"Aguardando",
+                 "resolvido":"Resolvido","fechado":"Fechado"}
+        conn.execute("""
+            INSERT INTO chamados_comentarios(chamado_id,usuario_id,usuario_nome,texto,tipo,criado_em)
+            VALUES(?,?,?,?,?,?)
+        """, (chamado_id, usuario_id, usuario_nome,
+              f"Status alterado: {label.get(old['status'],old['status'])} → {label.get(novo_status,novo_status)}",
+              "status", agora))
+    conn.commit()
+    conn.close()
+
+
+def atualizar_responsavel_chamado(chamado_id, responsavel_id, responsavel_nome, usuario_id, usuario_nome):
+    agora = _agora_br()
+    conn = get_db()
+    conn.execute(
+        "UPDATE chamados SET responsavel_id=?, atualizado_em=? WHERE id=?",
+        (responsavel_id or None, agora, chamado_id)
+    )
+    conn.execute("""
+        INSERT INTO chamados_comentarios(chamado_id,usuario_id,usuario_nome,texto,tipo,criado_em)
+        VALUES(?,?,?,?,?,?)
+    """, (chamado_id, usuario_id, usuario_nome,
+          f"Responsável atribuído: {responsavel_nome or 'Nenhum'}",
+          "atribuicao", agora))
+    conn.commit()
+    conn.close()
+
+
+def editar_chamado(chamado_id, titulo, descricao, prioridade, categoria, loja_id, prazo,
+                   solicitante_nome, solicitante_email, solicitante_tel):
+    agora = _agora_br()
+    conn = get_db()
+    conn.execute("""
+        UPDATE chamados SET titulo=?,descricao=?,prioridade=?,categoria=?,loja_id=?,prazo=?,
+            solicitante_nome=?,solicitante_email=?,solicitante_tel=?,atualizado_em=?
+        WHERE id=?
+    """, (titulo, descricao, prioridade, categoria, loja_id or None, prazo or None,
+          solicitante_nome, solicitante_email, solicitante_tel, agora, chamado_id))
+    conn.commit()
+    conn.close()
+
+
+def get_stats_chamados(grupo_id=None, loja_id=None):
+    conn = get_db()
+    filtros, params = [], []
+    if grupo_id is not None:
+        filtros.append("grupo_id=?"); params.append(grupo_id)
+    if loja_id:
+        filtros.append("loja_id=?"); params.append(loja_id)
+    where = ("WHERE " + " AND ".join(filtros)) if filtros else ""
+    rows = conn.execute(f"""
+        SELECT status, prioridade, COUNT(*) as total
+        FROM chamados {where}
+        GROUP BY status, prioridade
+    """, params).fetchall()
+    conn.close()
+    stats = {"total": 0, "aberto": 0, "em_andamento": 0, "aguardando": 0,
+             "resolvido": 0, "fechado": 0, "urgente": 0, "alta": 0}
+    for r in rows:
+        stats["total"] += r["total"]
+        if r["status"] in stats:
+            stats[r["status"]] += r["total"]
+        if r["prioridade"] in ("urgente", "alta"):
+            stats[r["prioridade"]] += r["total"]
+    return stats
