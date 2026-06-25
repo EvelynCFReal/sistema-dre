@@ -2363,20 +2363,27 @@ def chamados_detalhe(cid):
     if chamado["grupo_id"] != grupo_id and tipo != "master":
         flash("Sem acesso a este chamado.", "danger")
         return redirect(url_for("chamados_lista"))
-    comentarios = get_comentarios_chamado(cid)
+    comentarios    = get_comentarios_chamado(cid)
+    apoios         = get_apoios_chamado(cid)
+    acompanhantes  = get_acompanhantes_chamado(cid)
+    etiquetas_ch   = get_etiquetas_do_chamado(cid)
     lojas = get_lojas_usuario(uid, tipo)
-    usuarios_resp = []
-    if tipo in ("master", "gestor"):
-        conn = get_db()
-        usuarios_resp = [dict(r) for r in conn.execute(
-            "SELECT id, nome FROM usuarios WHERE grupo_id=? AND tipo IN ('master','gestor','loja') ORDER BY nome",
-            (grupo_id,)
-        ).fetchall()]
-        conn.close()
+    conn = get_db()
+    todos_usuarios = [dict(r) for r in conn.execute(
+        "SELECT id, nome FROM usuarios WHERE grupo_id=? AND ativo=1 ORDER BY nome",
+        (grupo_id,)
+    ).fetchall()]
+    conn.close()
+    usuarios_resp = [u for u in todos_usuarios if True]  # todos podem ser responsáveis
+    setores = get_setores_chamados(grupo_id)
+    etiquetas = get_etiquetas_chamados(grupo_id)
     return render_template(
         "chamados/detalhe.html",
         chamado=chamado, comentarios=comentarios,
+        apoios=apoios, acompanhantes=acompanhantes,
+        etiquetas_ch=etiquetas_ch, etiquetas=etiquetas,
         lojas=lojas, usuarios_resp=usuarios_resp,
+        todos_usuarios=todos_usuarios, setores=setores,
         STATUS_CHAMADO=STATUS_CHAMADO, PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
     )
 
