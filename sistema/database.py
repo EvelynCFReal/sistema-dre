@@ -579,7 +579,8 @@ def migrar_db():
             bg_login_url    TEXT DEFAULT '',
             logo_url        TEXT DEFAULT ''
         )""")
-        c.execute("INSERT INTO temas_grupo(grupo_id) VALUES(1)")
+        c.execute("""INSERT INTO temas_grupo(grupo_id,cor_primaria,cor_secundaria)
+                     VALUES(1,'#3d7a50','#1c3a28')""")
 
     # Adiciona grupo_id em lojas
     cols_lojas = [r[1] for r in c.execute("PRAGMA table_info(lojas)").fetchall()]
