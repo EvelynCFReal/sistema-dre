@@ -492,6 +492,12 @@ def migrar_db():
                         (u2["id"], bancos_mapa[slug])
                     )
 
+    # grupo_id em bancos_talentos
+    cols_bt = [r[1] for r in c.execute("PRAGMA table_info(bancos_talentos)").fetchall()]
+    if cols_bt and "grupo_id" not in cols_bt:
+        c.execute("ALTER TABLE bancos_talentos ADD COLUMN grupo_id INTEGER DEFAULT 1")
+        c.execute("UPDATE bancos_talentos SET grupo_id=1")
+
     # Coluna de último acesso
     if "ultimo_acesso" not in cols_usr:
         c.execute("ALTER TABLE usuarios ADD COLUMN ultimo_acesso TIMESTAMP")
