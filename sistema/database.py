@@ -565,7 +565,7 @@ def migrar_db():
             ativo     INTEGER DEFAULT 1,
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )""")
-        c.execute("INSERT INTO grupos(id,nome,slug) VALUES(1,'Grupo Mono','grupomono')")
+        c.execute("INSERT INTO grupos(id,nome,slug) VALUES(1,'UNYRAX','unyrax')")
 
     # ── temas_grupo (identidade visual por grupo) ──
     if "temas_grupo" not in tabelas:
