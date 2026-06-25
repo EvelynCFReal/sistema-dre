@@ -92,8 +92,12 @@ a{color:inherit;text-decoration:none}
 <!-- Nav -->
 <nav class="lp-nav">
   <div class="lp-logo">
+    {% if unyrax_logo_url %}
+    <img src="{{ unyrax_logo_url }}" alt="UNYRAX" style="height:32px;object-fit:contain">
+    {% else %}
     <div class="lp-logo-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
     <span class="lp-logo-name">UNYRAX</span>
+    {% endif %}
   </div>
   <div class="lp-nav-right">
     <button class="btn-ghost" onclick="toggleAcesso()">Já tenho acesso</button>
