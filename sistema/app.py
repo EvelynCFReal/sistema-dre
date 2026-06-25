@@ -2344,19 +2344,24 @@ def chamados_novo():
     grupo_id  = session.get("grupo_id", 1)
     setores   = get_setores_chamados(grupo_id)
     etiquetas = get_etiquetas_chamados(grupo_id)
+    slas      = get_slas_chamados(grupo_id, apenas_ativos=True)
     loja_id_atual = loja_selecionada()
-    # mapa setor_id -> {responsavel_id, responsavel_nome} para JS filtrar responsável
     import json as _json
     setores_map = _json.dumps({
-        str(s["id"]): {"id": s.get("responsavel_id"), "nome": s.get("responsavel_nome") or ""}
-        for s in setores if s.get("responsavel_id")
+        str(s["id"]): {
+            "resp_id": s.get("responsavel_id"),
+            "resp_nome": s.get("responsavel_nome") or "",
+            "cats": [c.strip() for c in (s.get("categorias") or "").split(",") if c.strip()],
+        }
+        for s in setores
     })
+    slas_prio_map = _json.dumps({s["prioridade"]: s["horas_resolucao"] for s in slas})
     return render_template(
         "chamados/form.html",
         lojas=lojas, usuarios_resp=usuarios_resp, setores=setores, etiquetas=etiquetas,
         STATUS_CHAMADO=STATUS_CHAMADO, PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
         chamado=None, sol_nome=sol_nome, sol_email="",
-        loja_id_atual=loja_id_atual, setores_map=setores_map,
+        loja_id_atual=loja_id_atual, setores_map=setores_map, slas_prio_map=slas_prio_map,
     )
 
 
