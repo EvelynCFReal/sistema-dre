@@ -40,6 +40,10 @@ from database import (
     get_grupos_lista, get_grupo_by_slug, get_tema_grupo,
     salvar_tema_grupo, salvar_grupo,
     get_lojas_grupo, get_stats_grupo,
+    criar_chamado, get_chamados, get_chamado, get_comentarios_chamado,
+    adicionar_comentario_chamado, atualizar_status_chamado,
+    atualizar_responsavel_chamado, editar_chamado, get_stats_chamados,
+    STATUS_CHAMADO, PRIO_CHAMADO, CAT_CHAMADO,
 )
 
 # ──────────────────────────────────────────
