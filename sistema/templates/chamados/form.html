@@ -20,7 +20,10 @@
 .form-ch textarea{resize:vertical;min-height:120px}
 .form-ch select option{background:var(--card)}
 .form-ch .hint{font-size:10px;color:var(--muted);margin-top:4px}
-.form-ch input[readonly]{opacity:.7;cursor:default}
+.form-ch input[readonly]{opacity:.65;cursor:default;background:var(--card)}
+.sol-auto{display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 13px;font-size:13px;color:var(--text);opacity:.8}
+.sol-auto i{color:var(--gold);flex-shrink:0}
 .prio-pills{display:flex;gap:6px;flex-wrap:wrap}
 .prio-pill{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;
   border:1px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;transition:all .2s;
@@ -56,7 +59,7 @@
         <textarea name="descricao" placeholder="Detalhe o problema, passos para reproduzir, impacto..."></textarea>
       </div>
 
-      <!-- Empresa + Categoria -->
+      <!-- Empresa + Setor -->
       <div class="row-2">
         <div class="fld">
           <label>Empresa / Unidade</label>
@@ -68,29 +71,26 @@
           </select>
         </div>
         <div class="fld">
-          <label>Categoria</label>
-          <select name="categoria">
-            {% for cat in CAT_CHAMADO %}
-            <option value="{{ cat }}" {% if cat == 'suporte' %}selected{% endif %}>
-              {{ cat.capitalize() }}
-            </option>
+          <label>Setor</label>
+          <select name="setor_id" id="fSetor" onchange="onSetorChange(this.value)">
+            <option value="">— Nenhum setor —</option>
+            {% for s in setores %}
+            <option value="{{ s.id }}">{{ s.nome }}</option>
             {% endfor %}
           </select>
         </div>
       </div>
 
-      <!-- Setor -->
-      {% if setores %}
-      <div class="fld">
-        <label>Setor</label>
-        <select name="setor_id" id="fSetor" onchange="onSetorChange(this.value)">
-          <option value="">— Nenhum setor —</option>
-          {% for s in setores %}
-          <option value="{{ s.id }}">{{ s.nome }}</option>
+      <!-- Categoria (filtrada pelo setor) -->
+      <div class="fld" id="blocoCategoria">
+        <label>Categoria</label>
+        <select name="categoria" id="fCategoria">
+          {% for cat in CAT_CHAMADO %}
+          <option value="{{ cat }}" {% if cat == 'suporte' %}selected{% endif %}>{{ cat.capitalize() }}</option>
           {% endfor %}
         </select>
+        <div class="hint" id="hintCategoria">Selecione um setor para filtrar as categorias disponíveis.</div>
       </div>
-      {% endif %}
 
       <!-- Etiquetas -->
       {% if etiquetas %}
@@ -115,23 +115,23 @@
         <label>Prioridade</label>
         <div class="prio-pills">
           <label class="prio-pill baixa">
-            <input type="radio" name="prioridade" value="baixa"> <i class="bi bi-arrow-down-circle"></i> Baixa
+            <input type="radio" name="prioridade" value="baixa" onchange="onPrioChange('baixa')"> <i class="bi bi-arrow-down-circle"></i> Baixa
           </label>
           <label class="prio-pill media">
-            <input type="radio" name="prioridade" value="media" checked> <i class="bi bi-dash-circle"></i> Média
+            <input type="radio" name="prioridade" value="media" checked onchange="onPrioChange('media')"> <i class="bi bi-dash-circle"></i> Média
           </label>
           <label class="prio-pill alta">
-            <input type="radio" name="prioridade" value="alta"> <i class="bi bi-arrow-up-circle"></i> Alta
+            <input type="radio" name="prioridade" value="alta" onchange="onPrioChange('alta')"> <i class="bi bi-arrow-up-circle"></i> Alta
           </label>
           <label class="prio-pill urgente">
-            <input type="radio" name="prioridade" value="urgente"> <i class="bi bi-exclamation-octagon"></i> Urgente
+            <input type="radio" name="prioridade" value="urgente" onchange="onPrioChange('urgente')"> <i class="bi bi-exclamation-octagon"></i> Urgente
           </label>
         </div>
       </div>
 
       <!-- Responsável (filtrado pelo setor) + Prazo -->
       <div class="row-2">
-        <div class="fld" id="blocoResponsavel">
+        <div class="fld">
           <label>Responsável</label>
           <select name="responsavel_id" id="fResponsavel">
             <option value="">— Selecione um setor primeiro —</option>
@@ -139,33 +139,34 @@
             <option value="{{ u.id }}" data-global="1">{{ u.nome }}</option>
             {% endfor %}
           </select>
-          <div class="hint" id="hintResponsavel">Selecione um setor para ver o responsável atribuído.</div>
+          <div class="hint" id="hintResponsavel">Selecione um setor para ver o responsável.</div>
         </div>
         <div class="fld">
-          <label>Prazo</label>
-          <input type="date" name="prazo">
+          <label>Prazo <span id="prazoHint" style="color:var(--gold);font-size:9px;margin-left:4px"></span></label>
+          <input type="date" name="prazo" id="fPrazo">
+          <div class="hint" id="hintPrazo">Preenchido automaticamente pelo SLA da prioridade.</div>
         </div>
       </div>
 
       <div class="separator"></div>
 
-      <!-- Dados do solicitante — preenchido automaticamente -->
-      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px">
-        <i class="bi bi-person"></i> Dados do Solicitante
+      <!-- Dados do solicitante — automáticos -->
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px">
+        <i class="bi bi-person-check" style="color:var(--gold)"></i> Solicitante
+        <span style="background:rgba(61,122,80,.12);color:var(--gold);font-size:9px;padding:2px 7px;border-radius:4px;letter-spacing:1px">AUTOMÁTICO</span>
       </div>
       <div class="row-3">
         <div class="fld">
           <label>Nome</label>
-          <input type="text" name="solicitante_nome" id="fSolNome"
-            value="{{ sol_nome or '' }}" placeholder="Nome completo">
+          <div class="sol-auto"><i class="bi bi-person"></i> {{ sol_nome or '—' }}</div>
+          <input type="hidden" name="solicitante_nome" value="{{ sol_nome or '' }}">
         </div>
         <div class="fld">
-          <label>E-mail</label>
-          <input type="email" name="solicitante_email" id="fSolEmail"
-            value="{{ sol_email or '' }}" placeholder="email@exemplo.com">
+          <label>E-mail <span style="color:var(--muted);font-size:9px">(opcional)</span></label>
+          <input type="email" name="solicitante_email" value="{{ sol_email or '' }}" placeholder="email@exemplo.com">
         </div>
         <div class="fld">
-          <label>Telefone</label>
+          <label>Telefone <span style="color:var(--muted);font-size:9px">(opcional)</span></label>
           <input type="text" name="solicitante_tel" placeholder="(00) 00000-0000">
         </div>
       </div>
@@ -184,54 +185,104 @@
 
 {% block scripts %}
 <script>
-var SETORES_MAP = {{ setores_map|default('{}')|safe }};
+var SETORES_MAP   = {{ setores_map|default('{}')|safe }};
+var SLAS_PRIO_MAP = {{ slas_prio_map|default('{}')|safe }};
+// Categorias padrão do sistema (fallback quando setor não tem categorias)
+var CAT_PADRAO    = {{ CAT_CHAMADO|tojson }};
 
+// ── Ao mudar setor: atualiza responsável e categorias ──
 function onSetorChange(setorId) {
-  var sel = document.getElementById('fResponsavel');
-  var hint = document.getElementById('hintResponsavel');
-  if (!sel) return;
+  atualizarResponsavel(setorId);
+  atualizarCategorias(setorId);
+}
 
-  if (!setorId || !SETORES_MAP[setorId]) {
-    // sem setor ou setor sem responsável: mostra lista completa
-    Array.from(sel.options).forEach(function(o) {
-      o.style.display = '';
-    });
+function atualizarResponsavel(setorId) {
+  var sel   = document.getElementById('fResponsavel');
+  var hint  = document.getElementById('hintResponsavel');
+  if (!sel) return;
+  var info  = setorId ? SETORES_MAP[setorId] : null;
+  var respId   = info ? String(info.resp_id || '') : '';
+  var respNome = info ? (info.resp_nome || '') : '';
+
+  if (!respId) {
+    // sem responsável definido no setor — mostra lista completa
+    Array.from(sel.options).forEach(function(o){ o.style.display = ''; });
+    sel.value = '';
     sel.options[0].text = '— Atribuir depois —';
-    if (hint) hint.textContent = 'Selecione um setor para ver o responsável atribuído.';
+    if (hint) hint.textContent = setorId ? 'Setor sem responsável definido.' : 'Selecione um setor para ver o responsável.';
     return;
   }
 
-  var resp = SETORES_MAP[setorId];
-  // Remove todas as opções exceto a primeira (placeholder) e reinsere só o responsável
-  // Mantemos as opções com data-global mas escondidas; adicionamos a do responsável se não existir
-  var respId = String(resp.id);
-  var respNome = resp.nome;
-
-  // Seleciona automaticamente o responsável do setor
+  // Oculta todos exceto o responsável do setor
   var found = false;
   Array.from(sel.options).forEach(function(o) {
-    if (String(o.value) === respId) {
-      o.selected = true;
-      o.style.display = '';
-      found = true;
-    } else if (o.value === '') {
-      o.style.display = '';
-      o.selected = false;
-    } else {
-      o.style.display = 'none';
-      o.selected = false;
-    }
+    if (o.value === '') { o.style.display = ''; o.selected = false; }
+    else if (o.value === respId) { o.style.display = ''; o.selected = true; found = true; }
+    else { o.style.display = 'none'; o.selected = false; }
   });
 
-  if (!found && resp.id) {
-    var newOpt = document.createElement('option');
-    newOpt.value = respId;
-    newOpt.text = respNome;
-    newOpt.selected = true;
-    sel.appendChild(newOpt);
+  if (!found) {
+    var opt = document.createElement('option');
+    opt.value = respId; opt.text = respNome; opt.selected = true;
+    sel.appendChild(opt);
+  }
+  if (hint) hint.textContent = 'Responsável do setor: ' + respNome;
+}
+
+function atualizarCategorias(setorId) {
+  var sel  = document.getElementById('fCategoria');
+  var hint = document.getElementById('hintCategoria');
+  if (!sel) return;
+  var info = setorId ? SETORES_MAP[setorId] : null;
+  var cats = (info && info.cats && info.cats.length > 0) ? info.cats : CAT_PADRAO;
+
+  var valorAtual = sel.value;
+  sel.innerHTML = '';
+  cats.forEach(function(cat) {
+    var opt = document.createElement('option');
+    opt.value = cat.toLowerCase().replace(/\s+/g,'_');
+    opt.text  = cat.charAt(0).toUpperCase() + cat.slice(1);
+    if (opt.value === valorAtual) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  if (!setorId) {
+    if (hint) hint.textContent = 'Selecione um setor para filtrar as categorias disponíveis.';
+  } else if (info && info.cats && info.cats.length > 0) {
+    if (hint) hint.textContent = 'Categorias do setor selecionado.';
+  } else {
+    if (hint) hint.textContent = 'Setor sem categorias definidas — usando padrão.';
+  }
+}
+
+// ── Ao mudar prioridade: calcula prazo pelo SLA ──
+function onPrioChange(prio) {
+  var fPrazo = document.getElementById('fPrazo');
+  var hint   = document.getElementById('hintPrazo');
+  var prazoHint = document.getElementById('prazoHint');
+  if (!fPrazo) return;
+
+  var horas = SLAS_PRIO_MAP[prio];
+  if (!horas) {
+    if (hint) hint.textContent = 'Nenhum SLA configurado para esta prioridade.';
+    if (prazoHint) prazoHint.textContent = '';
+    return;
   }
 
-  if (hint) hint.textContent = 'Responsável do setor selecionado: ' + respNome;
+  var dias = Math.ceil(horas / 24);
+  var d = new Date();
+  d.setDate(d.getDate() + dias);
+  var yyyy = d.getFullYear();
+  var mm   = String(d.getMonth() + 1).padStart(2, '0');
+  var dd   = String(d.getDate()).padStart(2, '0');
+  fPrazo.value = yyyy + '-' + mm + '-' + dd;
+
+  if (prazoHint) prazoHint.textContent = '(' + horas + 'h SLA)';
+  if (hint) hint.textContent = 'Calculado pelo SLA: ' + horas + 'h = ' + dias + ' dia(s) a partir de hoje.';
 }
+
+// Inicializar com prioridade padrão (média)
+document.addEventListener('DOMContentLoaded', function() {
+  onPrioChange('media');
+});
 </script>
 {% endblock %}
