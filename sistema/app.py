@@ -2321,16 +2321,15 @@ def chamados_novo():
         flash(f"Chamado {numero} aberto com sucesso.", "success")
         return redirect(url_for("chamados_detalhe", cid=cid))
 
-    conn = get_db()
     sol_nome  = session.get("nome", "")
-    sol_email = conn.execute("SELECT email FROM usuarios WHERE id=?", (uid,)).fetchone()
-    conn.close()
-    sol_email = sol_email["email"] if sol_email else ""
+    grupo_id  = session.get("grupo_id", 1)
+    setores   = get_setores_chamados(grupo_id)
+    etiquetas = get_etiquetas_chamados(grupo_id)
     return render_template(
         "chamados/form.html",
-        lojas=lojas, usuarios_resp=usuarios_resp,
+        lojas=lojas, usuarios_resp=usuarios_resp, setores=setores, etiquetas=etiquetas,
         STATUS_CHAMADO=STATUS_CHAMADO, PRIO_CHAMADO=PRIO_CHAMADO, CAT_CHAMADO=CAT_CHAMADO,
-        chamado=None, sol_nome=sol_nome, sol_email=sol_email,
+        chamado=None, sol_nome=sol_nome, sol_email="",
     )
 
 
