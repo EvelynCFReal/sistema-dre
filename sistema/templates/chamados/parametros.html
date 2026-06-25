@@ -94,7 +94,7 @@
             <td>{% if s.pode_receber %}<i class="bi bi-check-circle-fill" style="color:var(--gold)"></i>{% else %}<i class="bi bi-x-circle" style="color:var(--muted)"></i>{% endif %}</td>
             <td>
               <div style="display:flex;gap:4px">
-                <button onclick="editSetor({{ s.id }},'{{ s.nome|e }}','{{ s.cor or '#3d7a50' }}',{{ s.responsavel_id or 'null' }},{{ 1 if s.pode_abrir else 0 }},{{ 1 if s.pode_receber else 0 }})"
+                <button onclick="editSetor({{ s.id }},'{{ s.nome|e }}','{{ s.cor or '#3d7a50' }}',{{ s.responsavel_id or 'null' }},{{ 1 if s.pode_abrir else 0 }},{{ 1 if s.pode_receber else 0 }},'{{ (s.categorias or '')|e }}')"
                   style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px" title="Editar">
                   <i class="bi bi-pencil"></i>
                 </button>
